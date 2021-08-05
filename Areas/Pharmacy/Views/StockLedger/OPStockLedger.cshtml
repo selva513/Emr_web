@@ -1,0 +1,645 @@
+﻿@{
+    ViewData["Title"] = "OP Stock Ledger";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    label {
+        font-size: 14px;
+        font-weight: 600;
+        font-style: serif;
+    }
+
+    hr {
+        margin: 20px 0;
+        border: 0;
+        border-top: 1px solid #E0DFDF;
+        border-bottom: 1px solid #FEFEFE;
+    }
+
+    #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loading1 {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loadingcontent {
+        display: table;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loadingspinner {
+        display: table-cell;
+        vertical-align: middle;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+        padding-top: 80px;
+    }
+</style>
+
+<script type="text/javascript">
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        var today = new Date();
+        var currentyear = today.getFullYear();
+        var onetwentyyearback = currentyear - 120;
+        var daterange = onetwentyyearback + ':' + currentyear;
+
+        $('#txtfromdate').datepicker({
+            changeMonth: true,
+            changeYear: true,
+            yearRange: daterange,
+            dateFormat: 'dd/mm/yy',
+            endDate: "today",
+            maxDate: today,
+        });
+        $('#txttodate').datepicker({
+            changeMonth: true,
+            changeYear: true,
+            yearRange: daterange,
+            dateFormat: 'dd/mm/yy',
+            endDate: "today",
+            maxDate: today,
+        });
+        //$("#txtfromdate").datepicker('setDate', new Date(currentyear, today.getMonth(), today.getDate() - 10));
+        //$("#txttodate").datepicker('setDate', new Date());
+        GetStoreName();
+    });
+    function GetStoreName() {
+        $.ajax({
+            url: "/Pharma/Invoice/GetStoreName",
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.length > 0) {
+                    $('#ddlStoreName')
+                        .append($("<option></option>").val(0).html('-Select-'));
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var HIS_PH_STOREMASTER = response[PCHeader].HIS_PH_STOREMASTER;
+                        var HIS_PH_STORENAME = response[PCHeader].HIS_PH_STORENAME;
+                        $('#ddlStoreName')
+                            .append($("<option></option>").val(HIS_PH_STOREMASTER).html(HIS_PH_STORENAME));
+                    }
+                }
+            },
+            failure: function (response) {
+                alert(response);
+            },
+            error: function (response) {
+                alert(response);
+            }
+        });
+    }
+    function SearchDrug() {
+        var f = document.getElementById("ddlStoreName");
+        var StoreName = f.options[f.selectedIndex].text;
+        $("#txtDrugSearch").autocomplete({
+            source: function (request, response) {
+                $.ajax({
+                    url: "/Pharma/Dispense/GetDrugSearchByFreeText",
+                    type: "GET",
+                    data: {
+                        SearchTearm: request.term,
+                        StoreName: StoreName
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_CUR_DRUGBRANDNAME,
+                                value: el.PH_CUR_DRUGCODE,
+                                UOM: el.PH_CUR_STOCKUOM,
+                                CatCode: el.PH_ItemCatShortCode
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                $("#txtDrugSearch").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                // $("#txtDrugSearch").prop('disabled', true);
+                $("#txtDrugSearch").val(ui.item.label);
+                var DrugCode = parseInt(ui.item.value);
+                var Drugname = ui.item.label;
+                var UOM = ui.item.UOM;
+                var ItemShortCode = ui.item.CatCode;
+                GetBatchno(Drugname, StoreName, UOM, ItemShortCode);
+                return false;
+            },
+            minLength: 0
+        });
+    }
+    function GetBatchno(Drugname, StoreName, UOM, ItemShortCode) {
+        try {
+            $.ajax({
+                url: rootUrl + "/api/StockLedgerApi/GetBatchNo",
+                type: "GET",
+                data: {
+                    Drugname: Drugname,
+                    StoreName: StoreName,
+                    UOM: UOM,
+                    ItemShortCode: ItemShortCode
+                },
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    $("#ddlBatchNumber").empty();
+                    $("#ddlBatchNumber").append($("<option></option>").val(0).html('-Select-'));
+                    $.each(data, function (key, value) {
+                        $("#ddlBatchNumber").append($("<option></option>").val(value.PH_CUR_STOCK_BATCHNO).html(value.PH_CUR_STOCK_BATCHNO));
+                    });
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        catch (e) {
+
+        }
+    }
+    function BindAllLedgerData() {
+        try {
+            var f = document.getElementById("ddlStoreName");
+            var StoreName = f.options[f.selectedIndex].text;
+            var g = document.getElementById("ddlBatchNumber");
+            var BatchNumber = g.options[g.selectedIndex].text;
+            var FromDate = $("#txtfromdate").val();
+            var ToDate = $("#txttodate").val();
+            if (Validate()) {
+                $.ajax({
+                    url: rootUrl + "/api/StockLedgerApi/GetLedgerData",
+                    type: "GET",
+                    data: {
+                        StoreName: StoreName,
+                        BatchNumber: BatchNumber,
+                        FromDate: FromDate,
+                        ToDate: ToDate
+                    },
+                    dataType: "json",
+                    beforeSend: function () { $("#loading").css("display", "block"); },
+                    success: function (response) {
+                        var xmlDoc = $.parseXML(response);
+                        var xml = $(xmlDoc);
+                        var StockLedger = xml.find("StockLedger");
+                        $("#tblStockDetails tbody").empty();
+                        if (StockLedger.length > 0) {
+                            $.each(StockLedger, function () {
+                                var RowNumber = ($(this).find("RowNumber").text());
+                                var PH_CSH_PATID = ($(this).find("PH_CSH_PATID").text());
+                                var PH_CSH_PATNAME = ($(this).find("PH_CSH_PATNAME").text());
+                                var PH_CSH_BILLNO = ($(this).find("PH_CSH_BILLNO").text());
+                                var billDT = ($(this).find("billDT").text());
+                                var PH_CSHDTL_DRUGBATCHNO = ($(this).find("PH_CSHDTL_DRUGBATCHNO").text());
+                                var Qty = ($(this).find("Qty").text());
+                                var BeforeQty = ($(this).find("PH_CSHDTL_DRUGSTOCK_BEFOREDISPENSE").text());
+                                var PH_CSHDTL_DRUG_TAXPERCENT = ($(this).find("PH_CSHDTL_DRUG_TAXPERCENT").text());
+                                $("#tblStockDetails tbody").append
+                                    ("<tr>" + "<td>" + RowNumber + "</td>" +
+                                        "<td>" + PH_CSH_PATID + "</td>" +
+                                        "<td>" + PH_CSH_PATNAME + "</td>" +
+                                        "<td>" + PH_CSH_BILLNO + "</td>" +
+                                        "<td >" + billDT + "</td>" +
+                                        "<td >" + PH_CSHDTL_DRUGBATCHNO + "</td>" +
+                                        "<td >" + Qty + "</td>" +
+                                        "<td >" + BeforeQty + "</td>" +
+                                        "<td >" + PH_CSHDTL_DRUG_TAXPERCENT + "</td>"
+                                        + "</tr>");
+                            });
+
+                            var DCStockLedger = xml.find("DCStockLedger");
+                            $("#tblDCStockDetails tbody").empty();
+
+                            if (DCStockLedger.length > 0) {
+                                $.each(DCStockLedger, function () {
+                                    var RowNumber = ($(this).find("RowNumber").text());
+                                    var PH_SupplierName = ($(this).find("PH_SupplierName").text());
+                                    var PH_DC_ENTRYDATE = ($(this).find("PH_DC_ENTRYDATE").text());
+                                    var PH_DCDTL_RECVDQTY = ($(this).find("PH_DCDTL_RECVDQTY").text());
+                                    var PH_DCDTL_RATEEACH = ($(this).find("PH_DCDTL_RATEEACH").text());
+                                    $("#tblDCStockDetails tbody").append
+                                        ("<tr>" + "<td>" + RowNumber + "</td>" +
+                                            "<td>" + PH_SupplierName + "</td>" +
+                                            "<td>" + PH_DC_ENTRYDATE + "</td>" +
+                                            "<td>" + PH_DCDTL_RECVDQTY + "</td>" +
+                                            "<td >" + PH_DCDTL_RATEEACH + "</td>"
+                                            + "</tr>");
+                                });
+                            }
+
+                            var RetStockLedger = xml.find("RetStockLedger");
+                            $("#tblRetStockDetails tbody").empty();
+
+                            if (RetStockLedger.length > 0) {
+                                $.each(RetStockLedger, function () {
+                                    var RowNumber = ($(this).find("RowNumber").text());
+                                    var PH_RET_PATID = ($(this).find("PH_RET_PATID").text());
+                                    var PH_RET_PATNAME = ($(this).find("PH_RET_PATNAME").text());
+                                    var PH_CSH_BILLNO = ($(this).find("PH_CSH_BILLNO").text());
+                                    var ReTbillDT = ($(this).find("ReTbillDT").text());
+                                    var Qty = ($(this).find("Qty").text());
+                                    $("#tblRetStockDetails tbody").append
+                                        ("<tr>" + "<td>" + RowNumber + "</td>" +
+                                            "<td>" + PH_RET_PATID + "</td>" +
+                                            "<td>" + PH_RET_PATNAME + "</td>" +
+                                            "<td>" + PH_CSH_BILLNO + "</td>" +
+                                            "<td >" + ReTbillDT + "</td>" +
+                                            "<td >" + Qty + "</td>"
+                                            + "</tr>");
+                                });
+                            }
+
+                            var TransStockLedger = xml.find("TranStock");
+                            $("#tblTransStockDetails tbody").empty();
+
+                            if (TransStockLedger.length > 0) {
+                                $.each(TransStockLedger, function () {
+                                    var RowNumber = ($(this).find("RowNumber").text());
+                                    var PH_TRAN_FROMSTORENAME = ($(this).find("PH_TRAN_FROMSTORENAME").text());
+                                    var PH_TRAN_TOSTORENAME = ($(this).find("PH_TRAN_TOSTORENAME").text());
+                                    var PH_TRAN_TRANSFERDATE = ($(this).find("PH_TRAN_TRANSFERDATE").text());
+                                    var PH_TRAN_BATCH = ($(this).find("PH_TRAN_BATCH").text());
+                                    var PH_TRAN_STOCKTOTRANSFER = ($(this).find("PH_TRAN_STOCKTOTRANSFER").text());
+                                    var PH_TRAN_STOCKTRANSFER = ($(this).find("PH_TRAN_STOCKTRANSFER").text());
+                                    var PH_TRAN_STOCKBALANCE = ($(this).find("PH_TRAN_STOCKBALANCE").text());
+                                    $("#tblTransStockDetails tbody").append
+                                        ("<tr>" + "<td>" + RowNumber + "</td>" +
+                                            "<td>" + PH_TRAN_FROMSTORENAME + "</td>" +
+                                            "<td>" + PH_TRAN_TOSTORENAME + "</td>" +
+                                            "<td>" + PH_TRAN_TRANSFERDATE + "</td>" +
+                                            "<td >" + PH_TRAN_BATCH + "</td>" +
+                                            "<td >" + PH_TRAN_STOCKTOTRANSFER + "</td>" +
+                                            "<td >" + PH_TRAN_STOCKTRANSFER + "</td>" +
+                                            "<td >" + PH_TRAN_STOCKBALANCE + "</td>"
+                                            + "</tr>");
+                                });
+                            }
+
+                            var Calculation = xml.find("StockLedgerSum");
+                            var DrugSum = Calculation.find("Qty").text();
+                            $("label[for='lblDrugTotalStatus']").text(DrugSum);
+                            var Sno = document.getElementById("tblStockDetails").getElementsByTagName("tbody")[0].getElementsByTagName("tr").length;
+                            $("label[for='lblBillTotalStatus']").text(Sno);
+
+
+                            var RetStockSum = xml.find("RetStockSum");
+                            var DrugSum = RetStockSum.find("Qty").text();
+                            $("label[for='lblRetDrugTotalStatus']").text(DrugSum);
+                            var RetSno = document.getElementById("tblRetStockDetails").getElementsByTagName("tbody")[0].getElementsByTagName("tr").length;
+                            $("label[for='lblRetBillTotalStatus']").text(RetSno);
+
+                            var DCStockSum = xml.find("DCStockSum");
+                            var DrugSum = DCStockSum.find("Qty").text();
+                            $("label[for='lblDCDrugTotalStatus']").text(DrugSum);
+                            var RetSno = document.getElementById("tblDCStockDetails").getElementsByTagName("tbody")[0].getElementsByTagName("tr").length;
+                            $("label[for='lblDCBillTotalStatus']").text(RetSno);
+                        }
+                        else {
+                            alert('No Data Found');
+                        }
+                    },
+                    complete: function () { $("#loading").css("display", "none"); }
+                });
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function Validate() {
+        try {
+            var errors = "";
+            var f = document.getElementById("ddlStoreName");
+            var StoreName = f.options[f.selectedIndex].text;
+            var g = document.getElementById("ddlBatchNumber");
+            var BatchNumber = g.options[g.selectedIndex].text;
+            var FromDate = $("#txtfromdate").val();
+            var ToDate = $("#txttodate").val();
+            if (StoreName == "") {
+                errors += "* Please Select Store Name.\n";
+            }
+            if (BatchNumber == "") {
+                errors += "* Please Select Batch Number.\n";
+            }
+            if (FromDate == "" || ToDate == "") {
+                errors += "* Please Select Dates.\n";
+            }
+            if (errors.length > 0) {
+                alert('One or more errors occurred:\n\n' + errors);
+                return false;
+            }
+            else {
+                return true;
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function Cancel() {
+        try {
+            $("#txtfromdate").val('');
+            $("#txttodate").val('');
+            $("#ddlStoreName").val('');
+            $("#ddlBatchNumber").val('');
+            $("#tblStockDetails tbody").empty();
+            $("#tblDCStockDetails tbody").empty();
+            $("#tblRetStockDetails tbody").empty();
+            $("#tblTransStockDetails tbody").empty();
+            $("label[for='lblDrugTotalStatus']").text('');
+            $("label[for='lblBillTotalStatus']").text('');
+            $("label[for='lblRetDrugTotalStatus']").text('');
+            $("label[for='lblRetBillTotalStatus']").text('');
+            $("label[for='lblDCDrugTotalStatus']").text('');
+            $("label[for='lblDCBillTotalStatus']").text('');
+        }
+        catch (e) {
+
+        }
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div id="loading">
+            <div id="loadingcontent">
+                <div id="loadingspinner">
+                    <img src="~/images/loading.gif" style="width: 100px; height: 100px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-wrapper" style=" font-family: arial, sans-serif;">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="panel panel-default DivBox" style="background-color: white;">
+                        <div class="panel-heading" style="background-color: #007bff;color: white;margin-top: 6px;height:50px;">
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <h3 class="card-title" style="padding-top: 11px;padding-left: 7px;">Stock Ledger</h3>
+                                    <img src="~/images/ShutdownWhite.png" style="padding-top:11px;padding-right:7px;float:right;cursor:pointer;" onclick="GotoLogin();" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                    <div class="form-group">
+                                        <label>
+                                            Ware House
+                                        </label>
+                                        <select class="form-control" id="ddlStoreName" style="cursor:pointer;">
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                    <div class="form-group">
+                                        <label>
+                                            Brand Name
+                                        </label>
+                                        <input type="text" id="txtDrugSearch" placeholder="Brand Name" class="form-control" onkeyup="return SearchDrug();" />
+                                    </div>
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                    <div class="form-group">
+                                        <label>
+                                            Batch Number
+                                        </label>
+                                        <select class="form-control" id="ddlBatchNumber" style="cursor:pointer;">
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                    <div class="form-group">
+                                        <label>
+                                            From Date
+                                        </label>
+                                        <input type="text" id="txtfromdate" placeholder="From Date" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                    <div class="form-group">
+                                        <label>
+                                            To Date
+                                        </label>
+                                        <input type="text" id="txttodate" placeholder="To Date" class="form-control" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <button class="btn btn-primary" onclick="BindAllLedgerData();">Search</button>
+                                    <button class="btn btn-primary" onclick="Cancel();">Cancel</button>
+                                </div>
+                            </div>
+                            <br />
+                            <div class="row">
+                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                    <div class="row">
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <table>
+                                                <tr>
+                                                    <td>
+                                                        <label class="control-label" style="color: black;">Total Drug Count:</label>
+                                                    </td>
+                                                    <td>
+                                                        <label class="control-label" for="lblDrugTotalStatus" style="color: green; font-size: x-large;"></label>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <label class="control-label" style="color: black;">Total Bill Count:</label>
+                                                    </td>
+                                                    <td>
+                                                        <label class="control-label" for="lblBillTotalStatus" style="color: green; font-size: x-large;"></label>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <table id="tblStockDetails" class=" table-striped table table-bordered  table-hover" style="font-size: 13px; ">
+                                                <thead>
+                                                    <tr>
+                                                        <th>S.no</th>
+                                                        <th>PatientId</th>
+                                                        <th>Name</th>
+                                                        <th>BillNo</th>
+                                                        <th>BillDt</th>
+                                                        <th>Batch</th>
+                                                        <th>Qty</th>
+                                                        <th>BeforeQty</th>
+                                                        <th>Tax%</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                    <div class="row">
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <table>
+                                                <tr>
+                                                    <td>
+                                                        <label class="control-label" style="color: black;">Total DCDrug Count:</label>
+                                                    </td>
+                                                    <td>
+                                                        <label class="control-label" for="lblDCDrugTotalStatus" style="color: green; font-size: x-large;"></label>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <label class="control-label" style="color: black;">Total DCBill Count:</label>
+                                                    </td>
+                                                    <td>
+                                                        <label class="control-label" for="lblDCBillTotalStatus" style="color: green; font-size: x-large;"></label>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <table id="tblDCStockDetails" class=" table-striped table table-bordered  table-hover" style="font-size: 13px; ">
+                                                <thead>
+                                                    <tr>
+                                                        <th>S.no</th>
+                                                        <th>Supplier Name</th>
+                                                        <th>Dc Date</th>
+                                                        <th>Qty</th>
+                                                        <th>Rate</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <br />
+                            <div class="row">
+                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <table>
+                                                <tr>
+                                                    <td>
+                                                        <label class="control-label" style="color: black;">Total Return Drug Count:</label>
+                                                    </td>
+                                                    <td>
+                                                        <label class="control-label" for="lblRetDrugTotalStatus" style="color: green; font-size: x-large;"></label>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <label class="control-label" style="color: black;">Total Return Bill Count:</label>
+                                                    </td>
+                                                    <td>
+                                                        <label class="control-label" for="lblRetBillTotalStatus" style="color: green; font-size: x-large;"></label>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <table id="tblRetStockDetails" class=" table-striped table table-bordered  table-hover" style="font-size: 13px; ">
+                                                <thead>
+                                                    <tr>
+                                                        <th>S.no</th>
+                                                        <th>PatientId</th>
+                                                        <th>Patient Name</th>
+                                                        <th>BillNo</th>
+                                                        <th>RetBill Dt</th>
+                                                        <th>Qty</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                    <div class="row">
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+
+                                        </div>
+                                    </div>
+                                    <br />
+                                    <br />
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <table id="tblTransStockDetails" class=" table-striped table table-bordered  table-hover" style="font-size: 13px; ">
+                                                <thead>
+                                                    <tr>
+                                                        <th>S.no</th>
+                                                        <th>From Store</th>
+                                                        <th>To Store</th>
+                                                        <th>Date</th>
+                                                        <th>Batch</th>
+                                                        <th>Current Stock</th>
+                                                        <th>Transfer Stock</th>
+                                                        <th>Balance Stock</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

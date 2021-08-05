@@ -1,0 +1,606 @@
+﻿
+
+@using Syncfusion.EJ2
+@using Newtonsoft.Json
+<link href="~/AutoComplete/jquery-ui_1.11.4.css" rel="stylesheet" />
+<script src="~/AutoComplete/jquery-1.10.2.js"></script>
+<script src="~/AutoComplete/jquery-ui_1.11.4.js"></script>
+<style>
+    #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loadingcontent {
+        display: table;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loadingspinner {
+        display: table-cell;
+        vertical-align: middle;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+        padding-top: 80px;
+    }
+</style>
+<script>
+    function getValues(url) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+    function postValues(url, jdata) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(jdata),
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+</script>
+<script>
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+    function AddSymptoms() {
+        var grid = document.getElementById('CommonSymGrid').ej2_instances[0];
+        var selectedRecords = grid.getSelectedRecords();
+        if (selectedRecords.length == 0) {
+            alert("Please Select Minimum One");
+            return
+        }
+        $.ajax({
+            url: "/Common/AddSymptoms",
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(selectedRecords),
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (data) {
+                alert('Created Successfully');
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function AddHealthHabits() {
+        var grid = document.getElementById('CommonHabitsGrid').ej2_instances[0];
+        var selectedRecords = grid.getSelectedRecords();
+        if (selectedRecords.length == 0) {
+            alert("Please Select Minimum One");
+            return
+        }
+        $.ajax({
+            url: "/Common/AddHealthHabits",
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(selectedRecords),
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (data) {
+                alert(data);
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function AddDiagnosis() {
+        var grid = document.getElementById('CommonDiagGrid').ej2_instances[0];
+        var selectedRecords = grid.getSelectedRecords();
+        if (selectedRecords.length == 0) {
+            alert("Please Select Minimum One");
+            return
+        }
+        $.ajax({
+            url: "/Common/AddDiagnosis",
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(selectedRecords),
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (data) {
+                alert('Created Successfully');
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function AddInvestigation() {
+        var grid = document.getElementById('CommonInvestGrid').ej2_instances[0];
+        var selectedRecords = grid.getSelectedRecords();
+        if (selectedRecords.length == 0) {
+            alert("Please Select Minimum One");
+            return
+        }
+        //var responseinvest = postValues("/Common/AddInvestigation", selectedRecords);
+        $.ajax({
+            url: "/Common/AddInvestigation",
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(selectedRecords),
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (data) {
+                alert('Created Successfully');
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function AddDisease() {
+        var grid = document.getElementById('CommondiseaseGrid').ej2_instances[0];
+        var selectedRecords = grid.getSelectedRecords();
+        if (selectedRecords.length == 0) {
+            alert("Please Select Minimum One");
+            return
+        }
+        $.ajax({
+            url: "/Common/AddDisease",
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(selectedRecords),
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (data) {
+                alert('Created Successfully');
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function AddAllergy() {
+        var grid = document.getElementById('CommonallergyGrid').ej2_instances[0];
+        var selectedRecords = grid.getSelectedRecords();
+        if (selectedRecords.length == 0) {
+            alert("Please Select Minimum One");
+            return
+        }
+        $.ajax({
+            url: "/Common/AddAllergy",
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(selectedRecords),
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (data) {
+                alert('Created Successfully');
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function AddCommonDrugs() {
+        var grid = document.getElementById('CommonDrugGrid').ej2_instances[0];
+        var selectedRecords = grid.getSelectedRecords();
+        if (selectedRecords.length == 0) {
+            alert("Please Select Minimum One");
+            return
+        }
+        $.ajax({
+            url: "/Common/AddDrugs",
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(selectedRecords),
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (data) {
+                alert('Created Successfully');
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function AddCommonExamination() {
+        var grid = document.getElementById('CommonExaminationGrid').ej2_instances[0];
+        var selectedRecords = grid.getSelectedRecords();
+        if (selectedRecords.length == 0) {
+            alert("Please Select Minimum One");
+            return
+        }
+        $.ajax({
+            url: "/Common/AddCommonExamintion",
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(selectedRecords),
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (data) {
+                alert('Created Successfully');
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function AddCommonHISInvest() {
+        var grid = document.getElementById('CommonhisinvestGrid').ej2_instances[0];
+        var selectedRecords = grid.getSelectedRecords();
+        if (selectedRecords.length == 0) {
+            alert("Please Select Minimum One");
+            return
+        }
+        $.ajax({
+            url: "/Common/AddCommonHISInvestigation",
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(selectedRecords),
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (data) {
+                alert('Created Successfully');
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+</script>
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div id="loading">
+            <div id="loadingcontent">
+                <div id="loadingspinner">
+                    <img src="~/images/loading.gif" style="width:100px;height:100px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="content-wrapper">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-primary">
+                        <div class="card-header" style="margin-top:15px;">
+                            <h3 class="card-title">Common Data</h3>
+                            <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                        </div>
+                        <div class="card-body">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <br />
+                                <ul class="nav nav-tabs" id="custom-tabs-one-tab" role="tablist">
+                                    <li class="nav-item" style="display:none;">
+                                        <a class="nav-link active aLink" id="custom-tabs-one-home-tab" data-toggle="pill" href="#tabCommonSymDig" role="tab" aria-controls="custom-tabs-one-home" aria-selected="true">Presenting Illness</a>
+                                    </li>
+                                    <li class="nav-item" style="display:none;">
+                                        <a class="nav-link aLink" id="custom-tabs-one-profile-tab" data-toggle="pill" href="#tabHealthHabits" role="tab" aria-controls="custom-tabs-one-profile" aria-selected="false">Health Habits</a>
+                                    </li>
+                                    <li class="nav-item" style="display:none;">
+                                        <a class="nav-link aLink" id="custom-tabs-one-diag-tab" data-toggle="pill" href="#tabDiagcommon" role="tab" aria-controls="custom-tabs-one-diag" aria-selected="false">Diagnosis</a>
+                                    </li>
+                                    <li class="nav-item" style="display:none;">
+                                        <a class="nav-link aLink" id="custom-tabs-one-invest-tab" data-toggle="pill" href="#tabInvestcommon" role="tab" aria-controls="custom-tabs-one-invest" aria-selected="false">Investigation</a>
+                                    </li>
+                                    <li class="nav-item" style="display:none;">
+                                        <a class="nav-link aLink" id="custom-tabs-one-como-tab" data-toggle="pill" href="#tabcomocommon" role="tab" aria-controls="custom-tabs-one-como" aria-selected="false">Comorbidities</a>
+                                    </li>
+                                    <li class="nav-item" style="display:none;">
+                                        <a class="nav-link aLink" id="custom-tabs-one-aller-tab" data-toggle="pill" href="#taballercommon" role="tab" aria-controls="custom-tabs-one-aller" aria-selected="false">Allergy</a>
+                                    </li>
+                                    <li class="nav-item" style="display:none;">
+                                        <a class="nav-link aLink" id="custom-tabs-one-aller-tab" data-toggle="pill" href="#tabDrugcommon" role="tab" aria-controls="custom-tabs-one-aller" aria-selected="false">Drug</a>
+                                    </li>
+                                    <li class="nav-item" style="display:none;">
+                                        <a class="nav-link aLink" id="custom-tabs-one-aller-tab" data-toggle="pill" href="#tabExaminationcommon" role="tab" aria-controls="custom-tabs-one-aller" aria-selected="false">Examination</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link active aLink" id="custom-tabs-one-aller-tab" data-toggle="pill" href="#tabhisinvestigation" role="tab" aria-controls="custom-tabs-one-aller" aria-selected="false">HIS Investigation</a>
+                                    </li>
+                                </ul>
+                                <div class="tab-content" >
+                                    <div class="tab-pane fade show active" id="tabCommonSymDig" style="display:none;">
+                                        <br />
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <ejs-grid id="CommonSymGrid" allowPaging="true" dataSource="@ViewBag.CommonSymptom"
+                                                          toolbar="@(new List<string>() { "Search"})" allowSelection="true" enableHover="false"
+                                                          style="cursor:pointer;">
+                                                    <e-grid-searchsettings fields="@(new string[] { "CommonSymptoms"})"
+                                                                           operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                                    <e-grid-selectionSettings persistSelection="true" type="Multiple" checkboxOnly="true"></e-grid-selectionSettings>
+                                                    <e-grid-pagesettings pageCount="10" pageSizes="10"></e-grid-pagesettings>
+                                                    <e-grid-columns>
+                                                        <e-grid-column type="checkbox" width="60"></e-grid-column>
+                                                        <e-grid-column field="SeqId" isPrimaryKey="true" headerText="S.No" textAlign="Left"></e-grid-column>
+                                                        <e-grid-column field="CommonSymptoms" headerText="Symptom" textAlign="Left"></e-grid-column>
+                                                    </e-grid-columns>
+                                                </ejs-grid>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                                <div class="form-group">
+                                                    <button type="button" id="btnAddCommonSym" class="btn btn-info" onclick="AddSymptoms();">
+                                                        <span class="glyphicon glyphicon-floppy-disk"></span> Add Symptoms
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade" id="tabHealthHabits" style="display:none;">
+                                        <br />
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <ejs-grid id="CommonHabitsGrid" allowPaging="true" dataSource="@ViewBag.CommonHealthHabits"
+                                                          toolbar="@(new List<string>() { "Search"})" allowSelection="true" enableHover="false"
+                                                          style="cursor:pointer;">
+                                                    <e-grid-searchsettings fields="@(new string[] { "CommonHealthHabits"})"
+                                                                           operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                                    <e-grid-selectionSettings persistSelection="true" type="Multiple" checkboxOnly="true"></e-grid-selectionSettings>
+                                                    <e-grid-pagesettings pageCount="10" pageSizes="10"></e-grid-pagesettings>
+                                                    <e-grid-columns>
+                                                        <e-grid-column type="checkbox" width="60"></e-grid-column>
+                                                        <e-grid-column field="SeqId" isPrimaryKey="true" headerText="S.No" textAlign="Left"></e-grid-column>
+                                                        <e-grid-column field="CommonHealthHabits" headerText="Health Habits" textAlign="Left"></e-grid-column>
+                                                    </e-grid-columns>
+                                                </ejs-grid>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                                <div class="form-group">
+                                                    <button type="button" id="btnAddCommonHabits" class="btn btn-info" onclick="AddHealthHabits();">
+                                                        <span class="glyphicon glyphicon-floppy-disk"></span> Add Health Habits
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade" id="tabDiagcommon" style="display:none;">
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <ejs-grid id="CommonDiagGrid" allowPaging="true" dataSource="@ViewBag.CommonDiagnosis"
+                                                          toolbar="@(new List<string>() { "Search"})" allowSelection="true" enableHover="false"
+                                                          style="cursor:pointer;">
+                                                    <e-grid-searchsettings fields="@(new string[] { "DiagnosisName"})"
+                                                                           operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                                    <e-grid-selectionSettings persistSelection="true" type="Multiple" checkboxOnly="true"></e-grid-selectionSettings>
+                                                    <e-grid-pagesettings pageCount="10" pageSizes="10"></e-grid-pagesettings>
+                                                    <e-grid-columns>
+                                                        <e-grid-column type="checkbox" width="60"></e-grid-column>
+                                                        <e-grid-column field="DiagnosisSeqid" isPrimaryKey="true" headerText="S.No" textAlign="Left"></e-grid-column>
+                                                        <e-grid-column field="DiagnosisName" headerText="Diagnosis" textAlign="Left"></e-grid-column>
+                                                    </e-grid-columns>
+                                                </ejs-grid>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                                <div class="form-group">
+                                                    <button type="button" id="btnAddCommonDiag" class="btn btn-info" onclick="AddDiagnosis();">
+                                                        <span class="glyphicon glyphicon-floppy-disk"></span> Add Diagnosis
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade" id="tabInvestcommon" style="display:none;">
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <ejs-grid id="CommonInvestGrid" allowPaging="true" dataSource="@ViewBag.CommonInvestigation"
+                                                          toolbar="@(new List<string>() { "Search"})" allowSelection="true" enableHover="false"
+                                                          style="cursor:pointer;">
+                                                    <e-grid-searchsettings fields="@(new string[] { "InvestigationName"})"
+                                                                           operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                                    <e-grid-selectionSettings persistSelection="true" type="Multiple" checkboxOnly="true"></e-grid-selectionSettings>
+                                                    <e-grid-pagesettings pageCount="10" pageSizes="10"></e-grid-pagesettings>
+                                                    <e-grid-columns>
+                                                        <e-grid-column type="checkbox" width="60"></e-grid-column>
+                                                        <e-grid-column field="InvestigationSeqid" isPrimaryKey="true" headerText="S.No" textAlign="Left"></e-grid-column>
+                                                        <e-grid-column field="InvestigationName" headerText="Investigation" textAlign="Left"></e-grid-column>
+                                                    </e-grid-columns>
+                                                </ejs-grid>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                                <div class="form-group">
+                                                    <button type="button" id="btnAddCommonInvest" class="btn btn-info" onclick="AddInvestigation();">
+                                                        <span class="glyphicon glyphicon-floppy-disk"></span> Add Investigation
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade" id="tabcomocommon" style="display:none;">
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <ejs-grid id="CommondiseaseGrid" allowPaging="true" dataSource="@ViewBag.CommonDisease"
+                                                          toolbar="@(new List<string>() { "Search"})" allowSelection="true" enableHover="false"
+                                                          style="cursor:pointer;">
+                                                    <e-grid-searchsettings fields="@(new string[] { "DiseaseName"})"
+                                                                           operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                                    <e-grid-selectionSettings persistSelection="true" type="Multiple" checkboxOnly="true"></e-grid-selectionSettings>
+                                                    <e-grid-pagesettings pageCount="10" pageSizes="10"></e-grid-pagesettings>
+                                                    <e-grid-columns>
+                                                        <e-grid-column type="checkbox" width="60"></e-grid-column>
+                                                        <e-grid-column field="DiseaseSeqid" isPrimaryKey="true" headerText="S.No" textAlign="Left"></e-grid-column>
+                                                        <e-grid-column field="DiseaseName" headerText="Comorbidity" textAlign="Left"></e-grid-column>
+                                                    </e-grid-columns>
+                                                </ejs-grid>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                                <div class="form-group">
+                                                    <button type="button" id="btnAddCommonDisease" class="btn btn-info" onclick="AddDisease();">
+                                                        <span class="glyphicon glyphicon-floppy-disk"></span> Add Comorbidity
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade" id="taballercommon" style="display:none;">
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <ejs-grid id="CommonallergyGrid" allowPaging="true" dataSource="@ViewBag.CommonAllergy"
+                                                          toolbar="@(new List<string>() { "Search"})" allowSelection="true" enableHover="false"
+                                                          style="cursor:pointer;">
+                                                    <e-grid-searchsettings fields="@(new string[] { "AllergyName"})"
+                                                                           operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                                    <e-grid-selectionSettings persistSelection="true" type="Multiple" checkboxOnly="true"></e-grid-selectionSettings>
+                                                    <e-grid-pagesettings pageCount="10" pageSizes="10"></e-grid-pagesettings>
+                                                    <e-grid-columns>
+                                                        <e-grid-column type="checkbox" width="60"></e-grid-column>
+                                                        <e-grid-column field="AllergyId" isPrimaryKey="true" headerText="S.No" textAlign="Left"></e-grid-column>
+                                                        <e-grid-column field="AllergyName" headerText="Allergy" textAlign="Left"></e-grid-column>
+                                                    </e-grid-columns>
+                                                </ejs-grid>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                                <div class="form-group">
+                                                    <button type="button" id="btnAddCommonAllergy" class="btn btn-info" onclick="AddAllergy();">
+                                                        <span class="glyphicon glyphicon-floppy-disk"></span> Add Allergy
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade" id="tabDrugcommon" style="display:none;">
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <ejs-grid id="CommonDrugGrid" allowPaging="true" dataSource="@ViewBag.CommonDrug"
+                                                          toolbar="@(new List<string>() { "Search"})" allowSelection="true" enableHover="false"
+                                                          style="cursor:pointer;">
+                                                    <e-grid-searchsettings fields="@(new string[] { "DrugName"})"
+                                                                           operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                                    <e-grid-selectionSettings persistSelection="true" type="Multiple" checkboxOnly="true"></e-grid-selectionSettings>
+                                                    <e-grid-pagesettings pageCount="10" pageSizes="10"></e-grid-pagesettings>
+                                                    <e-grid-columns>
+                                                        <e-grid-column type="checkbox" width="60"></e-grid-column>
+                                                        <e-grid-column field="CDrugSeqID" isPrimaryKey="true" headerText="S.No" textAlign="Left"></e-grid-column>
+                                                        <e-grid-column field="DrugName" headerText="Drug Name" textAlign="Left"></e-grid-column>
+                                                        <e-grid-column field="Category" headerText="Drug Form" textAlign="Left"></e-grid-column>
+                                                        <e-grid-column field="Uom" headerText="UOM" textAlign="Left"></e-grid-column>
+                                                        <e-grid-column field="Gst" headerText="Gst%" textAlign="Left"></e-grid-column>
+                                                        <e-grid-column field="ScheduleType" headerText="Schedule Type" textAlign="Left"></e-grid-column>
+                                                        <e-grid-column field="HSnCode" headerText="HSnCode" textAlign="Left"></e-grid-column>
+                                                        <e-grid-column field="Company" headerText="Company" textAlign="Left"></e-grid-column>
+                                                        <e-grid-column field="Type" headerText="Type" textAlign="Left"></e-grid-column>
+                                                    </e-grid-columns>
+                                                </ejs-grid>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                                <div class="form-group">
+                                                    <button type="button" id="btnAddCommonDrug" class="btn btn-info" onclick="AddCommonDrugs();">
+                                                        <span class="glyphicon glyphicon-floppy-disk"></span> Add Drug
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade" id="tabExaminationcommon" style="display:none;">
+                                        <div class="row">
+                                            <ejs-grid id="CommonExaminationGrid" allowPaging="true" dataSource="@ViewBag.CommonExamintion"
+                                                      toolbar="@(new List<string>() { "Search"})" allowSelection="true" enableHover="false"
+                                                      style="cursor:pointer;">
+                                                <e-grid-searchsettings fields="@(new string[] { "ExaminationName"})"
+                                                                       operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                                <e-grid-selectionSettings persistSelection="true" type="Multiple" checkboxOnly="true"></e-grid-selectionSettings>
+                                                <e-grid-pagesettings pageCount="10" pageSizes="10"></e-grid-pagesettings>
+                                                <e-grid-columns>
+                                                    <e-grid-column type="checkbox" width="60"></e-grid-column>
+                                                    <e-grid-column field="SeqID" isPrimaryKey="true" headerText="S.No" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column field="ExaminationName" headerText="Examination" textAlign="Left" width="200"></e-grid-column>
+                                                    <e-grid-column field="Option1" headerText="Option1" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column field="Option2" headerText="Option2" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column field="Option3" headerText="Option3" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column field="Option4" headerText="Option4" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column field="Option5" headerText="Option5" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column field="Option5" headerText="Option5" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column field="Option6" headerText="Option7" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column field="Option8" headerText="Option8" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column field="Option9" headerText="Option9" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column field="Option10" headerText="Option10" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column field="Option11" headerText="Option11" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column field="Option12" headerText="Option12" textAlign="Left"></e-grid-column>
+                                                </e-grid-columns>
+                                            </ejs-grid>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                                <div class="form-group">
+                                                    <button type="button" id="btnAddCommonDrug" class="btn btn-info" onclick="AddCommonExamination();">
+                                                        <span class="glyphicon glyphicon-floppy-disk"></span> Add Examination
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade show active" id="tabhisinvestigation">
+                                        <div class="row">
+                                            <ejs-grid id="CommonhisinvestGrid" allowPaging="true" dataSource="@ViewBag.CommonHISInvestigation"
+                                                      toolbar="@(new List<string>() { "Search"})" allowSelection="true" enableHover="false"
+                                                      style="cursor:pointer;">
+                                                <e-grid-searchsettings fields="@(new string[] { "TestName"})"
+                                                                       operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                                <e-grid-selectionSettings persistSelection="true" type="Multiple" checkboxOnly="true"></e-grid-selectionSettings>
+                                                <e-grid-pagesettings pageCount="10" pageSizes="10"></e-grid-pagesettings>
+                                                <e-grid-columns>
+                                                    <e-grid-column type="checkbox" width="60"></e-grid-column>
+                                                    <e-grid-column field="TestId" isPrimaryKey="true" headerText="S.No" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column field="TestName" headerText="Investigation" textAlign="Left" width="200"></e-grid-column>
+                                                    <e-grid-column field="TestShortCode" headerText="TestShortCode" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column visible="false" field="TestAliasNames" headerText="TestAliasNames" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column visible="false" field="DeptType" headerText="DeptType" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column visible="false" field="Sampletype" headerText="Sampletype" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column visible="false" field="ContainerType" headerText="ContainerType" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column visible="false" field="TestType" headerText="TestType" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column visible="false" field="Format" headerText="Format" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column visible="false" field="IsParameter" headerText="IsParameter" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column visible="false" field="IsInterface" headerText="IsInterface" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column visible="false" field="IsProfile" headerText="IsProfile" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column visible="false" field="ProfileID" headerText="ProfileID" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column visible="false" field="IsPackage" headerText="IsPackage" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column visible="false" field="PackageID" headerText="PackageID" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column visible="false" field="TestActive" headerText="TestActive" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column visible="false" field="ServiceId" headerText="ServiceId" textAlign="Left"></e-grid-column>
+                                                    <e-grid-column visible="false" field="MSERVICESCODE" headerText="MSERVICESCODE" textAlign="Left"></e-grid-column>
+                                                </e-grid-columns>
+                                            </ejs-grid>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                                <div class="form-group">
+                                                    <button type="button" id="btnAddCommonHISInvest" class="btn btn-info" onclick="AddCommonHISInvest();">
+                                                        <span class="glyphicon glyphicon-floppy-disk"></span> Add Investigation
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

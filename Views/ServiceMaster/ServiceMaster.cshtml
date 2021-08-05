@@ -1,0 +1,926 @@
+﻿
+@{
+    ViewData["Title"] = "ServiceMaster";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@using Syncfusion.EJ2.Navigations;
+@using Newtonsoft.Json
+@model Emr_web.Models.ServiceModel
+
+<link href="~/AutoComplete/jquery-ui_1.11.4.css" rel="stylesheet" />
+<script src="~/AutoComplete/jquery-1.10.2.js"></script>
+<script src="~/AutoComplete/jquery-ui_1.11.4.js"></script>
+
+
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    var pageload;
+    $(function () {
+        pageload = false;
+        var service_id = localStorage.getItem('Serviceid');
+        var service_name = localStorage.getItem('ServiceName');
+        //var service_id = document.getElementById('Service_Name').ej2_instances[0].value;
+        //var service_name = document.getElementById('Service_Name').ej2_instances[0].text;
+        if (service_id == null || service_id == "null") {
+            service_id = 0;
+        }
+
+        if (service_id == "0" || service_id == 0) {
+            DisableFields();
+            document.getElementById('Service_Name').ej2_instances[0].value = 0;
+            localStorage.removeItem('Serviceid');
+            localStorage.removeItem('ServiceName');
+            pageload = true;
+        }
+        else {
+            document.getElementById('Service_Name').ej2_instances[0].text = service_name;
+            EnableFields();
+            localStorage.removeItem('Serviceid');
+            localStorage.removeItem('ServiceName');
+            pageload = true;
+        }
+    });
+
+    function DisableFields() {
+        $("#TestName").prop('disabled', true);
+        $("#tstrate").prop('disabled', true);
+        $("#tstshrt").prop('disabled', true);
+        $("#Tstalias").prop('disabled', true);
+        $("#Isactive").prop('disabled', true);
+        $("#chkqty").prop('disabled', true);
+        $("#chkrate").prop('disabled', true);
+    }
+
+    function EnableFields() {
+        $("#TestName").prop('disabled', false);
+        $("#tstrate").prop('disabled', false);
+        $("#tstshrt").prop('disabled', false);
+        $("#Tstalias").prop('disabled', false);
+        $("#Isactive").prop('disabled', false);
+        $("#chkqty").prop('disabled', false);
+        $("#chkrate").prop('disabled', false);
+    }
+
+    function save_click() {
+        try {
+            var Service_Id = document.getElementById('Service_Name').ej2_instances[0].value;
+            var Service_Name = document.getElementById('Service_Name').ej2_instances[0].text;
+            var Test_Name = $("#TestName").val();
+            var Test_Shortcode = $("#tstshrt").val();
+            var Test_Alias = $("#Tstalias").val();
+            var Test_Rate = $("#tstrate").val();
+            var Test_IsActive = document.getElementById('Isactive').checked;
+            var Test_EnableQty = document.getElementById('chkqty').checked;
+            var Test_EnableRate = document.getElementById('chkrate').checked;
+
+            if (Service_Id == 3 || Service_Id == "3") {
+                //if (Test_IsActive == true) {
+                //    alert("Currently Service Not Available. Please Contact Allied Business Solution");
+                //    return;
+                //}
+            }
+
+            if (Service_Id == "" || Service_Id == null) {
+                alert("Enter a Valid Service Name");
+                return;
+            }
+            else if (Test_Name == "" || Test_Name == null) {
+                alert("Enter Valid Test Name");
+                return;
+            }
+            else if (Test_Rate == "" || Number.isInteger(parseInt(Test_Rate)) == false || parseInt(Test_Rate) < 0) {
+                alert("Enter Valid Test Rate");
+                return;
+            }
+            else if (Test_IsActive == true) {
+                if (parseInt(Test_Rate) <= 0) {
+                    alert("Enter Valid Test Rate");
+                    return;
+                }
+            };
+
+            var sendJsondata = {
+                ServiceId: Service_Id,
+                ServiceName: Service_Name,
+                TestName: Test_Name,
+                TestShortCode: Test_Shortcode,
+                TestAlias: Test_Alias,
+                TestRate: parseInt(Test_Rate),
+                TestIsActive: Test_IsActive,
+                EnableQty: Test_EnableQty,
+                EnableRate: Test_EnableRate
+            };
+
+            $.ajax({
+                type: 'POST',
+                url: '/ServiceMaster/SaveTestByService',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(sendJsondata),
+                dataType: "json",
+                success: function (response) {
+                    if (response) {
+                        alert("Saved Successfully!!!");
+                        pageload = false;
+                        OnService_Select();
+                    }
+                },
+                error: function (response) { }
+            });
+        }
+        catch (e) { }
+    }
+
+    function update_click() {
+        try {
+            var Service_Id = document.getElementById('Service_Name').ej2_instances[0].value;
+            var Service_Name = document.getElementById('Service_Name').ej2_instances[0].text;
+            var Test_Id = $("#TestId").val();
+            var Test_Name = $("#TestName").val();
+            var Test_Shortcode = $("#tstshrt").val();
+            var Test_Alias = $("#Tstalias").val();
+            var Test_Rate = $("#tstrate").val();
+            var Test_IsActive = document.getElementById('Isactive').checked;
+            var Test_EnableQty = document.getElementById('chkqty').checked;
+            var Test_EnableRate = document.getElementById('chkrate').checked;
+
+            if (Service_Id == 3 || Service_Id == "3") {
+                if (Test_IsActive == true) {
+                    alert("Currently Service Not Available. Please Contact Allied Business Solution");
+                    return;
+                }
+            }
+
+            if (Test_Name == "" || Test_Name == null) {
+                alert("Enter Valid Test Name");
+                return;
+            }
+            else if (Test_Rate == "" || Number.isInteger(parseInt(Test_Rate)) == false || parseInt(Test_Rate) < 0) {
+                alert("Enter Valid Test Rate");
+                return;
+            }
+            else if (Test_IsActive == true) {
+                if (parseInt(Test_Rate) <= 0) {
+                    alert("Enter Valid Test Rate");
+                    return;
+                }
+                else {
+                    Test_Rate = parseFloat(Test_Rate);
+                }
+            };
+            if (Test_Id != "" && Test_Id != null) {
+                Test_Id = parseInt(Test_Id);
+            }
+
+            var sendJsondata = {
+                ServiceId: Service_Id,
+                ServiceName: Service_Name,
+                TestId: Test_Id,
+                TestName: Test_Name,
+                TestShortCode: Test_Shortcode,
+                TestAlias: Test_Alias,
+                TestRate: Test_Rate,
+                TestIsActive: Test_IsActive,
+                EnableQty: Test_EnableQty,
+                EnableRate: Test_EnableRate
+            };
+            console.log(sendJsondata);
+            $.ajax({
+                type: 'POST',
+                url: '/ServiceMaster/UpdateTestByService',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(sendJsondata),
+                dataType: "json",
+                success: function (response) {
+                    if (response) {
+                        pageload = false;
+                        OnService_Select();
+                    }
+                },
+
+                error: function (response) { }
+            });
+
+        }
+        catch (e) { }
+    }
+
+    function rowSelect(args) {
+        var selectedrecords = this.getSelectedRecords();  // get the selected records.
+
+        var Service_Id = document.getElementById('Service_Name').ej2_instances[0].value;
+        $("#TestName").val(selectedrecords[0].TestName);
+        $("#tstshrt").val(selectedrecords[0].TestShortCode);
+        $("#Tstalias").val(selectedrecords[0].TestAliasNames);
+        $("#tstrate").val(selectedrecords[0].TestRateCommon);
+        $("#TestId").val(selectedrecords[0].TestId);
+        document.getElementById("Isactive").checked = selectedrecords[0].TestActive;
+        document.getElementById("chkqty").checked = selectedrecords[0].QTY_Enable;
+        document.getElementById("chkrate").checked = selectedrecords[0].RATE_Enable;
+        $("#btnSave").hide();
+        if (Service_Id != 0) {
+            $("#btnUpdate").show();
+            $("#btnDelete").show();
+        }
+    }
+
+    function OnService_Select() {
+        try {
+
+            if (pageload == false) {
+                var ServiceId = document.getElementById('Service_Name').ej2_instances[0].value;
+                var ServiceName = document.getElementById('Service_Name').ej2_instances[0].text;
+                localStorage.setItem('Serviceid', ServiceId);
+                localStorage.setItem('ServiceName', ServiceName);
+                if (ServiceName == "All" || ServiceName == "Hospital Service" || ServiceName == "Imaging and Others" || ServiceName == "Laboratory" || ServiceName == "Miscellaneous") {
+                    $('#ServiceMaster').prop("hidden", false);
+                    $('#BedMasters').prop("hidden", true);
+                    $('#testName').prop("hidden", false);
+                    $('#testBedNo').prop("hidden", true);
+
+                }
+                if (ServiceName == "Bed Master") {
+                    $('#ServiceMaster').prop("hidden", true);
+                    $('#BedMasters').prop("hidden", false);
+                    $('#testName').prop("hidden", true);
+                    $('#testBedNo').prop("hidden", false); 
+                 
+                }
+                var Pagesize = 20;
+                var pageindex = 1;
+                //var servname = document.getElementById('Service_Name').ej2_instances[0].text;
+
+                $.ajax({
+                    type: 'GET',
+                    //url: rootUrl +"/api/Holiday/GetTestByService?ServiceId=" + ServiceId + "&PageIndex=" + pageindex + "&PageSize=" + Pagesize + " ",
+                    url: "/ServiceMaster/OnServiceChange?ServiceId=" + ServiceId + " ",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    beforeSend: function () { $("#loading").css("display", "block"); },
+                    success: function (response) {
+                        //if (response == "true") {
+                       /* window.location = "/ServiceMaster/ServiceMaster";*/
+                        //}
+                    },
+                    complete: function () {
+                        $("#loading").css("display", "none");
+                    },
+                    error: function (response) {
+                        //alert(response);
+                    }
+                });
+                //success: function (response) {
+                //    $("#tbltest tbody").empty();
+                //    var MainmenuArray = new Array();
+                //    $(response).find("ServiceTest").each(function (i) {
+                //        var seqno = $(this).find("SNO").text();
+                //        var Testid = $(this).find("TestId").text();
+                //        var TestName = $(this).find("TestName").text();
+                //        var ShortCode = $(this).find("TestShortCode").text();
+                //        var TestAlias = $(this).find("TestAliasNames").text();
+                //        var Hosp_Name = $(this).find("HospitalName").text();
+                //        var Service_Name = $(this).find("ServiceName").text();
+                //        var TestRate = $(this).find("TestRateCommon").text();
+
+                //        if (i % 2 == 0) {
+                //            stylerow = "background-color:white "
+                //        }
+                //        else {
+                //            stylerow = "background-color:lightgrey"
+                //        }
+
+                //        $("#tbltest tbody").append(
+                //            "<tr style=" + stylerow + ">" +
+                //            //"<tr onclick='PatientRowClick(this)' >" +
+                //            "<td>" + seqno + "</td>" +
+                //            "<td>" + Testid + "</td>" +
+                //            "<td>" + TestName + "</td>" +
+                //            "<td>" + ShortCode + "</td>" +
+                //            "<td>" + TestAlias + "</td>" +
+                //            "<td>" + Hosp_Name + "</td>" +
+                //            "<td>" + Service_Name + "</td>" +
+                //            "<td>" + TestRate + "</td>" +
+                //            "</tr>");
+                //    });
+                //},
+
+            }
+            pageload = false;
+        }
+        catch (e) { }
+    }
+
+    function SuccessBind(response) {
+        try {
+            $("#tbltest tbody").empty();
+            var MainmenuArray = new Array();
+            $(response).find("ServiceTest").each(function (i) {
+                var seqno = $(this).find("SNO").text();
+                var Testid = $(this).find("TestId").text();
+                var TestName = $(this).find("TestName").text();
+                var ShortCode = $(this).find("TestShortCode").text();
+                var TestAlias = $(this).find("TestAliasNames").text();
+                var Hosp_Name = $(this).find("HospitalName").text();
+                var Service_Name = $(this).find("ServiceName").text();
+                var TestRate = $(this).find("TestRateCommon").text();
+
+                if (i % 2 == 0) {
+                    stylerow = "background-color:white"
+                }
+                else {
+                    stylerow = "background-color:lightgrey"
+                }
+
+                $("#tbltest tbody").append(
+                    "<tr style=" + stylerow + ">" +
+                    //"<tr onclick='PatientRowClick(this)' >" +
+                    "<td>" + seqno + "</td>" +
+                    "<td>" + Testid + "</td>" +
+                    "<td>" + TestName + "</td>" +
+                    "<td>" + ShortCode + "</td>" +
+                    "<td>" + TestAlias + "</td>" +
+                    "<td>" + Hosp_Name + "</td>" +
+                    "<td>" + Service_Name + "</td>" +
+                    "<td>" + TestRate + "</td>" +
+                    "</tr>");
+            });
+        }
+        catch (e) { }
+
+    }
+
+    function cancel_click() {
+        ClearAllValues();
+        document.getElementById('Service_Name').ej2_instances[0].value = 0;
+        //OnService_Select();
+        window.location = "/ServiceMaster/ServiceMaster";
+    }
+
+    function ClearAllValues() {
+        localStorage.removeItem('Serviceid');
+        localStorage.removeItem('ServiceName');
+        $("#TestName").val('');
+        $("#tstrate").val('');
+        $("#tstshrt").val('');
+        $("#Tstalias").val('');
+        $("#Isactive").val(true);
+        $("#chkqty").val('');
+        $("#chkrate").val('');
+    }
+
+    function Save_Service() {
+        try {
+            var Service_Name = $("#txtservice").val();
+            var Service_Shortcode = $("#serv_shortcode").val();
+            var Service_IsActive = document.getElementById('serv_isactive').checked;
+            if (Service_Name == "" || Service_Name == null) {
+                alert("Enter a Valid Service Name");
+                return;
+            }
+
+            var sendJsondata = {
+                ServiceName: Service_Name,
+                ServiceShortCode: Service_Shortcode,
+                IsActive: Service_IsActive,
+            };
+            $.ajax({
+                type: 'POST',
+                url: '/ServiceMaster/SaveService',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(sendJsondata),
+                dataType: "json",
+                success: function (response) {
+                    if (response) {
+                        alert("Saved Successfully!!!");
+                        //$("#txtservice").val('');
+                        //$("#serv_shortcode").val('');
+                        //document.getElementById('specialitydialogue').ej2_instances[0].hide();
+                        window.location = "/ServiceMaster/ServiceMaster";
+                    }
+                },
+                error: function (response) { }
+            });
+
+        }
+        catch (e) { }
+    }
+
+    function Check_ServiceExist() {
+        try {
+            var Service_Name = $("#txtservice").val();
+            $.ajax({
+                type: 'POST',
+                url: "/ServiceMaster/Check_ServiceExist?ServiceName=" + Service_Name + " ",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    if (response) {
+                        alert("Service Already Exists");
+                        $("#txtservice").val('');
+                        return;
+                    }
+                    else {
+                        Save_Service();
+
+                    }
+                },
+                error: function (response) { }
+            });
+        }
+        catch (e) { }
+    }
+    function Add_Service() {
+        try {
+            $("#servicepanel").show();
+            $("#intial").hide();
+        }
+        catch (e) { }
+    }
+
+    function Cancel_Service() {
+        //$("#txtservice").val('');
+        //$("#serv_shortcode").val('');
+        //$("#intial").show();
+        //$("#servicepanel").hide();
+        window.location = "/ServiceMaster/ServiceMaster";
+    }
+
+    function statusbtnclick() {
+        try {
+            document.getElementById('specialitydialogue').ej2_instances[0].show();
+        }
+        catch (e) {
+
+        }
+    }
+
+    function CancelAllclick() {
+        try {
+            document.getElementById('specialitydialogue').ej2_instances[0].hide();
+            window.location = "/ServiceMaster/ServiceMaster";
+        }
+        catch (e) {
+
+        }
+    }
+
+    function PatientBind() {
+        $.ajax({
+            type: "GET",
+            url: rootUrl + "/api/Patient/GetAllPatientData?PageIndex=" + pageindex + "&PageSize=" + pagesize + " ",
+            contentType: "application/json; charset=utf-8",
+            //data: JSON.stringify({ PageIndex:pageindex, PageSize:pagesize }),
+            dataType: "json",
+            async: true,
+            success: function (response) {
+                //RefBy_Bind();
+                $("#patdet tbody").empty();
+                var MainmenuArray = new Array();
+                $(response).find("PatientData").each(function (i) {
+                    var seqno = $(this).find("RowNumber").text();
+                    var Patid = $(this).find("TemporaryID").text();
+                    var Name = $(this).find("PatientName").text();
+                    var Mobno = $(this).find("MobileNumber").text();
+                    var Reason = $(this).find("ReasonByVisit").text();
+                    var RefBy = $(this).find("RefBy").text();
+                    var tmpDate = new Date($(this).find("CreateDateTime").text());
+                    var PatType = $(this).find("PatientType").text();
+                    var Print_id = $(this).find("PatientId").text();
+                    if (Print_id == null || Print_id == "") {
+                        html = "<input type=\"button\" id=\"btnPrint\" value=\"Token\" class=\"btn btn-sm\" style='background-color:steelblue; color:white; margin:4px;' onclick='PrintPatient(this);'>";
+                    }
+                    else {
+                        html = "<input type=\"button\" id=\"btnPrint\" value=\"Reprint\" class=\"btn btn-sm\" style='margin:4px;' onclick='PrintPatient(this);'>";
+                    }
+
+                    //html += "<input type=\"checkbox\" style=\"width:16px;height:16px;cursor:pointer;\" onclick='return FocusRow(this)'>"
+                    if (i % 2 == 0) {
+                        stylerow = "background-color:white"
+                    }
+                    else {
+                        stylerow = "background-color:lightgrey"
+                    }
+                    var date = tmpDate.getDate();
+                    var mth = tmpDate.getMonth();
+                    var yr = tmpDate.getFullYear();
+                    var mth = mth + 1;
+                    var time = tmpDate.toLocaleTimeString();
+                    //var full_date = tmpDate.toLocaleDateString(); returning in mm/dd/yyyy without zero's s prefix
+                    if (date < 10) {
+                        date = '0' + date;
+                    }
+
+                    if (mth < 10) {
+                        mth = '0' + mth;
+                    }
+                    var RegisTime = date + "/" + mth + "/" + yr + " " + time;
+                    $("#patdet tbody").append(
+                        "<tr style=" + stylerow + ">" +
+                        //"<tr onclick='PatientRowClick(this)' >" +
+                        "<td>" + seqno + "</td>" +
+                        "<td>" + Patid + "</td>" +
+                        "<td>" + Name + "</td>" +
+                        "<td>" + Mobno + "</td>" +
+                        "<td>" + Reason + "</td>" +
+                        "<td>" + RefBy + "</td>" +
+                        "<td>" + PatType + "</td>" +
+                        "<td>" + RegisTime + "</td>" +
+                        "<td>" + html + "</td>" +
+                        "</tr>");
+                });
+
+                //var pager = xml.find("Pager");
+                //$(".Pager").ASPSnippets_Pager({
+                //    ActiveCssClass: "current",
+                //    PagerCssClass: "pager",
+                //    PageIndex: parseInt(pager.find("PageIndex").text()),
+                //    PageSize: parseInt(pager.find("PageSize").text()),
+                //    RecordCount: parseInt(pager.find("RecordCount").text())
+                //});
+            },
+            failure: function (response) {
+            },
+            error: function (response) {
+            }
+        });
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+
+<style>
+    .main-page {
+        background: linear-gradient(-141deg, #FBFAFF 14%, #FBFAFF 100%);
+        margin: 0;
+    }
+
+    body,
+    text {
+        font-family: "Helvetica Neue", "Helvetica", "Arial", sans-serif, "-apple-system", "BlinkMacSystemFont";
+    }
+
+    .form-group.required .control-label:after {
+        content: "*";
+        color: red;
+    }
+
+    #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loadingcontent {
+        display: table;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loadingspinner {
+        display: table-cell;
+        vertical-align: middle;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+        padding-top: 80px;
+    }
+
+    .statustemp.e-inactivecolor {
+        background-color: #ffd7cc;
+    }
+
+    .statustemp.e-activecolor {
+        background-color: #ccffcc;
+    }
+
+    .statustxt.e-activecolor {
+        color: #00cc00;
+    }
+
+    .statustxt.e-inactivecolor {
+        color: #e60000;
+    }
+</style>
+
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div id="loading">
+            <div id="loadingcontent">
+                <div id="loadingspinner">
+                    <img src="~/images/loading.gif" style="width:100px;height:100px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <form style="font-size:small;">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card card-primary" id="intial">
+                            <div class="card-header" style="margin-top:15px;">
+                                <h3 class="card-title"> Service Master</h3>
+                                <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                            </div>
+                            <div class="card-body" >
+
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label>Service Name</label><label style="color:orangered;">*</label><br />
+                                        @*<input id="ServiceName" type="text" class="form-control" placeholder="Enter Service Name" style="float:left;" />*@
+                                        <ejs-combobox id="Service_Name" autofill="true" ejs-for="ServiceId" allowFiltering="true"
+                                                      dataSource="@ViewBag.Service" placeholder="Select Service" change="OnService_Select" popupHeight="230px"
+                                                      required>
+                                            <e-combobox-fields text="ServiceName" value="ServiceId"></e-combobox-fields>
+                                        </ejs-combobox>
+                                    </div>
+                                    <div class="col-md-1" style="display:none;">
+                                        <img src="../images/Add_button.png" width="25" height="25" onclick="statusbtnclick()"
+                                             style="cursor:pointer;" />
+                                    </div>
+
+                                    @*<div class="col-md-1">
+        <img src="../images/Add_button.png" width="25" height="25" onclick="statusbtnclick()"
+             style="cursor:pointer;margin-left:-10px;margin-top:25px;" />                  @*margin-left:70px;
+        </div>*@
+                                    @*<div class="col-md-6" style="margin-top:23px;">
+            <input id="btnService" type="button" value="Add Service" onclick="Add_Service();" class="btn btn-primary" />
+        </div>*@
+                                    <div class="col-md-3" id="testName">
+                                        <label>Test Name</label><label style="color:orangered;">*</label>
+                                        <input id="TestId" type="text" style="display:none;" />
+                                        <input id="TestName" type="text" class="form-control" style="height:31px;" placeholder="Enter Test Name" />
+                                    </div>
+                                    <div class="col-md-3" hidden id="testBedNo">
+                                        <label>Bed No</label><label style="color:orangered;">*</label>
+                                        <input id="txtBedNo" type="text" class="form-control" style="height:31px;" placeholder="Enter Bed No" />
+                                    </div>
+                                </div>
+                                <div id="ServiceMaster">
+
+                                    @*<div class="col-md-1">
+                                            <label>Test Active</label>
+                                            <input id="Isactive" type="checkbox" checked="checked" />
+                                        </div>*@
+
+                                    <div class="row" style="margin-top:5px;">
+                                        <div class="col-md-3">
+                                            <label>Test Short Code</label>
+                                            <input id="tstshrt" type="text" class="form-control" style="height:31px;" placeholder="Enter Short Code" />
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label>Test Alias Name</label>
+                                            <input id="Tstalias" type="text" class="form-control" style="height:31px;" placeholder="Enter Alias Name" />
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <label>Test Rate</label>
+                                            <input id="tstrate" type="text" class="form-control" style="height:31px;" placeholder="Enter Test Rate" />
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label>Test Active</label>
+                                            <input id="Isactive" type="checkbox" checked="checked" />
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label>Enable Qty</label>
+                                            <input id="chkqty" type="checkbox" />
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label>Enable Rate</label>
+                                            <input id="chkrate" type="checkbox" />
+                                        </div>
+                                    </div>
+                                    <div class="row">
+
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6" style="margin-bottom:15px;margin-top:15px;">
+                                            <input id="btnSave" type="button" value="Save" class="btn btn-primary" onclick="save_click();" style="width:70px;" />
+                                            <input id="btnUpdate" type="button" value="Update" class="btn btn-primary" onclick="update_click();" style="display:none;" />
+                                            <input id="btnCancel" type="button" value="Cancel" class="btn btn-primary" onclick="cancel_click();" />
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        @*<table id="tbltest" border="1" class="table tab-content" style="width:100%; margin-top:30px;">
+                                                @*<thead style="font-weight:bold; font-family:'Times New Roman', Times, serif;  " >
+                                                <thead style="font-weight:bold; font-family:Helvetica Neue, Helvetica, Arial, sans-serif, -apple-system, BlinkMacSystemFont; ">
+                                                    <tr>
+                                                        <td>S No</td>
+                                                        <td>TestID</td>
+                                                        <td>Test Name</td>
+                                                        <td>Short Code</td>
+                                                        <td>Alias Name</td>
+                                                        <td>Hospital Name</td>
+                                                        <td>Service Name</td>
+                                                        <td>Test Rate</td>
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>*@
+                                        <ejs-grid id="GridMainmenu" dataSource="ViewBag.TestByService" allowPaging="true"
+                                                  toolbar="@(new List<string>() { "Search"})" rowSelected="rowSelect">
+                                            <e-grid-searchsettings fields="@(new string[] { "TestName","TestShortCode","TestAliasNames"})"
+                                                                   operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                            <e-grid-selectionsettings type="Single"></e-grid-selectionsettings>
+                                            <e-grid-pagesettings pageSize="10" pageCount="10"></e-grid-pagesettings>
+                                            <e-grid-columns>
+                                                <e-grid-column field="SNO" headerText="S No" width="6%"></e-grid-column>
+                                                <e-grid-column field="TestId" visible="false" headerText="TestID" width="10%"></e-grid-column>
+                                                <e-grid-column field="TestName" headerText="Test Name"></e-grid-column>
+                                                <e-grid-column field="TestShortCode" headerText="Short Code" visible="false" width="120px"></e-grid-column>
+                                                <e-grid-column field="TestAliasNames" headerText="Alias Name" visible="false"></e-grid-column>
+                                                <e-grid-column field="HospitalName" visible="false" headerText="Hospital Name"></e-grid-column>
+                                                <e-grid-column field="ServiceName" headerText="Service Name"></e-grid-column>
+                                                <e-grid-column field="TestRateCommon" headerText="TestRate"></e-grid-column>
+                                                <e-grid-column field="ServiceId" visible="false"></e-grid-column>
+                                                <e-grid-column field="TestActive" visible="false"></e-grid-column>
+                                                <e-grid-column field="QTY_Enable" visible="false"></e-grid-column>
+                                                <e-grid-column field="RATE_Enable" visible="false"></e-grid-column>
+                                            </e-grid-columns>
+                                        </ejs-grid>
+
+                                    </div>
+                                </div>
+                                <div id="BedMasters" hidden>
+                                    <div class="row" style="margin-top:5px;">
+                                        <div class="col-md-3">
+                                            <label>Bed Description</label>
+                                            <input id="tstshrt" type="text" class="form-control" style="height:31px;" placeholder="EnterBed Description" />
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label> Short Code</label>
+                                            <input id="tstshrt" type="text" class="form-control" style="height:31px;" placeholder="Enter Short Code" />
+                                        </div>
+                                        @*<div class="col-md-3">
+                                            <label> Alias Name</label>
+                                            <input id="Tstalias" type="text" class="form-control" style="height:31px;" placeholder="Enter Alias Name" />
+                                        </div>*@
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <label> Alias Name</label>
+                                            <input id="Tstalias" type="text" class="form-control" style="height:31px;" placeholder="Enter Alias Name" />
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label>Bed Rate</label>
+                                            <input id="tstrate" type="number" class="form-control" style="height:31px;" placeholder="Enter Bed Rate" />
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label> Active</label>
+                                            <input id="Isactive" type="checkbox" checked="checked" />
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label>Enable Qty</label>
+                                            <input id="chkqty" type="checkbox" />
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label>Enable Rate</label>
+                                            <input id="chkrate" type="checkbox" />
+                                        </div>
+                                    </div>
+                                    <div class="row">
+
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6" style="margin-bottom:15px;margin-top:15px;">
+                                            <input id="btnSave" type="button" value="Save" class="btn btn-primary" onclick="save();" style="width:70px;" />
+                                            <input id="btnUpdate" type="button" value="Update" class="btn btn-primary" onclick="update();" style="display:none;" />
+                                            <input id="btnCancel" type="button" value="Cancel" class="btn btn-primary" onclick="cancel_click();" />
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        @*<table id="tbltest" border="1" class="table tab-content" style="width:100%; margin-top:30px;">
+                                                @*<thead style="font-weight:bold; font-family:'Times New Roman', Times, serif;  " >
+                                                <thead style="font-weight:bold; font-family:Helvetica Neue, Helvetica, Arial, sans-serif, -apple-system, BlinkMacSystemFont; ">
+                                                    <tr>
+                                                        <td>S No</td>
+                                                        <td>TestID</td>
+                                                        <td>Test Name</td>
+                                                        <td>Short Code</td>
+                                                        <td>Alias Name</td>
+                                                        <td>Hospital Name</td>
+                                                        <td>Service Name</td>
+                                                        <td>Test Rate</td>
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>*@
+                                        <ejs-grid id="Grid" dataSource="ViewBag.TestByService" allowPaging="true"
+                                                  toolbar="@(new List<string>() { "Search"})" rowSelected="rowSelect">
+                                            <e-grid-searchsettings fields="@(new string[] { "TestName","TestShortCode","TestAliasNames"})"
+                                                                   operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                            <e-grid-selectionsettings type="Single"></e-grid-selectionsettings>
+                                            <e-grid-pagesettings pageSize="10" pageCount="10"></e-grid-pagesettings>
+                                            <e-grid-columns>
+                                                <e-grid-column field="SNO" headerText="S No" width="6%"></e-grid-column>
+                                                <e-grid-column field="TestId"  headerText="Bed Id" width="10%"></e-grid-column>
+                                                <e-grid-column field="TestName" headerText="Bed description"></e-grid-column>
+                                                <e-grid-column field="TestShortCode" headerText="Short Code" visible="false" width="120px"></e-grid-column>
+                                                <e-grid-column field="TestAliasNames" headerText="Alias Name" visible="false"></e-grid-column>
+                                                <e-grid-column field="HospitalName" visible="false" headerText="Hospital Name"></e-grid-column>
+                                                <e-grid-column field="ServiceName" headerText="Bed Rate"></e-grid-column>
+                                                @*<e-grid-column field="TestRateCommon" headerText="TestRate"></e-grid-column>*@
+                                                <e-grid-column field="ServiceId" visible="false"></e-grid-column>
+                                                <e-grid-column field="TestActive" visible="false"></e-grid-column>
+                                                <e-grid-column field="QTY_Enable" visible="false"></e-grid-column>
+                                                <e-grid-column field="RATE_Enable" visible="false"></e-grid-column>
+                                            </e-grid-columns>
+                                        </ejs-grid>
+
+                                    </div>
+                                </div>
+                            </div>
+
+
+
+                        </div>
+                        <div class="card card-primary" id="servicepanel" style="display:none;">
+                            <div class="card-header" style="margin-top:15px;">
+                                <h3 class="card-title"> Service Master</h3>
+                                <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                            </div>
+                            <div class="card-body">
+
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <label>Service Name</label><label style="color:orangered;">*</label>
+                                        @*<input id="txtservice" type="text" class="form-control" placeholder="Enter Service Name" />*@
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <label>Serive Short Code</label>
+                                        @*<input id="serv_shortcode" type="text" class="form-control" placeholder="Enter Service Code" />*@
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label>Active</label>
+                                        @*<input type="checkbox" id="serv_isactive" checked="checked" />*@
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <input id="save_service" type="button" value="Save" class="btn btn-primary" onclick="Check_ServiceExist();" style="width:70px;" />
+                                        <input id="cancel_service" type="button" value="Cancel" class="btn btn-primary" onclick="Cancel_Service();" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <ejs-dialog id="specialitydialogue" showCloseIcon="true" allowDragging="true" cssClass="ejs-dialog"
+                                    header="Add Service" style="max-height:400px" visible="false" width="820px">
+                            <e-dialog-position X="center" Y="top">
+                                <e-content-template>
+                                    <div class="row">
+                                        <div class="col-xs-6 col-sm-6 col-md-6" style="padding:10px;">
+                                            <label>Service Name</label><label style="color:orangered;">*</label>
+                                            <input type="text" class="form-control" placeholder="Enter Service Name" id="txtservice" />
+                                        </div>
+                                        <div class="col-xs-6 col-sm-6 col-md-6" style="padding:10px;">
+                                            <label>Serive Short Code</label>
+                                            <input id="serv_shortcode" type="text" class="form-control" placeholder="Enter Short Code" />
+                                        </div>
+                                        <div class="col-xs-6 col-sm-6 col-md-6" style="padding:10px;">
+                                            <label>Active</label>
+                                            <input type="checkbox" id="serv_isactive" checked="checked" />
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            @*<ejs-button id="btnAllsave" content="Save" onclick="Check_ServiceExist();" isPrimary="true" ></ejs-button>*@
+                                            <input id="save_service" type="button" value="Save" onclick="Check_ServiceExist();"
+                                                   class="btn btn-primary" style="width:70px;" />
+                                            @*<ejs-button id="btnAllCancel" content="Cancel" onclick="CancelAllclick();" isPrimary="true"></ejs-button>*@
+                                            <input id="cancel_service" type="button" value="Cancel" onclick="CancelAllclick();" class="btn btn-primary" />
+                                        </div>
+                                    </div>
+                                </e-content-template>
+                            </e-dialog-position>
+                        </ejs-dialog>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>
+
+

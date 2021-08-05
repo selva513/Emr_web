@@ -1,0 +1,243 @@
+﻿@{
+    ViewData["Title"] = "Login";
+    Layout = null;
+}
+
+@model Emr_web.Models.LoginView
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <environment include="Development">
+        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
+        <link rel="stylesheet" href="~/css/site.css" />
+    </environment>
+    <environment exclude="Development">
+        <link rel="stylesheet" href="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.7/css/bootstrap.min.css"
+              asp-fallback-href="~/lib/bootstrap/dist/css/bootstrap.min.css"
+              asp-fallback-test-class="sr-only" asp-fallback-test-property="position" asp-fallback-test-value="absolute" />
+        <link rel="stylesheet" href="~/css/site.min.css" asp-append-version="true" />
+    </environment>
+
+</head>
+<link href="~/AutoComplete/jquery-ui_1.11.4.css" rel="stylesheet" />
+<script src="~/AutoComplete/jquery-1.10.2.js"></script>
+<script src="~/AutoComplete/jquery-ui_1.11.4.js"></script>
+
+@*<script type="text/javascript" src="https://cloud.apizee.com/apiRTC/apiRTC-latest.min.js"></script>
+    <script type="text/javascript" src="https://cloud.apizee.com/apiRTC/v4.3/apiRTC-latest.min.js"></script>*@
+@*<script src="https://smtpjs.com/v3/smtp.js"></script>*@
+<script type="text/javascript">
+    $(document).ready(function () {
+        //var body = "";
+        //body += "<table><tr><th>S no </th> <th> Item</th></tr>";
+        //body += "<tr><td>1</td><td>Item1</td></tr>";
+        //body += "<tr><td>2</td><td>Item3</td></tr>";
+        //body += "</table>";
+
+        //Email.send({
+        //    Host: "smtp.gmail.com",
+        //    Username: "support@alliedbusiness.co.in",
+        //    Password: "support@321",
+        //    To: 'raffi@alliedbusiness.co.in',
+        //    From: "support@alliedbusiness.co.in",
+        //    Subject: "Sending Email using javascript",
+        //    Body: body
+        //}).then(function (message) {
+        //        alert("Mail has been sent successfully")
+        //    });
+
+
+
+        //var sendJsonData = {
+        //    FirstName: "Habibur",
+        //    LastName: "Rahman",
+        //    Gender: "Male",
+        //    MobileNo: "7092269002",
+        //    Email: "habib@alliedbusiness.co.in",
+        //    IsActive: "true",
+        //    UserType: "Doctor",
+        //    City: "Chennai",
+        //    ZipCode: "600032",
+        //    CreateDatetime: "2020-05-23 16:14:46.487"
+        //};
+        //$.ajax({
+        //    url: "https://api.mediviewemr.com:444/api/MobileUser/CreateMobileUser",
+        //    type: 'post',
+        //    headers: {
+        //        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFsbGllZG9uZW5pbmUiLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE1OTIwMzMyOTIsImlzcyI6IkFsbGllZEplZW5haCIsImF1ZCI6IkFsbGllZEplZW5haCJ9.bfNTWz5LfG5mCHxtgKFjt2iGiaEWVusLbaybR7ILgzQ',
+        //    },
+        //    contentType: "application/json",
+        //    data: JSON.stringify(sendJsonData),
+        //    dataType: "json",
+        //    success: function (response) {
+        //        alert(response);
+        //    },
+        //    failure: function (response) {
+        //        alert(response);
+        //    },
+        //    error: function (response) {
+        //        alert(response);
+        //    }
+        //});
+
+        //var ua = new apiRTC.UserAgent({
+        //    uri: 'apzkey:d276899cd9059ca2e48aaf0126da01f4'
+        //});
+
+        //ua.register({
+        //    id: 1 // OPTIONAL // This is used for setting userId
+        //}).then(function (session) {
+        //    // ok
+        //    console.log("Registration OK");
+        //    connectedSession = session;
+        //    let userAgentId_2 = "607225";
+        //    let contact = session.getContact(userAgentId_2);
+        //    if (contact !== null) {
+        //        contact.sendMessage("Hello");
+        //    }
+        //}).catch(function (error) {
+        //    // error
+        //    console.log("Registration error");
+        //});
+
+
+        var dt = new Date().toString();
+        console.log(dt);
+    });
+
+    function Registerclick() {
+        try {
+            window.location.href = "/Register/Register";
+        }
+        catch (e) {
+
+        }
+    }
+    function Licenceclick() {
+        try {
+            window.location.href = "/Licence/Licence";
+        }
+        catch (e) {
+
+        }
+    }
+    function TrailLicenceclick() {
+        try {
+            window.location.href = "/Licence/TrailLicence";
+        }
+        catch (e) {
+        }
+    }
+    function ForgotPasswordclick() {
+        try {
+            window.location.href = "/ForgotPassword/ForgotPassword";
+        }
+        catch (e) {
+
+        }
+    }
+</script>
+<script>
+    /* break back button */
+    window.onload = function () {
+        var i = 0;
+        var previous_hash = window.location.hash;
+        var x = setInterval(function () {
+            i++;
+            window.location.hash = "/noop/" + i;
+            if (i == 10) {
+                clearInterval(x);
+                window.location.hash = previous_hash;
+            }
+        }, 10);
+    }
+</script>
+<body class="text-center">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-5 col-md-offset-4">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        <img class="mb-4" alt="knockdok logo"  src="~/images/Logo-2.png" />  @*style="width:100%;max-width:100px;height:100px;"*@
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-5 col-md-offset-4">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Login</h3>
+                    </div>
+                    <div class="panel-body">
+                        <form asp-controller="Login" asp-action="Loginuser" method="post" data-toggle="validator" role="form">
+                            <fieldset>
+                                <div class="form-group">
+                                    <input asp-for="Userid" type="text" id="UserName" class="form-control" autocomplete="off" placeholder="User Id" autofocus required />
+                                    <div class="help-block with-errors"></div>
+                                </div>
+                                <div class="form-group">
+                                    <input asp-for="Password" type="password" class="form-control" autocomplete="off" placeholder="Password" required />
+                                </div>
+                                <div class="form-group">
+                                    <input type="submit" id="btnLogin" class="btn btn-lg btn-primary btn-block" autocomplete="off" value="Sign in" />
+                                </div>
+                                <div class="form-group" style="display:none;">
+                                    <input type="button" id="btnregister" onclick="Registerclick();" class="btn btn-lg btn-primary btn-block" autocomplete="off" value="Register" />
+                                </div>
+                                <div class="form-group" style="display:none;">
+                                    <input type="button" id="btnlicence" onclick="Licenceclick();" class="btn btn-lg btn-primary btn-block" autocomplete="off" value="Get Licence" />
+                                </div>
+                                <div class="form-group">
+                                    <input type="button" id="btntraillicence" onclick="TrailLicenceclick();" class="btn btn-lg btn-primary btn-block" autocomplete="off" value="Sign up" />
+                                </div>
+                                <div class="form-group">
+                                    <div class="row">
+                                        <div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                            <a id="btntriallicence" style="font-size:large;float:none;cursor:pointer;font-family:'Times New Roman'" onclick="TrailLicenceclick();"><u>Get Trial Licence</u></a>
+                                        </div>
+                                        <div class="col-xs-6 col-sm-6 col-md-6" style="float:right;">
+                                            <a id="lnforgotpassword" style="font-size:large;float:none;cursor:pointer;font-family:'Times New Roman'" onclick="ForgotPasswordclick();"><u>Forgot Password</u></a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </form>
+                        @if (TempData["UserLoginFailed"] != null)
+                        {
+                            <p class="alert alert-danger">@TempData["UserLoginFailed"]</p>
+                        }
+                        <div class="form-group text-center">
+                            <p>&copy; 2020 - Allied Business Solutions</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <environment include="Development">
+        <script src="~/lib/jquery/dist/jquery.js"></script>
+        <script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
+        <script src="~/js/site.js" asp-append-version="true"></script>
+    </environment>
+    <environment exclude="Development">
+        <script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-2.2.0.min.js"
+                asp-fallback-src="~/lib/jquery/dist/jquery.min.js"
+                asp-fallback-test="window.jQuery"
+                crossorigin="anonymous"
+                integrity="sha384-K+ctZQ+LL8q6tP7I94W+qzQsfRV2a+AfHIi9k8z8l9ggpc8X+Ytst4yBo/hH+8Fk">
+        </script>
+        <script src="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.7/bootstrap.min.js"
+                asp-fallback-src="~/lib/bootstrap/dist/js/bootstrap.min.js"
+                asp-fallback-test="window.jQuery && window.jQuery.fn && window.jQuery.fn.modal"
+                crossorigin="anonymous"
+                integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa">
+        </script>
+        <script src="~/js/site.min.js" asp-append-version="true"></script>
+    </environment>
+    @section Scripts {
+        @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    }
+</body>
+

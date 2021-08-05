@@ -1,0 +1,186 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+@{
+    ViewData["Title"] = "Purchase Activities";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<style>
+    .table-wrap {
+        height: 450px;
+        overflow-y: auto;
+    }
+   /* table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }*/
+
+  /*  .head {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+        font-family: serif;
+        color: black;
+        font-size: 14px;
+    }
+
+    .head1 {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+        font-family: sans-serif;
+        font-size: 14px;
+        cursor: pointer;
+        color:black;
+    }
+    th {
+        border: 1px solid #dddddd;
+        padding: 8px;
+        font-size: 15px;
+        font-weight:900;
+    }
+
+    td {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+    }
+
+    tr:nth-child(even) {
+        background-color: #8080800d;
+    }*/
+</style>
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        GetPurchaseOrderByHospital();
+
+    });
+
+
+    //function GetPurchaseOrderByHospital() {
+    //    $.ajax({
+            
+    //        type: 'Get',
+    //        contentType: "application/json; charset=utf-8",
+    //        dataType: "json",
+    //        success: function (response) {
+    //            $("#tblPurchase tbody").empty();
+    //           var html = "";
+    //            for (var purchase = 0; purchase < response.length; purchase++) {
+    //                html += "<tr  style='font-size:13px;font-family:sans-serif;'>";
+    //                html += "<td >" + response[purchase].PH_SUPPLIERNAME + "</td>";
+    //                html += "<td>" + response[purchase].PH_ITEM_DRUG_GENERIC + "</td>";
+    //                html += "<td>" + response[purchase].PH_ITEM_HSNCODE + "</td>";
+    //                html += "<td></td>";
+    //                html += "<tr>";
+    //            }
+
+    //            $("#tblPurchase tbody").append(html);
+
+    //        },
+    //        failure: function (response) {
+    //            alert(response);
+    //        },
+    //        error: function (response) {
+    //            alert(response);
+    //        }
+    //    });
+    //}
+    function GetPurchaseOrderByHospital() {
+        $.ajax({
+            url: rootUrl + "/api/PurchaseApi/GetPurchaseOrderByHospitalId",
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                var html = "";
+                $("#tblPurchase tbody").empty();
+                for (var purchase = 0; purchase < response.length; purchase++) {
+                    html += "<tr   style='font-size:13px;font-family:sans-serif;'onclick ='GetSelectedDetails(this);'>";
+                    html += "<td  style='display:none'>" + response[purchase].PH_ITEM_HEADERID + "</td>";
+                    html += "<td >" + response[purchase].PH_SUPPLIERNAME + "</td>";
+                    html += "<td>" + response[purchase].PH_ITEM_HSNCODE + "</td>";
+                    html += "<td>" + response[purchase].PH_ITEM_CREATEDDATETIME + "</td>";
+                    html += "<td></td>";
+                    html += "<tr>";
+                }
+                $("#tblPurchase tbody").append(html);
+            }
+
+        });
+
+    }
+    function GetSelectedDetails(SelectedRow) {
+        var row = SelectedRow;
+        var PH_ITEM_HEADERID = parseFloat(row.cells[0].innerHTML);
+        var PH_SUPPLIERNAME =  row.cells[1].innerHTML;
+        sessionStorage.setItem("PH_ITEM_HEADERID", PH_ITEM_HEADERID);
+        sessionStorage.setItem("PH_SUPPLIERNAME", PH_SUPPLIERNAME);
+        window.location.href = "/Pharmacy/Purchase/Purchase";
+
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+
+<div class="content-wrapper" style=" font-family: arial, sans-serif;">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="panel panel-default DivBox" style="background-color: white;">
+                        <div class="panel-heading" style="background-color: #007bff;color: white;margin-top: 6px;height:50px;">
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <h3 class="card-title" style="padding-top: 11px;padding-left: 7px;">Purchase Activities </h3>
+                                    <img src="~/images/ShutdownWhite.png" style="padding-top:11px;padding-right:7px;float:right;cursor:pointer;" onclick="GotoLogin();" />
+                                </div>
+
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <input type="text" class="form-control" placeholder="Search" />
+
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-12" style="font-size:13px;font-family:sans-serif;margin-top:-19px">
+                                    <div class="table-wrap ">
+                                        <table  id="tblPurchase" class=" table-striped table table-bordered  table-hover" style="margin-top:25px">
+                                            <thead >
+                                                <tr>
+                                                    <th>SupplierName</th>
+                                                    <th>HSN Code</th>
+                                                    <th>CreatedDate</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody style="line-height: 7px;">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

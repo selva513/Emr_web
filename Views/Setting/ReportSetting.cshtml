@@ -1,0 +1,276 @@
+﻿
+@{
+    ViewData["Title"] = "ReportSetting";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@using Syncfusion.EJ2.Navigations;
+@using Newtonsoft.Json
+<link href="~/AutoComplete/jquery-ui_1.11.4.css" rel="stylesheet" />
+<script src="~/AutoComplete/jquery-1.10.2.js"></script>
+<script src="~/AutoComplete/jquery-ui_1.11.4.js"></script>
+<style>
+    .main-page {
+        background: linear-gradient(-141deg, #FBFAFF 14%, #FBFAFF 100%);
+        margin: 0;
+    }
+
+    body,
+    text {
+        font-family: "Helvetica Neue", "Helvetica", "Arial", sans-serif, "-apple-system", "BlinkMacSystemFont";
+    }
+
+    .form-group.required .control-label:after {
+        content: "*";
+        color: red;
+    }
+</style>
+<script type="text/javascript">
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        var tabObj = new ej.navigations.Tab({
+            heightAdjustMode: "Auto"
+        });
+        tabObj.appendTo('#wholediv');
+        Reportbind();
+        AllReportbind();
+    });
+    function getValues(url) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+    function postValues(url, jdata) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(jdata),
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+    function Reportbind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/Setting/GetReportConfig",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (data) {
+                    var html = "";
+                    $.each(data, function (key, value) {
+                        var Isactive = value.IsActive;
+                        var Reportname = value.Report_Name;
+                        var seqid = value.ReportSeqID;
+                        html += "<tr>";
+                        html += "<td>" + seqid + "</td><td>" + Reportname + "</td> ";
+                        if (Isactive == true)
+                            html += "<td ><input type='checkbox' checked='checked' id='tblcheck' style='cursor:pointer;'></td>";
+                        else
+                            html += "<td ><input type='checkbox' id='tblcheck' style='cursor:pointer;'></td>";
+                        html += "</tr>";
+                    });
+                    $('#tblReport tbody').html(html);
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function UpdateConfig() {
+        try {
+            var tbl = document.getElementById("tblReport");
+            var tblrow = tbl.rows.length;
+            var ConfigArray = new Array();
+            var IsActive = "";
+            for (k = 1; k < tblrow; k++) {
+                var objDetails = new Object();
+                var sval = tbl.rows[k];
+                var ReportID = sval.cells[0].innerHTML;
+                var ReportName = sval.cells[1].innerHTML;
+                if (sval.cells[2].getElementsByTagName("input")[0].checked == true)
+                    IsActive = true;
+                else
+                    IsActive = false;
+                objDetails.ReportSeqID = ReportID;
+                objDetails.Report_Name = ReportName;
+                objDetails.IsActive = IsActive;
+                ConfigArray.push(objDetails);
+            }
+            var response = postValues("/Setting/UpdateConfigDetails", ConfigArray);
+            if (response != "")
+                Cancelclick();
+        }
+        catch (e) {
+
+        }
+    }
+    function AllReportbind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/Setting/GetAllReportConfig",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (data) {
+                    var html = "";
+                    $.each(data, function (key, value) {
+                        var Isactive = value.AllReport_IsActive;
+                        var Reportname = value.Report_Name;
+                        var seqid = value.ReportSeqID;
+                        html += "<tr>";
+                        html += "<td>" + seqid + "</td><td>" + Reportname + "</td> ";
+                        if (Isactive == true)
+                            html += "<td ><input type='checkbox' checked='checked' id='tblcheck' style='cursor:pointer;'></td>";
+                        else
+                            html += "<td ><input type='checkbox' id='tblcheck' style='cursor:pointer;'></td>";
+                        html += "</tr>";
+                    });
+                    $('#tblAllReport tbody').html(html);
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function UpdateAllConfig() {
+        try {
+            var tbl = document.getElementById("tblAllReport");
+            var tblrow = tbl.rows.length;
+            var ConfigArray = new Array();
+            var IsActive = "";
+            for (k = 1; k < tblrow; k++) {
+                var objDetails = new Object();
+                var sval = tbl.rows[k];
+                var ReportID = sval.cells[0].innerHTML;
+                var ReportName = sval.cells[1].innerHTML;
+                if (sval.cells[2].getElementsByTagName("input")[0].checked == true)
+                    IsActive = true;
+                else
+                    IsActive = false;
+                objDetails.ReportSeqID = ReportID;
+                objDetails.Report_Name = ReportName;
+                objDetails.AllReport_IsActive = IsActive;
+                ConfigArray.push(objDetails);
+            }
+            var response = postValues("/Setting/UpdateAllConfigDetails", ConfigArray);
+            if (response != "")
+                Cancelclick();
+        }
+        catch (e) {
+
+        }
+    }
+    function Cancelclick() {
+        try {
+            window.location.href = "/Setting/ReportSetting";
+        }
+        catch (e) {
+        }
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+
+<div class="content-wrapper">
+    <div class="card card-primary">
+        <div class="card-header" style="margin-top:15px;">
+            <h3 class="card-title">Report Setting</h3>
+            <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+        </div>
+    </div> 
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div id="wholediv">
+                        <div class="e-tab-header">
+                            <div>Visit Report</div>
+                            <div>All Report</div>
+                        </div>
+                        <div class="e-content">
+                            <div id="visitconfig">
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="card-body table-responsive p-0">
+                                            <table id="tblReport" class="table table-striped table-bordered table-hover dataTable table-reflow">
+                                                <thead>
+                                                    <tr style="font-weight:bold;">
+                                                        <td>SNO</td>
+                                                        <td>Report Name</td>
+                                                        <td></td>
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <br />
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <ejs-button id="btnsave" content="Update" onclick="UpdateConfig();" isPrimary="true"></ejs-button>
+                                        <ejs-button id="btnCancel" content="Cancel" onclick="Cancelclick();" isPrimary="true"></ejs-button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="Allconfig">
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <table id="tblAllReport" class="table table-striped table-bordered table-hover dataTable table-reflow">
+                                            <thead>
+                                                <tr style="font-weight:bold;">
+                                                    <td>SNO</td>
+                                                    <td>Report Name</td>
+                                                    <td></td>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <ejs-button id="btnAllsave" content="Update" onclick="UpdateAllConfig();" isPrimary="true"></ejs-button>
+                                        <ejs-button id="btnAllCancel" content="Cancel" onclick="Cancelclick();" isPrimary="true"></ejs-button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+
+
+

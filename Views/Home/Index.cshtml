@@ -1,0 +1,610 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<style>
+    .tableHB {
+        border-color: #646767 !important;
+    }
+</style>
+
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        document.getElementById('txtfromDate').enabled = false;
+        document.getElementById('txttoDate').enabled = false;
+        GetTrailPreiods();
+        PieChart(1);
+        barchart(1);
+        Topfivebarchart(1);
+    });
+    function getValues(url) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+    function postValues(url, jdata) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(jdata),
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+    function GetTrailPreiods() {
+        try {
+            $.ajax({
+                url: rootUrl + "/Home/GetTrailDays",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    if (response !== "") {
+                        $("#lblTrailDays").text(response);
+                    }
+                }
+            });
+        }
+        catch (e) {
+
+        }
+    }
+    function PieChart(arg) {
+        try {
+            var pieChart = null;
+            var Fromdate = document.getElementById('txtfromDate').ej2_instances[0];
+            var Todate = document.getElementById('txttoDate').ej2_instances[0];
+            if (arg != "1") {
+                Fromdate.value = "";
+                Todate.value = "";
+            }
+            var pieChartCanvas = $('#pieChart').get(0).getContext('2d')
+            var pieOptions = {
+                maintainAspectRatio: false,
+                responsive: true,
+            }
+            var tData = getValues("/Home/GenderChartData/?DayType=" + arg + "");
+            //pieChart = new Chart(pieChartCanvas, {
+            //    type: 'pie',
+            //    data: null,
+            //    options: pieOptions
+            //})
+            pieChart = new Chart(pieChartCanvas, {
+                type: 'pie',
+                data: tData,
+                options: pieOptions
+            })
+            var Total = parseInt(tData.datasets[0].data[0]) + parseInt(tData.datasets[0].data[1]) + parseInt(tData.datasets[0].data[2]);
+            var html = "";
+            html += "<table class='table table-bordered table-striped dataTable table-reflow tableHB'>";
+            html += "<thead><tr><td></td><td >Male</td><td >Female</td><td >Others</td><td >Total</td></tr></thead>";
+            html += "<tbody>";
+            html += "<tr><td>Numbers</td>";
+            html += "<td>" + tData.datasets[0].data[0] + "</td>";
+            html += "<td>" + tData.datasets[0].data[1] + "</td>";
+            html += "<td>" + tData.datasets[0].data[2] + "</td>";
+            html += "<td>" + Total + "</td>";
+            html += "</tr>";
+            html += "<tr><td>Percentage</td>";
+            if (Total == 0) {
+                html += "<td style='text-align:center;'>-</td>";
+                html += "<td style='text-align:center;'>-</td>";
+                html += "<td style='text-align:center;'>-</td>";
+                html += "<td style='text-align:center;'>-</td>";
+            }
+            else {
+                html += "<td>" + parseFloat((tData.datasets[0].data[0] / Total) * 100).toFixed(2) + "%</td>";
+                html += "<td>" + parseFloat((tData.datasets[0].data[1] / Total) * 100).toFixed(2) + "%</td>";
+                html += "<td>" + parseFloat((tData.datasets[0].data[2] / Total) * 100).toFixed(2) + "%</td>";
+                html += "<td>100%</td>";
+            }
+            html += "</tr>";
+            html += "</tbody>";
+            html += "</table>";
+            $("#tblgender").html(html);
+        }
+        catch (e) {
+
+        }
+    }
+    function barchart(arg) {
+        try {
+            var Fromdate = document.getElementById('txtfromgrdDate').ej2_instances[0];
+            var Todate = document.getElementById('txttogrdDate').ej2_instances[0];
+            if (arg != "1") {
+                Fromdate.value = "";
+                Todate.value = "";
+            }
+            var barChartCanvas = $('#barChart').get(0).getContext('2d')
+            var tData = getValues("/Home/GenderDiagnosisBarchart/?DayType=" + arg + "");
+            var barChartData = jQuery.extend(true, {}, tData)
+            var temp0 = tData.datasets[0]
+            var temp1 = tData.datasets[1]
+            var temp2 = tData.datasets[2]
+            barChartData.datasets[0] = temp0
+            barChartData.datasets[1] = temp1
+            barChartData.datasets[2] = temp2
+            var barChartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                datasetFill: false
+            }
+            var barChart = new Chart(barChartCanvas, {
+                type: 'bar',
+                data: barChartData,
+                options: barChartOptions
+            })
+            var html = "";
+            html += "<table class='table table-bordered table-striped dataTable table-reflow tableHB'>";
+            html += "<thead><tr><td></td>";
+            for (var i = 0; i < tData.labels.length; i++) {
+                html += "<td >" + tData.labels[i] + "</td>";
+            }
+            html += "</tr></thead>";
+            html += "<tbody>";
+            for (var i = 0; i < tData.datasets.length; i++) {
+                html += "<tr>";
+                html += "<td>" + tData.datasets[i].label + "</td>";
+                for (var j = 0; j < tData.datasets[i].data.length; j++) {
+                    html += "<td>" + tData.datasets[i].data[j] + "</td>";
+                }
+                html += "</tr>";
+            }
+            html += "<tr>";
+            html += "<td>Total</td>";
+            for (var i = 0; i < tData.Total.length; i++) {
+                html += "<td>" + tData.Total[i] + "</td>";
+            }
+            html += "</tr>";
+            html += "</tbody>";
+            html += "</table>";
+            $("#tblgenderdiagnosis").html(html);
+        }
+        catch (e) {
+
+        }
+    }
+    function Topfivebarchart(arg) {
+        try {
+            var Fromdate = document.getElementById('txtfromtopDate').ej2_instances[0];
+            var Todate = document.getElementById('txttotopDate').ej2_instances[0];
+            if (arg != "1") {
+                Fromdate.value = "";
+                Todate.value = "";
+            }
+            var barChartCanvas = $('#fivebarChart').get(0).getContext('2d')
+            var tData = getValues("/Home/DiagnosisBarchart/?DayType=" + arg + "");
+            var barChartData = jQuery.extend(true, {}, tData)
+            var temp0 = tData.datasets[0]
+            barChartData.datasets[0] = temp0
+            var barChartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                datasetFill: false
+            }
+            var barChart = new Chart(barChartCanvas, {
+                type: 'bar',
+                data: barChartData,
+                options: barChartOptions
+            })
+            var html = "";
+            var Total = 0;
+            html += "<table class='table table-bordered table-striped dataTable table-reflow tableHB'>";
+            html += "<thead><tr><td></td>";
+            for (var i = 0; i < tData.labels.length; i++) {
+                html += "<td >" + tData.labels[i] + "</td>";
+            }
+            html += "</tr></thead>";
+            html += "<tbody>";
+            html += "<tr><td>Numbers</td>";
+            for (var i = 0; i < tData.datasets[0].data.length; i++) {
+                Total = parseInt(Total) + parseInt(tData.datasets[0].data[i]);
+                html += "<td>" + tData.datasets[0].data[i] + "</td>";
+            }
+            html += "</tr>";
+            html += "<tr><td>Percentage</td>";
+            for (var i = 0; i < tData.datasets[0].data.length; i++) {
+                html += "<td>" + parseFloat((tData.datasets[0].data[i] / Total) * 100).toFixed(2) + "%</td>";
+            }
+            html += "</tr>";
+            html += "</tbody>";
+            html += "</table>";
+            $("#tblfivediagnosis").html(html);
+        }
+        catch (e) {
+
+        }
+    }
+    function SearchPiechart() {
+        try {
+            var Fromdate = document.getElementById('txtfromDate').ej2_instances[0].value;
+            var Todate = document.getElementById('txttoDate').ej2_instances[0].value;
+            var today = new Date();
+            if (Fromdate == null || Todate == null) {
+                if (Fromdate == null)
+                    alert('Please Enter From Date');
+                else if (Todate == null)
+                    alert('Please Enter To Date');
+            }
+            else if (Fromdate > today || Todate > today) {
+                if (Fromdate > today)
+                    alert('Please Enter Valid From Date');
+                else if (Todate > today)
+                    alert('Please Enter Valid To Date');
+            }
+            else {
+                var date = new Date(Fromdate),
+                    mnth = ("0" + (date.getMonth() + 1)).slice(-2),
+                    day = ("0" + date.getDate()).slice(-2);
+                var From = [date.getFullYear(), mnth, day].join("-");
+                var date1 = new Date(Todate),
+                    mnth1 = ("0" + (date1.getMonth() + 1)).slice(-2),
+                    day1 = ("0" + date1.getDate()).slice(-2);
+                var To = [date1.getFullYear(), mnth1, day1].join("-");
+                var pieChartCanvas = $('#pieChart').get(0).getContext('2d')
+                var pieOptions = {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                }
+                var tData = getValues("/Home/GenderSearchChartData/?Fromdate=" + From + "&Todate=" + To + "");
+                var pieChart = new Chart(pieChartCanvas, {
+                    type: 'pie',
+                    data: tData,
+                    options: pieOptions
+                })
+                var Total = parseInt(tData.datasets[0].data[0]) + parseInt(tData.datasets[0].data[1]) + parseInt(tData.datasets[0].data[2]);
+                var html = "";
+                html += "<table class='table table-bordered table-striped dataTable table-reflow tableHB'>";
+                html += "<thead><tr><td></td><td >Male</td><td >Female</td><td >Others</td><td >Total</td></tr></thead>";
+                html += "<tbody>";
+                html += "<tr><td>Numbers</td>";
+                html += "<td>" + tData.datasets[0].data[0] + "</td>";
+                html += "<td>" + tData.datasets[0].data[1] + "</td>";
+                html += "<td>" + tData.datasets[0].data[2] + "</td>";
+                html += "<td>" + Total + "</td>";
+                html += "</tr>";
+                html += "<tr><td>Percentage</td>";
+                if (Total == 0) {
+                    html += "<td style='text-align:center;'>-</td>";
+                    html += "<td style='text-align:center;'>-</td>";
+                    html += "<td style='text-align:center;'>-</td>";
+                    html += "<td style='text-align:center;'>-</td>";
+                }
+                else {
+                    html += "<td>" + parseFloat((tData.datasets[0].data[0] / Total) * 100).toFixed(2) + "%</td>";
+                    html += "<td>" + parseFloat((tData.datasets[0].data[1] / Total) * 100).toFixed(2) + "%</td>";
+                    html += "<td>" + parseFloat((tData.datasets[0].data[2] / Total) * 100).toFixed(2) + "%</td>";
+                    html += "<td>100%</td>";
+                }
+                html += "</tr>";
+                html += "</tbody>";
+                html += "</table>";
+                $("#tblgender").html(html);
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function SearchTopfivechart() {
+        try {
+            var Fromdate = document.getElementById('txtfromtopDate').ej2_instances[0].value;
+            var Todate = document.getElementById('txttotopDate').ej2_instances[0].value;
+            var today = new Date();
+            if (Fromdate == null || Todate == null) {
+                if (Fromdate == null)
+                    alert('Please Enter From Date');
+                else if (Todate == null)
+                    alert('Please Enter To Date');
+            }
+            else if (Fromdate > today || Todate > today) {
+                if (Fromdate > today)
+                    alert('Please Enter Valid From Date');
+                else if (Todate > today)
+                    alert('Please Enter Valid To Date');
+            }
+            else {
+                var date = new Date(Fromdate),
+                    mnth = ("0" + (date.getMonth() + 1)).slice(-2),
+                    day = ("0" + date.getDate()).slice(-2);
+                var From = [date.getFullYear(), mnth, day].join("-");
+
+                var date1 = new Date(Todate),
+                    mnth1 = ("0" + (date1.getMonth() + 1)).slice(-2),
+                    day1 = ("0" + date1.getDate()).slice(-2);
+                var To = [date1.getFullYear(), mnth1, day1].join("-");
+                var barChartCanvas = $('#fivebarChart').get(0).getContext('2d')
+                var tData = getValues("/Home/DiagnosisSearchBarchart/?Fromdate=" + From + "&Todate=" + To + "");
+                var barChartData = jQuery.extend(true, {}, tData)
+                var temp0 = tData.datasets[0]
+                barChartData.datasets[0] = temp0
+                var barChartOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    datasetFill: false
+                }
+                var barChart = new Chart(barChartCanvas, {
+                    type: 'bar',
+                    data: barChartData,
+                    options: barChartOptions
+                })
+                var html = "";
+                var Total = 0;
+                html += "<table class='table table-bordered table-striped dataTable table-reflow tableHB'>";
+                html += "<thead><tr><td></td>";
+                for (var i = 0; i < tData.labels.length; i++) {
+                    html += "<td >" + tData.labels[i] + "</td>";
+                }
+                html += "</tr></thead>";
+                html += "<tbody>";
+                html += "<tr><td>Numbers</td>";
+                for (var i = 0; i < tData.datasets[0].data.length; i++) {
+                    Total = parseInt(Total) + parseInt(tData.datasets[0].data[i]);
+                    html += "<td>" + tData.datasets[0].data[i] + "</td>";
+                }
+                html += "</tr>";
+                html += "<tr><td>Percentage</td>";
+                for (var i = 0; i < tData.datasets[0].data.length; i++) {
+                    html += "<td>" + parseFloat((tData.datasets[0].data[i] / Total) * 100).toFixed(2) + "%</td>";
+                }
+                html += "</tr>";
+                html += "</tbody>";
+                html += "</table>";
+                $("#tblfivediagnosis").html(html);
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function SearchGenderchart() {
+        try {
+            var Fromdate = document.getElementById('txtfromgrdDate').ej2_instances[0].value;
+            var Todate = document.getElementById('txttogrdDate').ej2_instances[0].value;
+            var today = new Date();
+            if (Fromdate == null || Todate == null) {
+                if (Fromdate == null)
+                    alert('Please Enter From Date');
+                else if (Todate == null)
+                    alert('Please Enter To Date');
+            }
+            else if (Fromdate > today || Todate > today) {
+                if (Fromdate > today)
+                    alert('Please Enter Valid From Date');
+                else if (Todate > today)
+                    alert('Please Enter Valid To Date');
+            }
+            else {
+                var date = new Date(Fromdate),
+                    mnth = ("0" + (date.getMonth() + 1)).slice(-2),
+                    day = ("0" + date.getDate()).slice(-2);
+                var From = [date.getFullYear(), mnth, day].join("-");
+
+                var date1 = new Date(Todate),
+                    mnth1 = ("0" + (date1.getMonth() + 1)).slice(-2),
+                    day1 = ("0" + date1.getDate()).slice(-2);
+                var To = [date1.getFullYear(), mnth1, day1].join("-");
+                var barChartCanvas = $('#barChart').get(0).getContext('2d')
+                var tData = getValues("/Home/GenderSearchDiagnosisBarchart/?Fromdate=" + From + "&Todate=" + To + "");
+                var barChartData = jQuery.extend(true, {}, tData)
+                var temp0 = tData.datasets[0]
+                var temp1 = tData.datasets[1]
+                var temp2 = tData.datasets[2]
+                barChartData.datasets[0] = temp0
+                barChartData.datasets[1] = temp1
+                barChartData.datasets[2] = temp2
+                var barChartOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    datasetFill: false
+                }
+                var barChart = new Chart(barChartCanvas, {
+                    type: 'bar',
+                    data: barChartData,
+                    options: barChartOptions
+                })
+                var html = "";
+                html += "<table class='table table-bordered table-striped dataTable table-reflow tableHB'>";
+                html += "<thead><tr><td></td>";
+                for (var i = 0; i < tData.labels.length; i++) {
+                    html += "<td >" + tData.labels[i] + "</td>";
+                }
+                html += "</tr></thead>";
+                html += "<tbody>";
+                for (var i = 0; i < tData.datasets.length; i++) {
+                    html += "<tr>";
+                    html += "<td>" + tData.datasets[i].label + "</td>";
+                    for (var j = 0; j < tData.datasets[i].data.length; j++) {
+                        html += "<td>" + tData.datasets[i].data[j] + "</td>";
+                    }
+                    html += "</tr>";
+                }
+                html += "<tr>";
+                html += "<td>Total</td>";
+                for (var i = 0; i < tData.Total.length; i++) {
+                    html += "<td>" + tData.Total[i] + "</td>";
+                }
+                html += "</tr>";
+                html += "</tbody>";
+                html += "</table>";
+                $("#tblgenderdiagnosis").html(html);
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+
+<div class="content-wrapper" style="background-color:white;">
+    <div class="card card-primary">
+        <div class="card-header" style="margin-top:10px;">
+            <h3 class="card-title">Dashboard</h3>
+            <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+        </div>
+    </div>
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="row">
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <label style="font-size:20px;">Gender Wise Count</label>
+                        </div>
+                        <div class="col-xs-8 col-sm-8 col-md-8">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-default" id="goption1" style="cursor:pointer;" onclick="PieChart(1);">Today</button>
+                                <button type="button" class="btn btn-default" id="goption2" style="cursor:pointer;" onclick="PieChart(2);">Previous Day</button>
+                                <button type="button" class="btn btn-default" id="goption3" style="cursor:pointer;" onclick="PieChart(7);">Week</button>
+                                <button type="button" class="btn btn-default" id="goption4" style="cursor:pointer;" onclick="PieChart(30);">Month</button>
+                            </div>
+                        </div>
+                    </div>
+                    <br />
+                    <div class="row">
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <ejs-datepicker id="txtfromDate" format="dd/MM/yyyy" value="@ViewBag.FrommaxDate" max="@ViewBag.FrommaxDate" name="LMBDate" placeholder="From Date"></ejs-datepicker>
+                            </div>
+                        </div>
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <ejs-datepicker id="txttoDate" format="dd/MM/yyyy" value="@ViewBag.FrommaxDate" max="@ViewBag.TomaxDate" name="LMBDate" placeholder="To Date"></ejs-datepicker>
+                            </div>
+                        </div>
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <button type="submit" id="btnSave" onclick="SearchPiechart();" class="btn btn-info">
+                                    Search
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <canvas id="pieChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                    </div>
+                    <br />
+                    <div class="row">
+                        <div id="tblgender" style="width:100%;">
+
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="row">
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <label style="font-size:20px;">Top Five Diagnosis</label>
+                        </div>
+                        <div class="col-xs-8 col-sm-8 col-md-8">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-default" id="toption1" style="cursor:pointer;" onclick="Topfivebarchart(1);">Today</button>
+                                <button type="button" class="btn btn-default" id="toption2" style="cursor:pointer;" onclick="Topfivebarchart(2);">Previous Day</button>
+                                <button type="button" class="btn btn-default" id="toption3" style="cursor:pointer;" onclick="Topfivebarchart(7);">Week</button>
+                                <button type="button" class="btn btn-default" id="toption4" style="cursor:pointer;" onclick="Topfivebarchart(30);">Month</button>
+                            </div>
+                        </div>
+                    </div>
+                    <br />
+                    <div class="row">
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <ejs-datepicker id="txtfromtopDate" format="dd/MM/yyyy" value="@ViewBag.FrommaxDate" max="@ViewBag.FrommaxDate" name="LMBDate" placeholder="From Date"></ejs-datepicker>
+                            </div>
+                        </div>
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <ejs-datepicker id="txttotopDate" format="dd/MM/yyyy" value="@ViewBag.FrommaxDate" max="@ViewBag.TomaxDate" name="LMBDate" placeholder="To Date"></ejs-datepicker>
+                            </div>
+                        </div>
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <button type="submit" id="btnSave" onclick="SearchTopfivechart();" class="btn btn-info">
+                                    Search
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart">
+                        <canvas id="fivebarChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                    </div>
+                    <br />
+                    <div class="row">
+                        <div id="tblfivediagnosis" style="width:100%;">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="row">
+                        <div class="col-xs-2 col-sm-2 col-md-2">
+                            <label style="font-size:20px;">Diagnosis Chart</label>
+                        </div>
+                        <div class="col-xs-6 col-sm-6 col-md-6">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-default" id="gdoption1" style="cursor:pointer;" onclick="barchart(1);">Today</button>
+                                <button type="button" class="btn btn-default" id="gdoption2" style="cursor:pointer;" onclick="barchart(2);">Previous Day</button>
+                                <button type="button" class="btn btn-default" id="gdoption3" style="cursor:pointer;" onclick="barchart(7);">Week</button>
+                                <button type="button" class="btn btn-default" id="gdoption4" style="cursor:pointer;" onclick="barchart(30);">Month</button>
+                            </div>
+                        </div>
+                    </div>
+                    <br />
+                    <div class="row">
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <ejs-datepicker id="txtfromgrdDate" format="dd/MM/yyyy" value="@ViewBag.FrommaxDate"
+                                                max="@ViewBag.FrommaxDate" name="LMBDate" placeholder="From Date">
+                                </ejs-datepicker>
+                            </div>
+                        </div>
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <ejs-datepicker id="txttogrdDate" format="dd/MM/yyyy" value="@ViewBag.FrommaxDate" max="@ViewBag.TomaxDate" name="LMBDate" placeholder="To Date"></ejs-datepicker>
+                            </div>
+                        </div>
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <button type="submit" id="btnSave" onclick="SearchGenderchart();" class="btn btn-info">
+                                    Search
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart">
+                        <canvas id="barChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                    </div>
+                    <div class="row">
+                        <div id="tblgenderdiagnosis" style="width:100%;">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

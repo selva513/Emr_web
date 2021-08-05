@@ -1,0 +1,273 @@
+﻿
+@{
+    ViewData["Title"] = "HolidayMaster";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@using Syncfusion.EJ2.Navigations;
+@using Newtonsoft.Json
+@model Emr_web.Models.HolidayView
+
+<link href="~/AutoComplete/jquery-ui_1.11.4.css" rel="stylesheet" />
+<script src="~/AutoComplete/jquery-1.10.2.js"></script>
+<script src="~/AutoComplete/jquery-ui_1.11.4.js"></script>
+
+<script>
+    //For PageLoad
+    //$(document).ready(function () {
+     //   http://www.smsintegra.com/api/smsapi.aspx?uid=xxxxx&pwd=xxxxx&mobile=xxxxx&msg=xxxxx&sid=xxxxx&type=0
+     //   & sched=1 & dt=xxxxx & time=xxxxx & dtTimeNow=xxxxx
+    //}) 
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+
+    function ValidateFestival(Holiday_Name,tmpDate,Content1) {
+        try {
+
+            if (tmpDate == "" || tmpDate == null) {
+                alert('Enter a Valid Date');
+                return false;
+            }
+            else {
+                e_date = Date.parse(tmpDate);
+            }
+
+            var cur_date = Date.now();
+
+            if (Holiday_Name == "") {
+                alert('Enter a Valid Name');
+                return false;
+            }
+            else if (e_date < cur_date || e_date == "") {
+                alert('Enter a Valid Date');
+                return false;
+            }
+            else if (Content1 == "") {
+                alert('Enter a Valid Greetings');
+                return false;
+            }
+            else {
+                return true;
+            }
+        }
+        catch (e) {}
+    }
+
+    function SaveFestival() {
+        try {
+            var Holiday_Name = $("#HolidayName").val();
+            var tmpDate = document.getElementById('txtHolidayDate').ej2_instances[0].value;
+            var Content1 = $('#Content').val();
+            //CheckExist(Holiday_Name);
+            var result = ValidateFestival(Holiday_Name, tmpDate, Content1);
+            if (result == true) {
+                t_date = new Date(document.getElementById('txtHolidayDate').ej2_instances[0].value);
+                var fulldate = t_date.toLocaleDateString();
+
+                var sendJsondata = {
+                    HolidayName: Holiday_Name,
+                    HolidayDate: fulldate,
+                    Content: Content1
+                };
+
+                $.ajax({
+                    type: 'post',
+                    url: "/HolidayMaster/SaveFestival",
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify(sendJsondata),
+                    dataType: "json",
+                    success: function (response) {
+                        if (response) {
+                            window.location.href = "/HolidayMaster/HolidayMaster";
+                        }
+                        else {
+                            alert("Record Already Exists");
+                        }
+                    },
+                    error: function (response) {}
+                });
+            }
+        }
+        catch (e) {
+
+        } 
+    }
+
+    function CheckExist(Holiday_Name) {
+        try {
+            
+            $.ajax({
+                type: 'GET',
+                url: rootUrl + "/api/Holiday/CheckHolidayExist?HolidayName=" + Holiday_Name +" ",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    if (response == true) {
+                        alert("Record Already Exists");
+                    }
+                    else {
+                        alert(response);
+                    }
+                },
+                error: function (response) { }
+
+            });
+        }
+        catch (e) {
+
+        }
+    }
+
+    function UpdateHoliday() {
+        try {
+            var Holiday_Id = $("#HolidayId").val();
+            var Holiday_Name = $("#HolidayName").val();
+            var tmpDate = document.getElementById('txtHolidayDate').ej2_instances[0].value;
+            var Content1 = $('#Content').val();
+
+            var result = ValidateFestival(Holiday_Name, tmpDate, Content1);
+
+            if (result == true) {
+                t_date = new Date(document.getElementById('txtHolidayDate').ej2_instances[0].value);
+                var fulldate = t_date.toLocaleDateString();
+
+                var sendJsondata = {
+                    HolidayId: Holiday_Id,
+                    HolidayName: Holiday_Name,
+                    HolidayDate: fulldate,
+                    Content: Content1
+                };
+
+                $.ajax({
+                    type: 'post',
+                    url: "/HolidayMaster/UpdateFestival",
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify(sendJsondata),
+                    dataType: "json",
+                    success: function (response) {
+                        if (response) {
+                            window.location.href = "/HolidayMaster/HolidayMaster";
+                        } 
+                    },
+                    error: function (response) {}
+                });
+            }
+        }
+        catch (e) {}
+    }
+
+    function DeleteHoliday() {
+        try {
+            var Holiday_Id = $("#HolidayId").val();
+            var IsActive = false;
+            $.ajax({
+                type: 'GET',
+                url: rootUrl + "/api/Holiday/DeleteFestival?HolidayId=" + Holiday_Id + "&IsActive=" + IsActive + " ",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    if (response) {
+                        window.location.href = "/HolidayMaster/HolidayMaster";
+                    }
+                },
+                error: function (response) {}
+            })
+        }
+        catch (e) {}
+    }
+   
+    function rowSelected(args) {
+        var selectedrecords = this.getSelectedRecords();  // get the selected records.
+        $("#HolidayId").val(selectedrecords[0].HolidayId);
+        $("#HolidayName").val(selectedrecords[0].HolidayName);
+        $("#Content").val(selectedrecords[0].Content);
+        document.getElementById('txtHolidayDate').ej2_instances[0].value = selectedrecords[0].HolidayDate;
+        $("#btnSave").hide();
+        $("#btnUpdate").show();
+        $("#btnDelete").show();
+    }
+
+    function CancelClick() {
+        window.location.href = "/HolidayMaster/HolidayMaster";
+        $("#HolidayId").val("");
+        $("#HolidayName").val("");
+        $("#txtHolidayDate").val("");
+        $("#Content").val("");
+        $("#btnSave").show();
+        $("#btnUpdate").hide();
+        $("#btnDelete").hide();
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+
+
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-primary">
+                        <div class="card-header" style="margin-top:15px;">
+                            <h3 class="card-title">Holiday Master</h3>
+                            <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                        </div>
+                        <form autocomplete="off" class="form-group" onkeydown="return event.key != 'Enter';">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <label>Festival Name</label>
+                                        <input id="HolidayName" type="text" placeholder="Enter Festival Name" class="form-control" />
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <label>Festival Date</label>
+                                        <ejs-datepicker id="txtHolidayDate" format="dd/MM/yyyy" ejs-for="HolidayDate" placeholder="Pick Festival Date"></ejs-datepicker>
+                                        <input id="HolidayId" type="text" class="form-control" style="display:none;" />
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <label class="control-label">Greetings</label>
+                                        <textarea id="Content" placeholder="Enter Greetings" class="form-control" style="height:100px;"></textarea>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <input id="btnSave" type="button" value="Save" class="btn btn-primary" onclick="SaveFestival();" style="width:70px;" />
+                                        <input id="btnUpdate" type="button" value="Update" class="btn btn-primary" onclick="UpdateHoliday();" style="display:none;" />
+                                        <input id="btnDelete" type="button" value="Delete" class="btn btn-primary" onclick="DeleteHoliday();" style="display:none;" />
+                                        <input id="btnCancel" type="button" value="Cancel" class="btn btn-primary" onclick="CancelClick();" />
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-lg-12" style="margin-top:20px; margin-bottom:40px;">
+                                        <ejs-grid id="GridMainmenu" dataSource="ViewBag.HolidayList" allowPaging="true"
+                                                  toolbar="@(new List<string>() { "Search"})" rowSelected="rowSelected">
+                                            <e-grid-searchsettings fields="@(new string[] { "HolidayName","Content"})"
+                                                                   operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                            <e-grid-selectionsettings type="Single"></e-grid-selectionsettings>
+                                            <e-grid-pagesettings pageSize="10" pageCount="10"></e-grid-pagesettings>
+                                            <e-grid-columns>
+                                                <e-grid-column field="S_No" headerText="S No" width="10%"></e-grid-column>
+                                                <e-grid-column field="HolidayId" visible="false"></e-grid-column>
+                                                <e-grid-column field="HolidayName" headerText="Holiday Name" width="30%"></e-grid-column>
+                                                <e-grid-column field="HolidayDate" headerText="Holiday Date" width="20%"></e-grid-column>
+                                                <e-grid-column field="Content" headerText="Holiday Content"></e-grid-column>
+                                            </e-grid-columns>
+                                        </ejs-grid>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+
+

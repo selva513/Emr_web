@@ -1,0 +1,142 @@
+﻿<script>
+    $(document).ready(function () {
+        DueDateBind();
+    });
+    function DueDateBind() {
+        try {
+            var today = new Date();
+            var currentyear = today.getFullYear();
+            var onetwentyyearback = currentyear - 120;
+            var daterange = onetwentyyearback + ':' + currentyear;
+
+            $('#txtDuefromdate').datepicker({
+                changeMonth: true,
+                changeYear: true,
+                yearRange: daterange,
+                dateFormat: 'dd/mm/yy',
+                endDate: "today",
+                maxDate: today,
+            });
+            $('#txtDuetodate').datepicker({
+                changeMonth: true,
+                changeYear: true,
+                yearRange: daterange,
+                dateFormat: 'dd/mm/yy',
+                endDate: "today",
+                maxDate: today,
+            });
+            $("#txtDuefromdate").datepicker('setDate', new Date());
+            $("#txtDuetodate").datepicker('setDate', new Date());
+        }
+        catch (e) {
+
+        }
+    }
+    function SearchDueCollection() {
+        var fromDate = $('#txtDuefromdate').val();
+        var toDate = $('#txtDuetodate').val();
+        $.ajax({
+            url: rootUrl + "/api/DueCollection/GetDueCollectionByDate",
+            type: "Get",
+            contentType: "application/json; charset=utf-8",
+            data: {
+                StartDt: fromDate, EndDt: toDate
+            },
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            dataType: 'json',
+            success: function (response) {
+                var html = "";
+                var Sno = 0;
+                $("#tblDueCollectionReport tbody").empty();
+                if (response.Header.length > 0) {
+                    for (PCHeader = 0; PCHeader < response.Header.length; PCHeader++) {
+                        Sno = PCHeader + 1;
+                        var BillNo = response.Header[PCHeader].BillNo;
+                        var PH_CSH_PATID = response.Header[PCHeader].PH_CSH_PATID;
+                        var PH_CSH_PATNAME = response.Header[PCHeader].PH_CSH_PATNAME;
+                        var TotalAmount = response.Header[PCHeader].TotalAmount;
+                        var DueAmount = response.Header[PCHeader].DueAmount;
+                        var DueCollectedAmt = response.Header[PCHeader].DueCollectedAmt;
+                        var CurrentDue = response.Header[PCHeader].CurrentDue;
+                        var CollectedAmt = response.Header[PCHeader].CollectedAmt;
+                        var CreatedDate = response.Header[PCHeader].CreatedDate;
+
+                        html += "<tr>";
+                        html += "<td>" + BillNo + "</td>";
+                        html += "<td>" + CreatedDate + "</td>";
+                        html += "<td>" + PH_CSH_PATID + "</td>";
+                        html += "<td>" + PH_CSH_PATNAME + "</td>";
+                        html += "<td >" + TotalAmount + "</td>";
+                        html += "<td >" + DueAmount + "</td>";
+                        html += "<td >" + DueCollectedAmt + "</td>";
+                        html += "<td >" + CurrentDue + "</td>";
+                        html += "<td style='display:none'>" + CollectedAmt + "</td>";
+                        html += "</tr>";
+                    }
+                    $("#tblDueCollectionReport tbody").append(html);
+
+
+                }
+            },
+            complete: function () { $("#loading").css("display", "none") },
+            failure: function (response) {
+                alert(response);
+            },
+            error: function (response) {
+                alert(response);
+            }
+        });
+    }
+</script>
+ <div class="row">
+        <div class="col-xs-12 col-sm-12 col-md-12">
+
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-xs-4 col-sm-4 col-md-4">
+                        <div class="form-group">
+                            <label>
+                                From Date
+                            </label>
+                            <input type="text" id="txtDuefromdate" placeholder="From Date" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="col-xs-4 col-sm-4 col-md-4">
+                        <div class="form-group">
+                            <label>
+                                To Date
+                            </label>
+                            <input type="text" id="txtDuetodate" placeholder="To Date" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="col-xs-2 col-sm-2 col-md-2">
+                        <label style="margin-left: 5px;"></label>
+                        <div class="form-group">
+                            <button style="margin-left:7px;margin-top:7px;" class="btn btn-primary" onclick="SearchDueCollection();">Search</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12 col-sm-12 col-md-12">
+                        <table class="table table-bordered table-striped" id="tblDueCollectionReport">
+                            <thead>
+                                <tr>
+                                    <th>Bill NO</th>
+                                    <th>Date</th>
+                                    <th>Patient ID</th>
+                                    <th>Name</th>
+                                    <th>Total Amt</th>
+                                    <th>Due</th>
+                                    <th>Collected</th>
+                                    <th>Pending To Pay</th>
+                                    <th style="display:none;">Received Amt</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>

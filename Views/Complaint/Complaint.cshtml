@@ -1,0 +1,1176 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@using Syncfusion.EJ2
+@using Newtonsoft.Json
+@using Syncfusion.EJ2.Navigations;
+
+<style>
+    .ImageSelection {
+        border: 2px solid Blue;
+    }
+</style>
+<script>
+    var PainScale = "";
+    $(document).ready(function () {
+        var Patientid = $("#lblpatid").text();
+        var visitid = $("#lblvisitid").text();
+        if (sessionStorage.getItem('Status') == 'Checked-In')
+            GetComplaintsLastData(Patientid, visitid);
+        //var arg = "Gasetro";
+        //GetDefaultComplaints(arg);
+    });
+    function GetComplaintsLastData(Patientid, visitid) {
+        var html = "";
+        var i = 0;
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/EmrApi/GetComplaintsLastData/?Patientid=" + Patientid + "&Visitid=" + visitid + "",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    $("#tblComplaints tbody").empty();
+                    $(response).find("LastCompliantsDetails").each(function () {
+                        var painScale = ($(this).find("PainScale").text());
+                        var HistoryNotes = ($(this).find("HistoryNotes").text());
+                        var SymptomName = ($(this).find("SymptomName").text());
+                        var SymptomId = ($(this).find("SymptomId").text());
+                        var duration = ($(this).find("duration").text());
+                        var Remarks = ($(this).find("Remarks").text());
+
+                        $("#txtNotes").val(HistoryNotes);
+
+                        html += "<tr data-id=\"" + SymptomId + "\"><td><input type=\"checkbox\" style=\"width:16px;height:16px;\" onclick='return FocusRow(this)' checked></td>";
+                        html += "<td style='color:blue;'>" + SymptomName + "</td>";
+                        html += "<td style='display:none;'>" + SymptomId + "</td>";
+                        html += "<td><input value='" + duration + "'  style='height:24px;width:74px;' type=\"Text\" onfocusout=txtCompOnfoucsOut(this);>&nbsp;&nbsp;&nbsp";
+                        html += "<Select style='height:24px;'><option Value='Days'>Days</option><option Value='Months'>Months</option><option Value='Years'>Years</option></Select></td>";
+                        html += "<td><input   type=\"Text\" class='form-control' value='" + Remarks + "'></td>";
+                        html += "<td style='text-align: center;'>";
+                        html += "<img src='../Images/Delete.png'  onclick='return DeleteComplaints(this)' style='cursor:pointer;width: 25px !important;height:25px !important;'>";
+                        html += "</td></tr>";
+                    });
+                    $("#tblComplaints tbody").append(html);
+                },
+                failure: function (response) {
+                },
+                error: function s(response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function onfiltering(e) {
+        var Symptom = document.getElementById('cmbSymptom').ej2_instances[0];
+        var query = new ej.data.Query();
+
+        query = (e.text !== '') ? query.where('Symptoms', 'Contains', e.text, true) : query;
+
+        e.updateData(Symptom.dataSource, query);
+        if (document.getElementById('nodata')) {
+            document.getElementById('btnAddSymptom').onclick = function () {
+                var customValue = (document.getElementById('cmbSymptom')).value;
+                var tData = getValues("/Emr/CreateNewSymptom/?mq=" + customValue + "");
+                var newItem = { 'Symptoms': tData.Symptoms, 'SymSeqID': tData.SymSeqID };
+                (Symptom.dataSource).push(newItem);
+                Symptom.hidePopup();
+                Symptom.addItem(newItem);
+                Symptom.value = "";
+            };
+        }
+    }
+    function OnSymptomFocus(args) {
+        this.showPopup();
+    }
+    function GetDefaultComplaints(PicklistName) {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        var arg = PicklistName;
+        $.ajax({
+            url: rootUrl + "/api/EmrApi/GetDefaultPick/?DefaultValue=" + arg + "",
+            type: 'GET',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                //$("#tblComplaints tbody").empty();
+                for (Count = 0; Count < response.length; Count++) {
+                    var SymSeqID = response[Count].SymSeqID;
+                    var Symptoms = response[Count].Symptoms;
+                    var $tr = $('#tblComplaints tr[data-id="' + SymSeqID + '"]');
+                    if ($tr.length === 0)
+                        CreateNewRow(SymSeqID, Symptoms);
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function OnSymptomChange(args) {
+        var Symptom = document.getElementById('cmbSymptom').ej2_instances[0];
+        var SymId = Symptom.value;
+        var SymName = Symptom.text;
+        Symptom.autofill = args.checked;
+        if (SymName !== "") {
+            var table = $('#tblComplaints');
+            var $tr = $('#tblComplaints tr[data-id="' + SymId + '"]');
+            if ($tr.length === 0)
+                CreateNewRow(SymId, SymName);
+            //else
+            //    alert('Already Exist');
+            //document.getElementById('cmbSymptom').ej2_instances[0].value = "";
+            document.getElementById('cmbSymptom').ej2_instances[0].text = "";
+            document.getElementById('cmbSymptom').ej2_instances[0].value = "";
+
+        }
+    }
+    function CreateNewRow(SymID, symText) {
+        var html = "";
+        if (SymID > 0) {
+            html += "<tr data-id=\"" + SymID + "\"><td><input type=\"checkbox\" style=\"width:16px;height:16px;\" onclick='return FocusRow(this)'></td>";
+            html += "<td style='color:blue;'>" + symText + "</td>";
+            html += "<td style='display:none;'>" + SymID + "</td>";
+            html += "<td><input  style='height:24px;width:74px;' type=\"Text\" onfocusout=txtCompOnfoucsOut(this); onchange='ComplaintChekedRow(this);'>&nbsp;&nbsp;&nbsp";
+            html += "<Select style='height:24px;'><option Value='Days'>Days</option><option Value='Months'>Months</option><option Value='Years'>Years</option></Select></td>";
+            html += "<td><input   type=\"Text\" class='form-control'></td>";
+            html += "<td style='text-align: center;'>";
+            html += "<img src='../Images/Delete.png'  onclick='return DeleteComplaints(this)' style='cursor:pointer;width: 25px !important;height:25px !important;'>";
+            html += "</td></tr>";
+            $("#tblComplaints tbody").append(html);
+
+        }
+        return html;
+    }
+    function DeleteComplaints(SelectedRow) {
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = myrow.rowIndex;
+        document.getElementById("tblComplaints").deleteRow(myrow.rowIndex);
+        var table = document.getElementById("tblComplaints");
+        var rowCount = table.rows.length;
+        var i = myrow.rowIndex;
+        document.getElementById('cmbSymptom').ej2_instances[0].text = "";
+        document.getElementById('cmbSymptom').ej2_instances[0].value = "";
+        return false;
+    }
+    function DeletePreviewTable(SelectedRow) {
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = myrow.rowIndex;
+        document.getElementById("tblComplaintsPreview").deleteRow(myrow.rowIndex);
+        var table = document.getElementById("tblComplaintsPreview");
+        var rowCount = table.rows.length;
+        var i = myrow.rowIndex;
+        //regroup(i, rowCount, "tblComplaints");
+        PreviewIllness();
+
+    }
+    function FocusRow(SelectedRow) {
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = myrow.rowIndex;
+        var table = document.getElementById("tblComplaints");
+        var rowCount = table.rows.length;
+        var i = myrow.rowIndex;
+        var sval12 = table.rows[i];
+        var checkbox = sval12.cells[0].getElementsByTagName("input");
+        var SymptomID = sval12.cells[2].innerHTML;
+        if ($(checkbox).is(':checked'))
+            sval12.cells[3].getElementsByTagName("input")[0].focus();
+        //else {
+        //    var $tr = $('#tblComplaintsPreview tr[data-id="' + SymptomID + '"]');
+        //    DeletePreviewTable($tr);
+        //}
+    }
+    function SavepickList() {
+        var tbl12 = document.getElementById("tblComplaints");
+        var PickListName = document.getElementById('txtPickHeader').ej2_instances[0].value;
+        var PicklstClick = "Old";
+        if (PickListName.length > 0) {
+            var PickArray = new Array();
+            var row12 = tbl12.rows.length;
+            for (k = 1; k < row12; k++) {
+                var sval12 = tbl12.rows[k];
+                var checkbox = sval12.cells[0].getElementsByTagName("input");
+                if ($(checkbox).is(':checked')) {
+                    var objDetails = new Object();
+                    objDetails.SymPSeqID = 0;
+                    objDetails.PickListName = PickListName;
+                    objDetails.SymptomId = parseFloat(sval12.cells[2].innerHTML);
+                    objDetails.Symptom = sval12.cells[1].innerHTML;
+                    objDetails.PicklstClick = PicklstClick;
+                    PickArray.push(objDetails);
+                }
+            }
+            //var response = postValues("/Emr/CreateNewPickList", PickArray);
+            $.ajax({
+                url: "/Emr/CreateNewPickList",
+                type: 'post',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(PickArray),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    alert(data);
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        else {
+            document.getElementById('txtPickHeader').ej2_instances[0].focus();
+        }
+
+        return false;
+    }
+    function PreviewIllness() {
+        //var tbl12 = document.getElementById("tblComplaints");
+        //var html = "";
+        //var row12 = tbl12.rows.length;
+        //$("#tblComplaintsPreview tbody").empty();
+        //for (k = 1; k < row12; k++) {
+        //    var sval12 = tbl12.rows[k];
+        //    var checkbox = sval12.cells[0].getElementsByTagName("input");
+        //    if ($(checkbox).is(':checked')) {
+        //        var SymptomName = sval12.cells[1].innerHTML;
+        //        var SymptomID = parseFloat(sval12.cells[2].innerHTML);
+        //        var Duration = sval12.cells[3].getElementsByTagName("input")[0].value;
+        //        html += "<tr data-id=\"" + SymptomID + "\"><td>" + SymptomName + " " + Duration + "</td></tr>";
+        //    }
+        //}
+        //$("#tblComplaintsPreview tbody").append(html);
+    }
+    function txtCompOnfoucsOut(SelectedRow) {
+        var myrow = SelectedRow.parentNode.parentNode;
+        var Complaints = myrow.cells[1].innerHTML;
+        var Duration = myrow.cells[3].getElementsByTagName("input")[0].value;
+        PreviewIllness();
+    }
+    function HistoryIllnessChange() {
+        //var historyText = $("#txtNotes").val();
+        //var html = "<span style='color: darkred;'>History of Presenting Illness</span><br/>";
+        //html += "" + historyText + "";
+        //$("label[for='lblHistoryIllness']").html(html);
+    }
+    function PainImgClik(imgObj) {
+        var tittle = $(imgObj).attr('title');
+        PainScale = tittle;
+        var id = (".ImageSelection");
+        $(id).removeClass("ImageSelection");
+        $(imgObj).addClass("ImageSelection");
+        //var src = $(imgObj).attr('src');
+        //var html = "<span style='color: darkred;'>Pain intensity</span><br/>";
+        //html += "" + tittle + "";
+        //$("label[for='lblPainintensity']").html(html);
+        //$("#ImgFinalPain").attr('src', src);
+        //$("#ImgFinalPain").attr('title', id);
+    }
+    function OnPickListChange() {
+        var PickListName = document.getElementById('txtPickHeader').ej2_instances[0].value;
+        if (PickListName.length > 0) {
+            GetDefaultComplaints(PickListName);
+        }
+    }
+    function ChangeSymptomPickList() {
+        var PickListName = document.getElementById('txtPickHeader').ej2_instances[0].value;
+        if (PickListName !== null) {
+            GetDefaultComplaints(PickListName);
+        }
+    }
+    function SavePatSymptom(IsVerified) {
+        var Detail = new Array();
+        var tbl12 = document.getElementById("tblComplaints");
+        var row12 = tbl12.rows.length;
+        for (k = 1; k < row12; k++) {
+            var sval12 = tbl12.rows[k];
+            var checkbox = sval12.cells[0].getElementsByTagName("input");
+            if ($(checkbox).is(':checked')) {
+                var objDetail = new Object();
+                objDetail.PsdSeqId = 0;
+                objDetail.SymHeaderSeqId = 0;
+                objDetail.SymptomName = sval12.cells[1].innerHTML;
+                var Duration = sval12.cells[3].getElementsByTagName("input")[0].value;
+                if (Duration !== "")
+                    objDetail.duration = sval12.cells[3].getElementsByTagName("input")[0].value + " " + sval12.cells[3].getElementsByTagName("select")[0].value;
+                else
+                    objDetail.duration = "";
+                objDetail.Remarks = sval12.cells[4].getElementsByTagName("input")[0].value;
+                objDetail.SymptomId = parseFloat(sval12.cells[2].innerHTML);
+                Detail.push(objDetail);
+            }
+        }
+        var HistoryNotes = $("#txtNotes").val();
+
+        ///var tblFun = document.getElementById("tblFunctionlStatus");
+        //var PickArray = new Array();
+        //var Funrow12 = tblFun.rows.length;
+        //for (s = 1; s < Funrow12; s++) {
+        //    var funsval12 = tblFun.rows[s];
+        //    var objDetails = new Object();
+        //    objDetails.FuncationalStatus = funsval12.cells[0].innerHTML;
+        //    objDetails.Comments = funsval12.cells[2].getElementsByTagName("input")[0].value;
+        //    PickArray.push(objDetails);
+        //}
+
+        var sendJsonData = {
+            PshSeqID: 0,
+            PatientId: $("#lblpatid").text(),
+            VisitId: $("#lblvisitid").text(),
+            HistoryNotes: HistoryNotes,
+            PainScale: PainScale,
+            IsVerified:IsVerified,
+            SymDetails: Detail
+        };
+        $.ajax({
+            url: "/Emr/CreateNewPatSym",
+            type: 'post',
+            contentType: "application/json",
+            data: JSON.stringify(sendJsonData),
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                alert("Save Success");
+                if (IsVerified === true) {
+                    ClearPickList();
+                }
+                CloseComplaintStatus();
+                OnSuccessComplaintHeader(response);
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+   
+    function ClearPickList() {
+        $("#tblComplaints tbody").empty();
+        $("#txtNotes").val('');
+        document.getElementById('cmbSymptom').ej2_instances[0].value = "";
+        document.getElementById('txtPickHeader').ej2_instances[0].value = "";
+        $("#imgNopain").removeClass("ImageSelection");
+        $("#imgMild").removeClass("ImageSelection");
+        $("#imgModerate").removeClass("ImageSelection");
+        $("#imgSevere").removeClass("ImageSelection");
+        $("#imgVerySevere").removeClass("ImageSelection");
+        $("#imgWorstPain").removeClass("ImageSelection");
+        PainScale = "";
+        $("#chksymPrevious").prop("checked", false);
+    }
+    function OpenAsPickList() {
+        var tbl12 = document.getElementById("tblComplaints");
+        var html = "";
+        var row12 = tbl12.rows.length;
+        $("#tblSaveAsNewPickLsit tbody").empty();
+        for (k = 1; k < row12; k++) {
+            var sval12 = tbl12.rows[k];
+            var checkbox = sval12.cells[0].getElementsByTagName("input");
+            if ($(checkbox).is(':checked')) {
+                var SymptomName = sval12.cells[1].innerHTML;
+                var SymptomID = parseFloat(sval12.cells[2].innerHTML);
+                var Duration = sval12.cells[3].getElementsByTagName("input")[0].value;
+                html += "<tr><td>" + SymptomName+"</td></tr>";
+            }
+        }
+        $("#tblSaveAsNewPickLsit tbody").append(html);
+        document.getElementById('dialog').ej2_instances[0].show();
+    }
+    function SaveAsNewPickList() {
+        var tbl12 = document.getElementById("tblComplaints");
+        var PickListName = document.getElementById("txtNewPickListName").value;
+        var PicklstClick = "New";
+        var PickArray = new Array();
+        if (PickListName.length > 0) {
+            var row12 = tbl12.rows.length;
+            for (k = 1; k < row12; k++) {
+                var sval12 = tbl12.rows[k];
+                var checkbox = sval12.cells[0].getElementsByTagName("input");
+                if ($(checkbox).is(':checked')) {
+                    var objDetails = new Object();
+                    objDetails.SymPSeqID = 0;
+                    objDetails.PickListName = PickListName;
+                    objDetails.SymptomId = parseFloat(sval12.cells[2].innerHTML);
+                    objDetails.Symptom = sval12.cells[1].innerHTML;
+                    objDetails.PicklstClick = PicklstClick;
+                    PickArray.push(objDetails);
+                }
+            }
+            //var response = postValues("/Emr/CreateNewPickList", PickArray);
+            $.ajax({
+                url: "/Emr/CreateNewPickList",
+                type: 'post',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(PickArray),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    alert(data);
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+            document.getElementById('dialog').ej2_instances[0].hide();
+        }
+        else {
+            alert("Please Enter Pick List Name");
+        }
+        return false;
+    }
+    function GetAllPatientComplaintsByVist() {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        var arg = $("#lblpatid").text();
+        $.ajax({
+            url: rootUrl + "/Emr/GetSymptomByVist/?PatientID=" + arg + "",
+            type: 'GET',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: OnSuccessComplaint,
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function OnSuccessComplaint(response) {
+        if (response.Header.length > 0) {
+            var html = "";
+            for (PCHeader = 0; PCHeader < response.Header.length; PCHeader++) {
+                var VisitDate = response.Header[PCHeader].VisitDate;
+                var PsHedSeqID = response.Header[PCHeader].PshSeqID;
+                html += "<div class='row'><div class='col-xs-12'><table Class='table table-bordered table-striped dataTable table-reflow'>";
+                html += "<thead><tr><td style='font-weight: 700;color: Blue;'>Presenting Illness-" + VisitDate +" </td></thead><tbody>";
+                for (PCDetails = 0; PCDetails < response.Details.length; PCDetails++) {
+                    var SymHeader = response.Details[PCDetails].SymHeaderSeqId;
+                    var SymptomID = response.Details[PCDetails].SymptomId;
+                    var SymptomName = response.Details[PCDetails].SymptomName;
+                    var Duration = response.Details[PCDetails].duration;
+                    var Remarks = response.Details[PCDetails].Remarks;
+                    if (PsHedSeqID === SymHeader) {
+                        html += "<tr data-id=\"" + SymptomID + "\"><td>" + SymptomName + " " + Duration+" "+Remarks+"</td></tr>";
+                    }
+                }
+                html += "</tbody></table></div></div>";
+
+                html += "<div class='row'><div class='col-xs-12'><div class='form-group'><span style='color: Blue;'>Pain intensity</span><br/>";
+                html += "<sapn>" + response.Header[PCHeader].PainScale + "</sapn></div></div></div>";
+
+                html += "<div class='row'><div class='col-xs-12'><div class='form-group'><br/>"; //<span style='color: Blue;'>Other Notes</span>
+                html += "<sapn>" + response.Header[PCHeader].HistoryNotes + "</sapn></div></div></div>";
+
+                if (response.Header[PCHeader].IsVerified === true) {
+                    html += "<div class='row'><div class='col-xs-12'><div class='form-group'><span style='color: Blue;'>Status</span><br/>";
+                    html += "<sapn>Verified</sapn></div></div></div>";
+                }
+                else {
+                    html += "<div class='row'><div class='col-xs-12'><div class='form-group'><span style='color: Blue;'>Status</span><br/>";
+                    html += "<sapn style='color:red;'>As Reported by patient</sapn></div></div></div><br/>";
+                }
+            }
+            //for (FHCount = 0; FHCount < response.FHeader.length; FHCount++) {
+            //    var CreateDateAsString = response.FHeader[FHCount].CreateDateAsString;
+            //    var SeqID = response.FHeader[FHCount].SeqID;
+            //    html += "<table Class='table table-bordered table-striped dataTable table-reflow'>";
+            //    html += "<thead><tr><td style='font-weight: 700;color: Blue;'>Functional  Status-" + CreateDateAsString + " </td></thead><tbody>";
+            //    for (FCDetails = 0; FCDetails < response.FDetails.length; FCDetails++) {
+            //        var HeaderSeqID = response.FDetails[FCDetails].HeaderSeqID;
+            //        var FunctionalStatus = response.FDetails[FCDetails].FunctionalStatus;
+            //        var Comments = response.FDetails[FCDetails].Comments;
+            //        if (SeqID === HeaderSeqID) {
+            //            html += "<tr><td>" + FunctionalStatus + " " + Comments + "</td></tr>";
+            //        }
+            //    }
+            //    html += "</tbody></table>";
+            //}
+            $("#LatestComplaint").hide();
+            $("#OldComplaints").show();
+            $("#OldComplaints").html('');
+            $("#OldComplaints").html(html);
+        }
+    }
+    function CompliantPrint() {
+        try {
+            var arg = $("#lblvisitid").text();
+            $.ajax({
+                url: rootUrl + "/Emr/GetCompliantByVisit/?Visitid=" + arg + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: OnSuccessCompliantPrint,
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        catch (e) {
+
+        }
+    }
+    function OnSuccessCompliantPrint(response) {
+        var Hospitaldtl = "";
+        var Patdtl = "";
+        var html = "";
+        if (response.HospitalDtl.length > 0) {
+            Hospitaldtl += "<table style='width:95%;'><tr>";
+            Hospitaldtl += "<td><img src='data:image/jpeg;base64," + response.HospitalDtl[0].HospitalLogo + "' style='width:100%; max-width:200px;height:100px;'></td>";
+            Hospitaldtl += "<td><table>";
+            Hospitaldtl += "<tr><td>" + response.HospitalDtl[0].HospitalName + "</td></tr>";
+            Hospitaldtl += "<tr><td>" + response.HospitalDtl[0].HospitalAddress + " " + response.HospitalDtl[0].HospitalAddress1 + " " + response.HospitalDtl[0].HospitalAddress2 + "</td></tr>";
+            Hospitaldtl += "<tr><td>Mobile : " + response.HospitalDtl[0].HospitalMobileNo + "</td></tr>";
+            Hospitaldtl += "<tr><td>Phone : " + response.HospitalDtl[0].HospitalLandlineNo + "</td></tr>";
+            Hospitaldtl += "<tr><td>" + response.HospitalDtl[0].City + "";
+            if (response.HospitalDtl[0].Pin != "" && response.HospitalDtl[0].Pin != null)
+                Hospitaldtl += "-" + response.HospitalDtl[0].Pin + "</td></tr>";
+            else
+                Hospitaldtl += "</td></tr>";
+            Hospitaldtl += "<tr><td>" + response.HospitalDtl[0].Country + "</td></tr>";
+            Hospitaldtl += "</table></td>";
+            Hospitaldtl += "</tr></table>";
+            Hospitaldtl += "<table style='width:100%;'><tr><td style='font-weight: bold;border-top: solid 1px black;'></td></tr></table>";
+        }
+        html += Hospitaldtl;
+        if (response.PatientDtl.length > 0) {
+            Patdtl += "<table style='float:left;width:50%;'>";
+            Patdtl += "<tr>";
+            Patdtl += "<td>UHID No </td><td>:</td><td>" + response.PatientDtl[0].PatientID + "</td>";
+            Patdtl += "</tr>";
+            Patdtl += "<tr>";
+            Patdtl += "<td>Age </td><td>:</td><td>" + response.PatientDtl[0].Age + "</td>";
+            Patdtl += "</tr>";
+            Patdtl += "<tr>";
+            Patdtl += "<td>Doctor Name </td><td>:</td><td>" + response.PatientDtl[0].RefDoctor + "</td>";
+            Patdtl += "</tr>";
+            Patdtl += "</table>";
+
+            Patdtl += "<table style='float: right;width:50%;'>";
+            Patdtl += "<tr>";
+            Patdtl += "<td>Patient Name</td><td>:</td><td>" + response.PatientDtl[0].FirstName + "</td>";
+            Patdtl += "</tr>";
+            Patdtl += "<tr>";
+            Patdtl += "<td>Gender</td><td>:</td><td>" + response.PatientDtl[0].Gender + "</td>";
+            Patdtl += "</tr>";
+            Patdtl += "</table>";
+
+            Patdtl += "<table style='width:100%;'><tr><td style='font-weight: bold;border-top: solid 1px black;'></td></tr></table>";
+        }
+        html += Patdtl;
+        if (response.Header.length > 0) {
+            for (PCHeader = 0; PCHeader < response.Header.length; PCHeader++) {
+                var DtlSeqid = 0;
+                if (PCHeader != 0) {
+                    html += "<div style='page-break-before: always;'></div>";
+                    html += Hospitaldtl;
+                    html += Patdtl;
+                }
+                var VisitDate = response.Header[PCHeader].VisitDate;
+                var PsHedSeqID = response.Header[PCHeader].PshSeqID;
+                html += "<table border='0' style='width:100%;' Class='table table-bordered table-striped dataTable table-reflow'>";
+                html += "<thead><tr><td colspan='2' style='font-weight: 700;'>Treatment Plan -" + VisitDate + " </td>";
+                html += "<td style='font-weight: 700;'>Verified</td></thead><tbody>";
+                html += "<tr><td style='font-weight:bold;'>SNO</td><td style='font-weight:bold;'>Symptom Name</td>";
+                html += "<td style='font-weight:bold;'>Duration</td>";
+                html += "</tr>";
+                for (PCDetails = 0; PCDetails < response.Details.length; PCDetails++) {
+                    var SymptomHeader = response.Details[PCDetails].SymHeaderSeqId;
+                    var SymptomID = response.Details[PCDetails].SymptomId;
+                    var SymptomName = response.Details[PCDetails].SymptomName;
+                    var Duration = response.Details[PCDetails].duration;
+                    if (PsHedSeqID === SymptomHeader) {
+                        DtlSeqid = parseInt(DtlSeqid + 1);
+                        html += "<br/>";
+                        html += "<tr data-id=\"" + SymptomID + "\"><td>" + DtlSeqid + "</td><td>" + SymptomName + "</td>";
+                        html += "<td>" + Duration + "</td>";
+                        html += "</tr>";
+                    }
+                }
+                html += "</tbody></table><br/>";
+                html += "<div class='row'><div class='col-xs-12'><div class='form-group'><span><b>History Notes : </b></span>"
+                html += "<span>" + response.Header[PCHeader].HistoryNotes + "</span></div></div></div><br/>";
+                html += "<div class='row'><div class='col-xs-12'><div class='form-group'><span><b>Pain Scale : </b></span>";
+                html += "<span>" + response.Header[PCHeader].PainScale + "</span></div></div></div>";
+            }
+        }
+        sessionStorage.setItem("PrintDetails", html);
+        openRequestedPopup();
+    }
+    var windowObjectReference;
+    function openRequestedPopup() {
+        var url = '@Url.Action("Print", "Home")';
+        window.open(url, '_blank');
+    }
+    function OpenAddSymptomPopup() {
+        $("#txtNewSymptomName").val("");
+        document.getElementById('AddSymptom').ej2_instances[0].show();
+    }
+    function AddNewSymptom() {
+        var SymptomName = $("#txtNewSymptomName").val();
+        if (SymptomName.length > 0) {
+            var tData = getValues("/Emr/CreateNewSymptom/?SymptomName=" + SymptomName + "");
+            var newItem = { 'Symptoms': tData.Symptoms, 'SymSeqID': tData.SymSeqID };
+            if (tData.Symptoms === "Already Exists") {
+                alert("Already Exists");
+            }
+            else {
+                alert("Save Success");
+                var Symptom = document.getElementById('cmbSymptom').ej2_instances[0];
+                Symptom.addItem(newItem);
+                document.getElementById('AddSymptom').ej2_instances[0].hide();
+            }
+
+        }
+        else {
+            alert("please Enter Symptom");
+        }
+    }
+    function GetAllSymptomHeader() {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        var sendJsonData = {};
+        var response = postValues("/Emr/GetPatDetails", sendJsonData);
+        if (response.Pat.length > 0) {
+            var DoctorCompare = response.Pat[0].DoctorCompare;
+            if (DoctorCompare == false) {
+                document.getElementById('btnVerifiyComplaints').disabled = true;
+            }
+            else {
+                var verifyresponse = getValues("/Emr/GetVerifyDetails");
+                if (verifyresponse == false) {
+                    $("#btnVerifiyComplaints").prop('disabled', true);
+                }
+                else {
+                    $("#btnVerifiyComplaints").prop('disabled', false);
+                }
+            }
+        }
+
+        var arg = $("#lblpatid").text();
+        $.ajax({
+            url: rootUrl + "/Emr/GetSymptomHeader/?PatientID=" + arg + "",
+            type: 'GET',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: OnSuccessComplaintHeader,
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function OnSuccessComplaintHeader(response) {
+        if (response.Header.length > 0) {
+            var html = "";
+            var Sno = 0;
+            html += "<table id='tblComplaintHeader' class='table table-bordered table-striped dataTable table-reflow'>";
+            html += "<thead><tr><td></td><td>S.no</td><td>Visit Date</td><td>Status</td></tr></thead><tbody>";
+            for (PCHeader = 0; PCHeader < response.Header.length; PCHeader++) {
+                Sno = PCHeader + 1;
+                var VisitDate = response.Header[PCHeader].VisitDate;
+                var PsHedSeqID = response.Header[PCHeader].PshSeqID;
+                var status = response.Header[PCHeader].IsVerified;
+                var painScale = response.Header[PCHeader].PainScale;
+                var HistoryNotes = response.Header[PCHeader].HistoryNotes;
+                html += "<tr>";
+                html += "<td><input type='image' style='width:21px;height:21px;' src='../Images/details_open.png' onclick='javascript:return CheckSelectComplaint(this)'></td>";
+                html += "<td style='display:none;'>" + PsHedSeqID + "</td>";
+                html += "<td>" + Sno + "</td>";
+                html += "<td>" + VisitDate + "</td>";
+                if (status === true) {
+                    html += "<td>Verified</td>";
+                }
+                else {
+                    html += "<td style='color:red;'>As Reported by patient</td>";
+                }
+                html += "<td style='display:none;'>" + painScale + "</td>";
+                html += "<td style='display:none;'>" + HistoryNotes + "</td>";
+                html += "</tr>";
+            }
+            html += "</tbody></table>";
+            $("#LatestComplaint").hide();
+            $("#OldComplaints").show();
+            $("#OldComplaints").html('');
+            $("#OldComplaints").html(html);
+        }
+    }
+    function CheckSelectComplaint(SelectedRow) {
+        var row = SelectedRow.parentNode.parentNode;
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = row.rowIndex - 1;
+        var PSeqID = row.cells[1].innerHTML;
+        var painScale = row.cells[5].innerHTML;
+        var HistoryNotes = row.cells[6].innerHTML;
+
+        var className = myrow.cells[0].getElementsByTagName("input")[0].className;
+        if (className === "shown") {
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', '../Images/details_open.png');
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'abc');
+            $('#tblComplaintHeader > tbody > tr').eq(rowIndex).next().remove();
+        }
+        else {
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', '../Images/details_close.png');
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'shown');
+
+            var arg = parseFloat(PSeqID);
+            $.ajax({
+                url: "/Emr/GetSymptomDeatils/?HeaderSeqID=" + arg + "",
+                type: 'Get',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    var html = "<table id='myTable1' class='table table-striped table-bordered table-hover table-full-width dataTable no-footer'>";
+                    for (SymCount = 0; SymCount < response.length; SymCount++) {
+                        if (SymCount == 0) {
+                            html += "<tr>";
+                            html += "<thead><th>Presenting Illness</th></thead>";
+                            html += "</tr>";
+                        }
+                        html += "<tr data-id=\"" + response[SymCount].SymptomId + "\"><td>" + response[SymCount].SymptomName + " " + response[SymCount].duration + "";
+                        html += "" + " " + response[SymCount].Remarks + "</td></tr>";
+                    }
+                    html += "</table>";
+
+                    html += "<table class='table' style='color:black;font-size: medium;'>";
+                    if (painScale != "" && painScale != null)
+                        html += " <tr style='color:black;'><td>Pain intensity</td><td>" + painScale + "</td> </tr>";
+                    if (HistoryNotes != "" && HistoryNotes != null)
+                        html += " <tr style='color:black;'><td>" + HistoryNotes + "</td> </tr>";
+                    html += "</table>";
+                    var newRow = $('<tr><td></td><td colspan="7">' + html + '</td></tr>');
+                    $('#tblComplaintHeader > tbody > tr').eq(rowIndex).after(newRow);
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        return false;
+    }
+    function OnFocus(args) {
+        this.showPopup();
+    }
+    function sympopenPopup() {
+        var multiselectObj = document.getElementById("txtPickHeader");
+        multiselectObj.ej2_instances[0].showPopup();
+    }
+    function symponCreate() {
+        document.getElementById("txtPickHeader").addEventListener("click", sympopenPopup);
+    }
+    function sympactionComplete(e) {
+        if (this.suggestionCount) {
+            e.result = e.result.slice(0, this.suggestionCount)
+        }
+    }
+    function sympfiltering(args) {
+        var dataSource;
+        new ej.data.DataManager({ url: "/api/EmrApi/GetPickListHeader/", adaptor: new ej.data.WebApiAdaptor }).executeQuery(new ej.data.Query().where('PickListName', 'Contains', args.text, true)).then((e) => {
+            dataSource = e.result;
+            var dropdown_query = new ej.data.Query();
+            if (args.text !== '') {
+                dropdown_query = dropdown_query.where('PickListName', 'Contains', args.text, true);
+                args.updateData(dataSource, dropdown_query);
+            } else {
+                args.updateData(dataSource);
+            }
+        });
+    }
+    function onSympSelect(e) {
+        this.onBlur(e);
+    }
+    function SympImageClick() {
+        try {
+            if (document.getElementById("sympimgmore").src = "/images/MOREX.png")
+                document.getElementById("sympimgmore").src = "/images/Less.png";
+            else
+                document.getElementById("sympimgmore").src = "/images/MOREX.png";
+        }
+        catch (e) {
+
+        }
+    }
+    function IsAlreadyComplatintsCheck(IsVerified) {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        var PatID = $("#lblpatid").text();
+        var VisitId = $("#lblvisitid").text();
+        var tblcompliants = document.getElementById("tblComplaints");
+        var notes = $("#txtNotes").val();
+        var painscale = PainScale;
+        if (tblcompliants.rows.length == 1 && notes == "" && painscale == "") {
+            alert('Please Enter atleast one Data to save');
+        }
+        else {
+            $.ajax({
+                url: rootUrl + "/Emr/IsAlreadyComplaintsExists/?PatientID=" + PatID + "&VisitID=" + VisitId + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    const verify = data.verified;
+                    const notverify = data.notverified;
+                    if (notverify == 1) {
+                        if (IsVerified === true)
+                            SavePatSymptom(true);
+                        else
+                            SavePatSymptom(false);
+                    }
+                    else if (verify == 1)
+                        OpenComplaintStatus();
+
+                    else {
+                        if (IsVerified === true)
+                            SavePatSymptom(true);
+                        else
+                            SavePatSymptom(false);
+                    }
+
+                    //if (data === "Already Exists") {
+                    //    OpenComplaintStatus();
+                    //}
+                    //else {
+                    //    if (IsVerified === true)
+                    //        SavePatSymptom(true);
+                    //    else
+                    //        SavePatSymptom(false);
+                    //}
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+    }
+    function OpenComplaintStatus() {
+        document.getElementById('ComplatintInfo').ej2_instances[0].show();
+    }
+    function CloseComplaintStatus() {
+        document.getElementById('ComplatintInfo').ej2_instances[0].hide();
+    }
+    function GetCurrentComplaint() {
+        if ($("#chksymPrevious").is(":checked")) {
+            var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+            var arg = $("#lblpatid").text();
+            $.ajax({
+                url: rootUrl + "/Emr/GetCurrentComplaint/?PatientID=" + arg + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: OnsuccessCurrentComplaint,
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        else {
+            ClearPickList();
+        }
+
+    }
+    function OnsuccessCurrentComplaint(response) {
+        if (response.Symptom.length > 0) {
+            var html = "";
+            $("#tblComplaints tbody").empty();
+            for (PCHeader = 0; PCHeader < response.Symptom.length; PCHeader++) {
+                var painScale = response.Symptom[PCHeader].PainScale;
+                var HistoryNotes = response.Symptom[PCHeader].HistoryNotes;
+                var SymptomName = response.Symptom[PCHeader].SymptomName;
+                var SymptomId = response.Symptom[PCHeader].SymptomId;
+                var duration = response.Symptom[PCHeader].duration;
+                var Remarks = response.Symptom[PCHeader].Remarks;
+
+                $("#txtNotes").val(HistoryNotes);
+
+                html += "<tr data-id=\"" + SymptomId + "\"><td><input type=\"checkbox\" style=\"width:16px;height:16px;\" onclick='return FocusRow(this)' checked></td>";
+                html += "<td style='color:blue;'>" + SymptomName + "</td>";
+                html += "<td style='display:none;'>" + SymptomId + "</td>";
+                html += "<td><input value='" + duration + "'  style='height:24px;width:74px;' type=\"Text\" onfocusout=txtCompOnfoucsOut(this);>&nbsp;&nbsp;&nbsp";
+                html += "<Select style='height:24px;'><option Value='Days'>Days</option><option Value='Months'>Months</option><option Value='Years'>Years</option></Select></td>";
+                html += "<td><input   type=\"Text\" class='form-control' value='" + Remarks + "'></td>";
+                html += "<td style='text-align: center;'>";
+                html += "<img src='../Images/Delete.png'  onclick='return DeleteComplaints(this)' style='cursor:pointer;width: 25px !important;height:25px !important;'>";
+                html += "</td></tr>";
+            }
+            $("#tblComplaints tbody").append(html);
+        }
+    }
+    function ComplaintChekedRow(SelectedRow) {
+        var myrow = SelectedRow.parentNode.parentNode;
+        var cellValue = SelectedRow.parentNode.cellIndex;
+        var table = document.getElementById("tblComplaints");
+        var i = myrow.rowIndex;
+        var sval12 = table.rows[i];
+        var Duration = sval12.cells[cellValue].getElementsByTagName("input")[0].value;
+        if (Duration !== "")
+            sval12.cells[0].getElementsByTagName("input")[0].checked = true;
+        else
+            sval12.cells[0].getElementsByTagName("input")[0].checked = false;
+
+    }
+</script>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xs-6 col-sm-6 col-md-6">
+
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group" style="float:right;">
+                <button type="button" id="btncomplaintreport" class="btn btn-info" style="background-color:blue;display:none;" onclick="CompliantPrint();">Report</button>
+                <button type="button" id="btnSavePickList" class="btn" onclick="GetAllSymptomHeader();" title="More">
+                    <img src="~/images/MOREX.png" id="sympimgmore" style="height:50px;width:50px;" />
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-7 col-sm-7 col-md-7">
+            <div class="panel panel-default DivBox">
+                <div class="row">
+                    <div class="col-xs-1 col-sm-1 col-md-1">
+                        <div class="form-check">
+                            <input type="checkbox" style="height:22px;width:30px" onclick="GetCurrentComplaint();" class="form-check-input" id="chksymPrevious" title="Load Previous Data">
+                            <label class="form-check-label" for="chkPrevious"></label>
+                        </div>
+                    </div>
+                    <div class="col-xs-4 col-sm-4 col-md-4">
+                        <div class="form-group">
+                            <ejs-combobox id="cmbSymptom" allowFiltering="true" cssClass="inputEmr"
+                                          placeholder="Search Symptom" popupHeight="230px"
+                                          change="OnSymptomChange" filtering="onfiltering" focus="OnFocus" select="onSympSelect">
+                                <e-data-manager url="/api/EmrApi/GetAllSymptombyHospitalID/" adaptor="WebApiAdaptor"></e-data-manager>
+                                <e-combobox-fields text="Symptoms" value="SymSeqID"></e-combobox-fields>
+                            </ejs-combobox>
+                        </div>
+                    </div>
+                    <div class="col-xs-1 col-sm-1 col-md-1">
+                        <div class="form-group">
+                            <span>
+                                <img src="~/images/ADD ITEM.png"  style="height:45px;cursor:pointer;width:40px;margin-top:-8px;"
+                                     title="Add New Symptom" onclick="OpenAddSymptomPopup();" />
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-xs-4 col-sm-4 col-md-4">
+                        <div class="form-group">
+                            <ejs-autocomplete id="txtPickHeader" filterType="Contains" highlight="true" cssClass="inputEmr"
+                                              placeholder="Symptoms Pick list" suggestionCount="10"
+                                              change="ChangeSymptomPickList" filtering="sympfiltering" actionComplete="sympactionComplete" created="symponCreate">
+                                <e-data-manager url="/api/EmrApi/GetPickListHeader/" adaptor="WebApiAdaptor" crossDomain="true"></e-data-manager>
+                                <e-autocomplete-fields value="PickListName"></e-autocomplete-fields>
+                            </ejs-autocomplete>
+                        </div>
+                    </div>
+                    @*<div class="col-xs-3">
+                            <div class="form-group">
+                                <img src="~/images/SAVEA PICKLISTX.png" style="height:40px;cursor:pointer;" title="Save As PickList" onclick="OpenAsPickList();" />
+                                <img src="~/images/SAVE TO PICK LIST.png" style="height:40px;cursor:pointer;" title="Save To PickList" onclick="SavepickList();" />
+                                <img src="~/images/ClearAll.png" style="height:40px;cursor:pointer;display:none;" title="Clear Symptoms" onclick="ClearPickList();" />
+                            </div>
+                        </div>*@
+
+                    <div class="col-xs-1 col-sm-1 col-md-1">
+                        <div class="form-group">
+                            <img src="~/images/SAVEA PICKLISTX.png" style="height:40px;cursor:pointer;" title="Save As PickList" onclick="OpenAsPickList();" />
+                        </div>
+                    </div>
+                    <div class="col-xs-1 col-sm-1 col-md-1" style="width:50px;">
+                        <div class="form-group">
+                            <img src="~/images/SAVE TO PICK LIST.png" style="height:40px;cursor:pointer;" title="Save To PickList" onclick="SavepickList();" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="padding:10px;">
+                    <div class="col-xs-12 col-sm-12 col-md-12">
+                        <div class="table-responsive">
+                            <table id="tblComplaints" class="table table-bordered table-striped dataTable table-reflow tableHB">
+                                <thead>
+                                    <tr>
+                                        <td></td>
+                                        <td>Symptoms</td>
+                                        <td>Duration</td>
+                                        <td>Remarks</td>
+                                        <td>Delete</td>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="padding:10px;">
+                    <div class="col-sm-2">
+                        <img src="~/images/Nopain.png" style="cursor:pointer;" id="imgNopain" title="No Pain" onclick="PainImgClik(this);" />
+                    </div>
+                    <div class="col-sm-2">
+                        <img src="~/images/Mild.png" id="imgMild" style="cursor:pointer;" title="Mild" onclick="PainImgClik(this);" />
+                    </div>
+                    <div class="col-sm-2">
+                        <img src="~/images/Moderate.png" id="imgModerate" style="cursor:pointer;" title="Moderate" onclick="PainImgClik(this);" />
+                    </div>
+                    <div class="col-sm-2">
+                        <img src="~/images/severe.png" id="imgSevere" style="cursor:pointer;" title="Severe" onclick="PainImgClik(this);" />
+                    </div>
+                    <div class="col-sm-2" style="padding:2px;">
+                        <img src="~/images/VerySevere.png" id="imgVerySevere" style="cursor:pointer;" title="Very Severe" onclick="PainImgClik(this);" />
+                    </div>
+                    <div class="col-sm-2" style="padding:2px;">
+                        <img src="~/images/WorstPain.png" id="imgWorstPain" style="cursor:pointer;" title="Worst Pain Possible" onclick="PainImgClik(this);" />
+                    </div>
+                </div>
+                <div class="row" style="padding:10px;">
+                    <div class="col-xs-12 col-sm-12 col-md-12">
+                        <div class="form-group">
+                            <textarea class="form-control inputEmr" id="txtNotes" placeholder="Other Notes" onchange="HistoryIllnessChange();"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" id="ComplaitnsbtnDiv">
+                    <div class="col-lg-12">
+                        <button type="button" id="btnSaveComplaints" class="btn" onclick="IsAlreadyComplatintsCheck(false);" title="Save">
+                            <img src="~/images/SAVES.png" style="height:50px;width:50px;">
+                        </button>
+                        <button type="button" id="btnVerifiyComplaints" class="btn" onclick="IsAlreadyComplatintsCheck(true);" title="Save and Verify">
+                            <img src="~/images/verify-512.png" style="height:50px;width:50px;">
+                        </button>
+                        <button type="button" id="btncancel" onclick="CancelViewclick();" class="btn" title="Cancel">
+                            <img src="~/images/CANCEL-512.png" style="height:50px;width:50px;">
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-5 col-sm-5 col-md-5">
+            <div class="panel panel-default DivBox">
+                <div id="LatestComplaint">
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <div class="table-responsive">
+                                    <table id="tblComplaintsPreview" class="table table-bordered table-striped dataTable table-reflow tableHB">
+                                        <thead>
+                                            <tr>
+                                                <td style="font-weight: 700;color: blue;">Presenting Illness</td>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-6 col-sm-6 col-md-6">
+                            <div class="form-group">
+                                <label for="lblPainintensity"></label>
+                            </div>
+                        </div>
+                        <div class="col-sm-2">
+                            <img id="ImgFinalPain" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <div class="form-group">
+                                <label for="lblHistoryIllness"></label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <div class="form-group">
+                                <label for="lblCompaintStaus"></label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="display:none;">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <div class="table-responsive">
+                                    <table id="tblFunctionalPreview" class="table table-bordered table-striped dataTable table-reflow">
+                                        <thead>
+                                            <tr>
+                                                <td style="font-weight: 700;color: blue;">Functional Status</td>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" id="OldComplaints" style="padding:15px;">
+
+                </div>
+            </div>
+        </div>
+        <div>
+            <ejs-dialog id="dialog" showCloseIcon="true" cssClass="ejs-dialog" header="Symptom Pick List Name" style="max-height:400px" visible="false" width="634px">
+                <e-content-template>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtNewPickListName" class="form-control" placeholder="Enter Pick List Name" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <div class="table-responsive">
+                                    <table id="tblSaveAsNewPickLsit" class="table table-bordered table-striped dataTable table-reflow">
+                                        <thead>
+                                            <tr>
+                                                <td style="font-weight: 700;color: darkred;">Symptom</td>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <button type="button" id="btnSavePickList" class="btn" onclick="SaveAsNewPickList();" title="Save">
+                                    <img src="~/images/SAVES.png" style="height:50px;width:50px;">
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </e-content-template>
+            </ejs-dialog>
+        </div>
+        <div>
+            <ejs-dialog id="AddSymptom" showCloseIcon="true" cssClass="ejs-dialog" header="Add Symptom" style="max-height:400px" visible="false" width="634px">
+                <e-content-template>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtNewSymptomName" class="form-control inputEmr" placeholder="Enter Symptom" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <button type="button" id="btnAddNewSymptom" class="btn" onclick="AddNewSymptom();" title="Save">
+                                    <img src="~/images/SAVES.png" style="height:50px;width:50px;">
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </e-content-template>
+            </ejs-dialog>
+        </div>
+        <div>
+            <ejs-dialog id="ComplatintInfo" showCloseIcon="true" cssClass="ejs-help" header="Inforamtion" style="max-height:400px" visible="false" width="634px">
+                <e-content-template>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <span style="font-size: 15px !important;font-family: Source Sans Pro,sans-serif !important;">
+                                    There are data in the current visit Do you want to add new data?
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <button type="button" id="btnComplaitStatus" class="btn EmrbtnPrimary" onclick="SavePatSymptom(false);" title="Yes">
+                                    Save
+                                </button>
+                                <button type="button" id="btnComplaitStatusYes" class="btn EmrbtnPrimary" onclick="SavePatSymptom(true);" title="Yes">
+                                    Save & Verify
+                                </button>
+                                <button type="button" id="btnComplaitStatusNo" class="btn EmrbtnPrimary" onclick="CloseComplaintStatus();" title="No">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </e-content-template>
+            </ejs-dialog>
+        </div>
+    </div>
+</div>

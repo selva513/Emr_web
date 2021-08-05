@@ -1,0 +1,46 @@
+﻿
+@{
+    ViewData["Title"] = "PurchaseOrder";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<script>
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+<div class="content-wrapper" style="font-family: arial, sans-serif;">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="panel panel-default DivBox" style="background-color: white;">
+                        <div class="panel-heading" style="background-color: #007bff;color: white;margin-top: 6px;height:50px;">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <h3 class="card-title" style="padding-top: 11px;padding-left: 7px;">Purchase Order</h3>
+                                <img src="~/images/ShutdownWhite.png" style="padding-top:11px;padding-right:7px;float:right;cursor:pointer;" onclick="GotoLogin();" />
+                            </div>
+                        </div>
+                        <br />
+                        <div class="panel-body">
+                            <div class="row">
+                                <div class="col-xs-3 col-sm-3 col-md-3" style="margin-left: 5px;">
+                                    <div>
+                                        <label>Suppiler Name </label>
+                                        <select class="form-control" id="drpSuppiler">
+                                            <option>--Select--</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

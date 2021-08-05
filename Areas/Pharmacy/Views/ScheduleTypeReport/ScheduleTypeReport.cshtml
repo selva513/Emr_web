@@ -1,0 +1,266 @@
+﻿
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+
+    $(document).ready(function () {
+        //$("#dtScheduleFromDt").datepicker({
+        //    dateFormat: 'dd/mm/yy',
+        //    changeMonth: true,
+        //    changeYear: true,
+        //    yearRange: '1990:' + new Date().getFullYear().toString(),
+        //    onClose: function (selectedDate) {
+        //        $("#dtScheduleToDt").datepicker("option", "minDate", selectedDate);
+        //    }
+        //});
+        //$("#dtScheduleToDt").datepicker({
+        //    dateFormat: 'dd/mm/yy',
+        //    changeMonth: true,
+        //    changeYear: true,
+        //    yearRange: '1990:' + new Date().getFullYear().toString(),
+        //    onClose: function (selectedDate) {
+        //        $("#dtScheduleFromDt").datepicker("option", "maxDate", selectedDate);
+        //    }
+        //});
+        $("#dtScheduleFromDt").change(function () {
+            var FromDate = $("#dtScheduleFromDt").val();
+            $("#dtScheduleToDt").prop('min', FromDate);
+            GetScheduleTypeData();
+        });
+        $("#dtScheduleToDt").change(function () {
+            var ToDate = $("#dtScheduleToDt").val();
+            $("#dtScheduleFromDt").prop('max', ToDate);
+            GetScheduleTypeData();
+        });
+        SetCurrentScheduleTypeDate();
+        GetScheduleTypeList();
+    });
+
+    function ScheduleTypeReportPageLoad() {
+        $("#dtScheduleFromDt").change(function () {
+            var FromDate = $("#dtScheduleFromDt").val();
+            $("#dtScheduleToDt").prop('min', FromDate);
+            GetScheduleTypeData();
+        });
+        $("#dtScheduleToDt").change(function () {
+            var ToDate = $("#dtScheduleToDt").val();
+            $("#dtScheduleFromDt").prop('max', ToDate);
+            GetScheduleTypeData();
+        });
+        SetCurrentScheduleTypeDate();
+        GetScheduleTypeList();
+    }
+    function SetCurrentScheduleTypeDate() {
+        try {
+            var currentdate = new Date();
+            var day = currentdate.getDate();
+            var month = currentdate.getMonth() + 1;
+            var year = currentdate.getFullYear();
+            if (day < 10) {
+                day = "0" + day;
+            }
+            if (month < 10) {
+                month = "0" + month;
+            }
+            var datetime = year + "-" + month + "-" + day;
+            //var datetime = day + "-" + month + "-" + year;
+
+            $('#dtScheduleFromDt').val(datetime);
+            $('#dtScheduleToDt').val(datetime);
+            $("#dtScheduleFromDt").prop('max', datetime);
+            $("#dtScheduleToDt").prop('min', datetime);
+            $("#dtScheduleToDt").prop('max', datetime);
+        }
+        catch (e) { console.log(e); }
+    }
+    function GetScheduleTypeList() {
+        try {
+            $.ajax({
+                url: rootUrl + "/api/DrugMastersApi/GetScheduleTypeList",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    $("#ddlScheduleType").empty();
+                    if (response.length > 0) {
+                        for (var i = 0; i < response.length; i++) {
+                            var ScheduleType = response[i].ScheduleType;
+                            $('#ddlScheduleType').append($("<option></option>").val(ScheduleType).html(ScheduleType));
+                        }
+                    }
+                    GetScheduleTypeData();
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        catch (e) { console.log(e); }
+    }
+    function GetScheduleTypeData() {
+        try {
+            var SchTypeName = $("#ddlScheduleType option:selected").text();
+            var FromDate = $("#dtScheduleFromDt").val();
+            var ToDate = $("#dtScheduleToDt").val();
+            if (SchTypeName != null && SchTypeName != "") {
+                $.ajax({
+                    url: rootUrl + "/api/DrugMastersApi/GetScheduleTypeReportData",
+                    type: 'GET',
+                    contentType: "application/json; charset=utf-8",
+                    data: { ScheduleType: SchTypeName, FromDate: FromDate, ToDate: ToDate },
+                    dataType: "json",
+                    beforeSend: function () { $("#loading").css("display", "block"); },
+                    success: BindScheduleTypeData,
+                    complete: function () { $("#loading").css("display", "none"); }
+                });
+
+            }
+        }
+        catch (e) { console.log(e); }
+    }
+    function BindScheduleTypeData(response) {
+        try {
+            var html = "";
+            $("#tblScheduleTypeReport tbody").empty();
+            if (response.length > 0) {
+                for (var dtl = 0; dtl < response.length; dtl++) {
+                    var sno = dtl + 1;
+                    var BillNo = response[dtl].BillNo;
+                    var BillDate = response[dtl].BillDate;
+                    var PatSaluation = response[dtl].PatSaluation;
+                    var PatientName = response[dtl].PatientName;
+                    var RefDoctor = response[dtl].RefDoctor;
+                    var PH_CUR_DRUGBRANDNAME = response[dtl].PH_CUR_DRUGBRANDNAME;
+                    var PH_ManufactureName = response[dtl].PH_ManufactureName;
+                    var PH_CSHDTL_DRUG_QTY = response[dtl].PH_CSHDTL_DRUG_QTY;
+                    var PH_CSHDTL_DRUGBATCHNO = response[dtl].PH_CSHDTL_DRUGBATCHNO;
+                    var PH_CSHDTL_DRUG_AMTEACH = response[dtl].PH_CSHDTL_DRUG_AMTEACH;
+                    var PH_CSHDTL_DRUG_ROWTOTALAMT = response[dtl].PH_CSHDTL_DRUG_ROWTOTALAMT;
+                    var PH_CSHDTL_DRUG_CONCESSION_AMT = response[dtl].PH_CSHDTL_DRUG_CONCESSION_AMT;
+                    var PH_CSHDTL_DRUG_TAXPERCENT = response[dtl].PH_CSHDTL_DRUG_TAXPERCENT;
+                    var PHCSHDTL_DRUG_TAXVALUE = response[dtl].PHCSHDTL_DRUG_TAXVALUE;
+                    var PH_CSHDTL_DRUG_NETTAMT = response[dtl].PH_CSHDTL_DRUG_NETTAMT;
+
+                    html += "<tr>";
+                    html += "<td>" + sno + "</td>";
+                    html += "<td>" + BillNo + "</td>";
+                    html += "<td>" + BillDate + "</td>";
+                    html += "<td>" + PatSaluation + " " + PatientName + "</td>";
+                    html += "<td>" + RefDoctor + "</td>";
+                    html += "<td>" + PH_CUR_DRUGBRANDNAME + "</td>";
+                    html += "<td>" + PH_ManufactureName + "</td>";
+                    html += "<td>" + PH_CSHDTL_DRUG_QTY + "</td>";
+                    html += "</tr>";
+                }
+
+                $(".table1").css('height', '400px');
+                $("#tblScheduleTypeReport tbody").append(html);
+
+            }
+            else {
+                //alert("No Data Available");
+            }
+        }
+        catch (e) { console.log(e); }
+    }
+    function GetScheduleTypePrint() {
+        try {
+            var SchTypeName = $("#ddlScheduleType option:selected").text();
+            var FromDate = $("#dtScheduleFromDt").val();
+            var ToDate = $("#dtScheduleToDt").val();
+            if (SchTypeName != null && SchTypeName != "") {
+                $.ajax({
+                    url: rootUrl + "/api/DrugMastersApi/GetScheduleTypeHtmlPrint",
+                    type: 'GET',
+                    contentType: "application/json; charset=utf-8",
+                    data: { ScheduleType: SchTypeName, FromDate: FromDate, ToDate: ToDate },
+                    dataType: "json",
+                    beforeSend: function () { $("#loading").css("display", "block"); },
+                    success: BindScheduleTypeData,
+                    complete: function () { $("#loading").css("display", "none"); }
+                })
+
+            }
+        }
+        catch (e) { console.log(e); }
+    }
+</script>
+<script>
+    function isNumeric(n) {
+        return !isNaN(parseFloat(n)) && isFinite(n);
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+<style>
+    .btn-primary {
+        color: #fff;
+        background-color: #337ab7;
+        border-color: #337ab7;
+        box-shadow: none;
+        border-width: 0 !important;
+        overflow: hidden;
+        position: relative;
+        user-select: none;
+        padding: 9px 14px 8px 14px;
+    }
+
+    .table1 {
+        /*height: 400px;*/
+        overflow-y: auto;
+    }
+</style>
+
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div class="card-body">
+            <div class="row">
+                @*<div class="col-xs-3 col-sm-3 col-md-3">
+                        <label>Search</label>
+                        <input type="text" class="form-control" onchange="GetScheduleTypeData();" placeholder="Search Here" />
+                    </div>*@
+                <div class="col-xs-3 col-sm-3 col-md-3">
+                    <label>Schedule Type</label>
+                    <select id="ddlScheduleType" class="form-control" onchange="GetScheduleTypeData();"></select>
+                </div>
+                <div class="col-xs-2 col-sm-2 col-md-2">
+                    <label>From Date</label>
+                    <input id="dtScheduleFromDt" type="date" class="form-control" />
+                </div>
+                <div class="col-xs-2 col-sm-2 col-md-2">
+                    <label>To Date</label>
+                    <input id="dtScheduleToDt" type="date" class="form-control" />
+                </div>
+                <div class="col-xs-2 col-sm-2 col-md-2">
+                    <button class="btn btn-primary" style="margin-top:32px;" onclick="GetScheduleTypePrint();" hidden>Print</button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="table1">
+                        <table id="tblScheduleTypeReport" class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>S.No</th>
+                                    <th>Bill No</th>
+                                    <th>Bill Date</th>
+                                    <th>Patient Name</th>
+                                    <th>Doctor</th>
+                                    <th>Drug</th>
+                                    <th>Manufacture</th>
+                                    <th>Qty</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+

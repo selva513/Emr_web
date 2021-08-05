@@ -1,0 +1,747 @@
+﻿
+@using Syncfusion.EJ2.Navigations;
+@using Newtonsoft.Json
+<link href="~/AutoComplete/jquery-ui_1.11.4.css" rel="stylesheet" />
+<script src="~/AutoComplete/jquery-1.10.2.js"></script>
+<script src="~/AutoComplete/jquery-ui_1.11.4.js"></script>
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        var Patientid = $("#lblpatid").text();
+        var visitid = $("#lblvisitid").text();
+        GetLastDiagnosis(Patientid, visitid);
+        //GetOldDiagnosis();
+    });
+    function GetOldDiagnosis() {
+        try {
+            var sendJsonData = {};
+            var response = postValues("/Emr/GetPatDetails", sendJsonData);
+            if (response.Pat.length > 0) {
+                var DoctorCompare = response.Pat[0].DoctorCompare;
+                if (DoctorCompare == false) {
+                    document.getElementById('btnDiagSafy').disabled = true;
+                }
+                else {
+                    var verifyresponse = getValues("/Emr/GetVerifyDetails");
+                    if (verifyresponse == false) {
+                        $("#btnDiagSafy").prop('disabled', true);
+                    }
+                    else {
+                        $("#btnDiagSafy").prop('disabled', false);
+                    }
+                }
+            }
+            var Patientid = $("#lblpatid").text();
+            var response = postValues("/Emr/GetOldDiagnosis", Patientid);
+            if (response.length > 0) {
+                var html = "";
+                var IsVerified = response[0].IsVerified;
+                var CheckVerified = "";
+                if (IsVerified == true)
+                    CheckVerified = "Verified";
+                else
+                    CheckVerified = "Not Verified";
+                $("#OldDiagnosis").html(html);
+                html += "<span style='color: darkred;'>" + response[0].DignosisType + ":</span>";
+                html += "<br/>";
+                html += "<table class='table table-bordered table-striped dataTable table-reflow'>";
+                html += "<thead><tr><td>Date:" + response[0].CreateDatetime + "</td><td style='color:blue;'>" + CheckVerified + "</td></tr></thead></table>";
+                html += "<table class='table table-bordered table-striped dataTable table-reflow'>";
+                html += "<thead><tr><td>SNO</td><td>Diagnosis</td><td>Remarks</td></tr></thead><tbody>";
+                for (var i = 0; i < response.length; i++) {
+                    html += "<tr><td>" + parseInt(i + 1) + "</td>";
+                    html += "<td>" + response[i].DiagnosisName + "</td>";
+                    html += "<td>" + response[i].Remarks + "</td>";
+                    html += "</tr>";
+                }
+                html += "</tbody><table>";
+                html += "<br/>";
+                html += "<span style='color: darkred;'>Diagnosis Notes:</span>";
+                html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span>" + response[0].Comments + "</span></div></div>";
+                $("#OldDiagnosis").html(html);
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function GetLastDiagnosis(Patientid, visitid) {
+        var html = "";
+        var i = 0;
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/EmrApi/GetLastData/?Patientid=" + Patientid + "&Visitid=" + visitid + "",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    $("#tblDiagnosis tbody").empty();
+                    $(response).find("LastDiagDetails").each(function () {
+                        var Comments = ($(this).find("Comments").text());
+                        var Seqid = ($(this).find("Seqid").text());
+                        var Diagnosisid = ($(this).find("DiagnosisId").text());
+                        var DiagnosisName = ($(this).find("DiagnosisName").text());
+                        var Remarks = ($(this).find("Remarks").text());
+                        //html += "<tr><td>" + parseInt(i + 1) + "</td>";
+                        html += "<tr data-id=\"" + Diagnosisid + "\"><td  style='color:blue;'>" + DiagnosisName + "</td>";
+                        html += "<td style='display:none;'>" + Diagnosisid + "</td>";
+                        html += "<td style='text-align: center;'>";
+                        html += "<img src='../Images/Delete.png'  onclick='return DeleteDiagnosis(this)' style='width: 25px !important;height:25px !important;cursor:pointer;'>";
+                        html += "</td>";
+                        html += "</tr>";
+                        $("#txtDiagNotes").val(Comments);
+                        $("#btnDiagSave").prop("disabled", true);
+                    });
+                    $("#tblDiagnosis tbody").append(html);
+                },
+                failure: function (response) {
+                },
+                error: function s(response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function onDiagnosisfiltering(e) {
+        try {
+            var Diagnosis = document.getElementById('cmbDiagnosis').ej2_instances[0];
+            var query = new ej.data.Query();
+            query = (e.text !== '') ? query.where('Diagnosis_Name', 'Contains', e.text, true) : query;
+            e.updateData(Diagnosis.dataSource, query);
+            if (document.getElementById('noDiagdata')) {
+                document.getElementById('btnDiag').onclick = function () {
+                    var customValue = (document.getElementById('cmbDiagnosis')).value;
+                    var tData = getValues("/Emr/CreateNewDiagnosis/?DiagnosisName=" + customValue + "");
+                    var newItem = { 'Diagnosis_Name': tData.Diagnosis_Name, 'Diagnosis_Seqid': tData.Diagnosis_Seqid };
+                    (Diagnosis.dataSource).push(newItem);
+                    Diagnosis.hidePopup();
+                    Diagnosis.addItem(newItem);
+                    Diagnosis.value = "";
+                    document.getElementById('cmbDiagnosis').ej2_instances[0].text = "";
+                    alert('Test Added Successfully');
+                };
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function OnDiagnosisChange() {
+        try {
+            var Diagnosis = document.getElementById('cmbDiagnosis').ej2_instances[0];
+            var DiagnosisId = Diagnosis.value;
+            var DiagnosisName = Diagnosis.text;
+            if (DiagnosisName !== null) {
+                var table = $('#tblDiagnosis');
+                var $tr = $('#tblDiagnosis tr[data-id="' + DiagnosisId + '"]');
+                if ($tr.length === 0)
+                    CreateNewDiagnosisRow(DiagnosisId, DiagnosisName);
+                else
+                    document.getElementById('cmbDiagnosis').ej2_instances[0].text = "";
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function CreateNewDiagnosisRow(DiagnosisId, DiagnosisName) {
+        var html = "";
+        try {
+            if (DiagnosisId > 0) {
+                html += "<tr data-id=\"" + DiagnosisId + "\"><td style='color:blue;'>" + DiagnosisName + "</td>";
+                html += "<td style='display:none;'>" + DiagnosisId + "</td>";
+                html += "<td><input   type=\"Text\" class='form-control'></td>";
+                html += "<td style='text-align: center;'>";
+                html += "<img src='../Images/Delete.png'  onclick='return DeleteDiagnosis(this)' style='width: 25px !important;height:25px !important;cursor:pointer;'>";
+                html += "</td></tr>";
+                $("#tblDiagnosis tbody").append(html);
+                document.getElementById('cmbDiagnosis').ej2_instances[0].text = "";
+            }
+            else {
+                document.getElementById('cmbDiagnosis').ej2_instances[0].text = "";
+            }
+            //html += "<tr data-id=\"" + DiagnosisId + "\"><td><input type=\"checkbox\" style=\"width:16px;height:16px;cursor:pointer;\" ></td>";
+        }
+        catch (e) {
+
+        }
+        return html;
+    }
+    function DeleteDiagnosis(SelectedRow) {
+        try {
+            var myrow = SelectedRow.parentNode.parentNode;
+            var rowIndex = myrow.rowIndex;
+            document.getElementById("tblDiagnosis").deleteRow(myrow.rowIndex);
+            var table = document.getElementById("tblDiagnosis");
+            var rowCount = table.rows.length;
+            var i = myrow.rowIndex;
+            document.getElementById('cmbDiagnosis').ej2_instances[0].text = "";
+        }
+        catch (e) {
+
+        }
+        return false;
+    }
+    function DiagnosisSave(IsVerified) {
+        try {
+            var DiagnosisType = "Provisional Diagnosis";
+            if ($("#rdoProDig").is(':checked')) {
+                DiagnosisType = "Provisional Diagnosis";
+            }
+            if ($("#rdoFinalDig").is(':checked')) {
+                DiagnosisType = "Final Diagnosis";
+            }
+            var Patientid = $("#lblpatid").text();
+            var visitid = $("#lblvisitid").text();
+            var Detail = new Array();
+            var tbl12 = document.getElementById("tblDiagnosis");
+            var row12 = tbl12.rows.length;
+            for (k = 1; k < row12; k++) {
+                var sval12 = tbl12.rows[k];
+                var objDetail = new Object();
+                objDetail.DetailSeqid = 0;
+                objDetail.DiagnosisId = parseFloat(sval12.cells[1].innerHTML);
+                objDetail.DiagnosisName = sval12.cells[0].innerHTML;
+                objDetail.Remarks = sval12.cells[2].getElementsByTagName("input")[0].value;
+                Detail.push(objDetail);
+            }
+            var DiagNotes = $("#txtDiagNotes").val();
+            var sendJsonData = {
+                PatientId: Patientid,
+                VisitId: visitid,
+                Comments: DiagNotes,
+                IsVerified: IsVerified,
+                DignosisType: DiagnosisType,
+                DiagDetails: Detail
+            };
+            $.ajax({
+                url: "/Emr/CreateNewPatDiagnosis",
+                type: 'post',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(sendJsonData),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    alert("Save Success");
+                    OnSuccessDiagnosisHeader(data);
+                    if (IsVerified === true) {
+                        ClearDignosisForm();
+                        CloseDiagnosisStatus();
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function GetAllPatientDiagnosisByPatid() {
+        try {
+            if (document.getElementById('btnmorediag').innerHTML == "More") {
+                var arg = $("#lblpatid").text();
+                $.ajax({
+                    url: rootUrl + "/Emr/GetDiagnosisByPatient/?PatID=" + arg + "",
+                    type: 'GET',
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    beforeSend: function () { $("#loading").css("display", "block"); },
+                    success: OnSuccessDiagnosis,
+                    complete: function () { $("#loading").css("display", "none"); }
+                });
+            }
+            else {
+                GetOldDiagnosis();
+                document.getElementById('btnmorediag').innerHTML = "More";
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function OnSuccessDiagnosis(response) {
+        if (response.Header.length > 0) {
+            var html = "";
+            for (PCHeader = 0; PCHeader < response.Header.length; PCHeader++) {
+                var CheckVerified = "";
+                if (response.Header[PCHeader].IsVerified == true)
+                    CheckVerified = "Verified";
+                else
+                    CheckVerified = "Not Verified";
+                var VisitDate = response.Header[PCHeader].CreateDatetime;
+                var PsHedSeqID = response.Header[PCHeader].Seqid;
+                var DignosisType = response.Header[PCHeader].DignosisType;
+                html += "<div class='row'><div class='col-xs-12'><table Class='table table-bordered table-striped dataTable table-reflow'>";
+                html += "<thead><tr><td style='font-weight: 700;color: darkred;'>" + DignosisType+"-" + VisitDate + " </td>";
+                html += "<td style='font-weight: 700;color: darkred;'>" + CheckVerified + "</td></thead><tbody>";
+                for (PCDetails = 0; PCDetails < response.Details.length; PCDetails++) {
+                    var DiagHeader = response.Details[PCDetails].HeaderSeqid;
+                    var DiagnosisID = response.Details[PCDetails].DiagnosisId;
+                    var DiagnosisName = response.Details[PCDetails].DiagnosisName;
+                    if (PsHedSeqID === DiagHeader) {
+                        html += "<br/>";
+                        html += "<tr data-id=\"" + DiagnosisID + "\"><td>" + parseInt(PCDetails + 1) + "</td><td>" + DiagnosisName + "</td></tr>";
+                    }
+                }
+                html += "</tbody></table></div></div>";
+                html += "<div class='row'><div class='col-xs-12'><div class='form-group'><span style='color: darkred;'>Comments</span><br/>";
+                html += "<span>" + response.Header[PCHeader].Comments + "</span></div></div></div>";
+            }
+            $("#OldDiagnosis").html('');
+            $("#OldDiagnosis").html(html);
+            document.getElementById('btnmorediag').innerHTML = "Less";
+        }
+    }
+     function DiagnosissPrint() {
+        try {
+            var arg = $("#lblvisitid").text();
+            $.ajax({
+                url: rootUrl + "/Emr/GetDiagnosisByVisit/?Visitid=" + arg + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: OnSuccessDiagnosisPrint,
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        catch (e) {
+
+        }
+    }
+    function OnSuccessDiagnosisPrint(response) {
+        var Hospitaldtl = "";
+        var Patdtl = "";
+        var html = "";
+        if (response.HospitalDtl.length > 0) {
+            Hospitaldtl += "<table style='width:95%;'><tr>";
+            Hospitaldtl += "<td><img src='data:image/jpeg;base64," + response.HospitalDtl[0].HospitalLogo + "' style='width:100%; max-width:200px;height:100px;'></td>";
+            Hospitaldtl += "<td><table>";
+            Hospitaldtl += "<tr><td>" + response.HospitalDtl[0].HospitalName + "</td></tr>";
+            Hospitaldtl += "<tr><td>" + response.HospitalDtl[0].HospitalAddress + " " + response.HospitalDtl[0].HospitalAddress1 + " " + response.HospitalDtl[0].HospitalAddress2 + "</td></tr>";
+            Hospitaldtl += "<tr><td>Mobile : " + response.HospitalDtl[0].HospitalMobileNo + "</td></tr>";
+            Hospitaldtl += "<tr><td>Phone : " + response.HospitalDtl[0].HospitalLandlineNo + "</td></tr>";
+            Hospitaldtl += "<tr><td>" + response.HospitalDtl[0].City + "";
+            if (response.HospitalDtl[0].Pin != "" && response.HospitalDtl[0].Pin != null)
+                Hospitaldtl += "-" + response.HospitalDtl[0].Pin + "</td></tr>";
+            else
+                Hospitaldtl += "</td></tr>";
+            Hospitaldtl += "<tr><td>" + response.HospitalDtl[0].Country + "</td></tr>";
+            Hospitaldtl += "</table></td>";
+            Hospitaldtl += "</tr></table>";
+            Hospitaldtl += "<table style='width:100%;'><tr><td style='font-weight: bold;border-top: solid 1px black;'></td></tr></table>";
+        }
+        html += Hospitaldtl;
+        if (response.PatientDtl.length > 0) {
+            Patdtl += "<table style='float:left;width:50%;'>";
+            Patdtl += "<tr>";
+            Patdtl += "<td>UHID No </td><td>:</td><td>" + response.PatientDtl[0].PatientID + "</td>";
+            Patdtl += "</tr>";
+            Patdtl += "<tr>";
+            Patdtl += "<td>Age </td><td>:</td><td>" + response.PatientDtl[0].Age + "</td>";
+            Patdtl += "</tr>";
+            Patdtl += "<tr>";
+            Patdtl += "<td>Doctor Name </td><td>:</td><td>" + response.PatientDtl[0].RefDoctor + "</td>";
+            Patdtl += "</tr>";
+            Patdtl += "</table>";
+
+            Patdtl += "<table style='float: right;width:50%;'>";
+            Patdtl += "<tr>";
+            Patdtl += "<td>Patient Name</td><td>:</td><td>" + response.PatientDtl[0].FirstName + "</td>";
+            Patdtl += "</tr>";
+            Patdtl += "<tr>";
+            Patdtl += "<td>Gender</td><td>:</td><td>" + response.PatientDtl[0].Gender + "</td>";
+            Patdtl += "</tr>";
+            Patdtl += "</table>";
+
+            Patdtl += "<table style='width:100%;'><tr><td style='font-weight: bold;border-top: solid 1px black;'></td></tr></table>";
+        }
+        html += Patdtl;
+        if (response.Header.length > 0) {
+            for (PCHeader = 0; PCHeader < response.Header.length; PCHeader++) {
+                var DtlSeqid = 0;
+                var CheckVerified = "";
+                if (PCHeader != 0) {
+                    html += "<div style='page-break-before: always;'></div>";
+                    html += Hospitaldtl;
+                    html += Patdtl;
+                }
+                if (response.Header[PCHeader].IsVerified == true)
+                    CheckVerified = "Verified";
+                else
+                    CheckVerified = "Not Verified";
+                var VisitDate = response.Header[PCHeader].CreateDatetime;
+                var PsHedSeqID = response.Header[PCHeader].Seqid;
+                html += "<table border='0' style='width:100%;' Class='table table-bordered table-striped dataTable table-reflow'>";
+                html += "<thead><tr><td style='font-weight: 700;'>Diagnosis-" + VisitDate + " </td>";
+                html += "<td style='font-weight: 700;'>"+CheckVerified+"</td></thead><tbody>";
+                html += "<tr><td style='font-weight:bold;'>SNO</td><td style='font-weight:bold;'>Diagnosis</td></tr>";
+                for (PCDetails = 0; PCDetails < response.Details.length; PCDetails++) {
+                   var DiagHeader = response.Details[PCDetails].HeaderSeqid;
+                    var DiagnosisID = response.Details[PCDetails].DiagnosisId;
+                    var DiagnosisName = response.Details[PCDetails].DiagnosisName;
+                    if (PsHedSeqID === DiagHeader) {
+                        DtlSeqid = parseInt(DtlSeqid + 1);
+                        html += "<br/>";
+                        html += "<tr data-id=\"" + DiagnosisID + "\"><td>" + DtlSeqid + "</td><td>" + DiagnosisName + "</td></tr>";
+                    }
+                }
+                html += "</tbody></table><br/>";
+                html += "<div class='row'><div class='col-xs-12'><div class='form-group'><span><b>Diagnosis Notes : </b></span>"
+                html += "<span>" + response.Header[PCHeader].Comments + "</span></div></div></div>";
+            }
+        }
+        sessionStorage.setItem("PrintDetails", html);
+        openRequestedPopup();
+    }
+    var windowObjectReference;
+        function openRequestedPopup() {
+            var url = '@Url.Action("Print", "Home")';
+            window.open(url, '_blank');
+    }
+    function OpenAddDiagnosisPopup() {
+        $("#txtAddNewDiagnosis").val("");
+        document.getElementById('AddDiagnosis').ej2_instances[0].show();
+    }
+    function AddNewDiagnosis() {
+        var DiagnosisName = $("#txtAddNewDiagnosis").val();
+        if (DiagnosisName.length > 0) {
+            var tData = getValues("/Emr/CreateNewDiagnosis/?DiagnosisName=" + DiagnosisName + "");
+            if (tData.Diagnosis_Name === "Already Exists") {
+                alert("Already Exists");
+            }
+            else {
+                alert("Save Success");
+                var newItem = { 'Diagnosis_Name': tData.Diagnosis_Name, 'Diagnosis_Seqid': tData.Diagnosis_Seqid };
+                var Diagnosis = document.getElementById('cmbDiagnosis').ej2_instances[0];
+                Diagnosis.addItem(newItem);
+                document.getElementById('AddDiagnosis').ej2_instances[0].hide();
+            }
+        }
+        else {
+            alert("please Enter Diagnosis");
+        }
+    }
+    function GetAllPatientDiagnosisHeaderByPatid() {
+        try {
+            var arg = $("#lblpatid").text();
+            $.ajax({
+                url: rootUrl + "/Emr/GetDiagnosisHeaderByPatient/?PatID=" + arg + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: OnSuccessDiagnosisHeader,
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function OnSuccessDiagnosisHeader(response) {
+        if (response.Header.length > 0) {
+            var html = "";
+            html += "<div class='row'><div class='col-xs-12'><table id='tblDigMore' Class='table table-bordered table-striped dataTable table-reflow'>";
+            html += "<thead><tr><td></td><td>S.no</td><td>Dignosis Type</td><td>Visit Date</td>";
+            html += "<td>Status</td></thead><tbody>";
+            var Sno = 0;
+            for (PCHeader = 0; PCHeader < response.Header.length; PCHeader++) {
+                Sno = PCHeader + 1;
+                var CheckVerified = "";
+                if (response.Header[PCHeader].IsVerified == true)
+                    CheckVerified = "Verified";
+                else
+                    CheckVerified = "Not Verified";
+                var VisitDate = response.Header[PCHeader].CreateDatetime;
+                var PsHedSeqID = response.Header[PCHeader].Seqid;
+                var DignosisType = response.Header[PCHeader].DignosisType;
+                var DignosisComments = response.Header[PCHeader].Comments;
+                html += "<tr>";
+                html += "<td><input type='image' style='width:21px;height:21px;' src='../Images/details_open.png' onclick='javascript:return CheckSelectDignosis(this)'></td>";
+                html += "<td style='display:none;'>" + PsHedSeqID + "</td>";
+                html += "<td>" + Sno + "</td>";
+                html += "<td>" + DignosisType + "</td>";
+                html += "<td>" + VisitDate + "</td>";
+                html += "<td>" + CheckVerified + "</td>";
+                html += "<td style='display:none;'>" + DignosisComments + "</td>";
+                html += "</tr>";
+            }
+            html += "</tbody></table></div></div>";
+            $("#OldDiagnosis").html('');
+            $("#OldDiagnosis").html(html);
+            document.getElementById('btnmorediag').innerHTML = "Less";
+        }
+    }
+    function CheckSelectDignosis(SelectedRow) {
+        var row = SelectedRow.parentNode.parentNode;
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = row.rowIndex - 1;
+        var PSeqID = row.cells[1].innerHTML;
+        var DignosisComments = row.cells[6].innerHTML;
+
+        var className = myrow.cells[0].getElementsByTagName("input")[0].className;
+        if (className === "shown") {
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', '../Images/details_open.png');
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'abc');
+            $('#tblDigMore > tbody > tr').eq(rowIndex).next().remove();
+        }
+        else {
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', '../Images/details_close.png');
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'shown');
+
+            var arg = parseFloat(PSeqID);
+
+            $.ajax({
+                url: "/Emr/GetDiagnosisDeatilsByPatient/?HeaderSeqID=" + arg + "",
+                type: 'Get',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    var html = "<table id='myTable1' class='table table-striped table-bordered table-hover table-full-width dataTable no-footer'>";
+                    html += "<tr>";
+                    html += "<thead><th>S.no</th><th>Dignosis</th><th>Remarks</th></thead>";
+                    html += "</tr><tbody >";
+                    for (PCDetails = 0; PCDetails < response.Details.length; PCDetails++) {
+                        var DiagHeader = response.Details[PCDetails].HeaderSeqid;
+                        var DiagnosisID = response.Details[PCDetails].DiagnosisId;
+                        var DiagnosisName = response.Details[PCDetails].DiagnosisName;
+                        var Remarks = response.Details[PCDetails].Remarks;
+                        html += "<br/>";
+                        html += "<tr data-id=\"" + DiagnosisID + "\"><td>" + parseInt(PCDetails + 1) + "</td><td>" + DiagnosisName + "</td><td>" + Remarks + "</td></tr>";
+                    }
+                    html += " </tbody></table>";
+                    html += "<table class='table' style='color:black;font-size: medium;'> <tbody>";
+                    html += " <tr style='color:black;'><td>" + DignosisComments + "</td> </tr>";
+                    html += "</tbody></table>";
+                    var newRow = $('<tr><td></td><td colspan="7">' + html + '</td></tr>');
+                    $('#tblDigMore > tbody > tr').eq(rowIndex).after(newRow);
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        return false;
+    }
+    function ClearDignosisForm() {
+        $("#txtDiagNotes").val("");
+        $("#tblDiagnosis tbody").empty();
+    }
+    function OnFocus(args) {
+        this.showPopup();
+    }
+    function onDiagSelect(e) {
+        this.onBlur(e);
+    }
+    function IsAlreadyDiagnosisExists() {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        var PatID = $("#lblpatid").text();
+        var VisitId = $("#lblvisitid").text();
+        $.ajax({
+            url: rootUrl + "/Emr/IsAlreadyDiagnosisExists/?PatientID=" + PatID + "&VisitID=" + VisitId + "",
+            type: 'GET',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (data) {
+                if (data === "Already Exists") {
+                    OpenDiagnosisStatus();
+                }
+                else {
+                    DiagnosisSave(true);
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function OpenDiagnosisStatus() {
+        document.getElementById('DiagnosisInfo').ej2_instances[0].show();
+    }
+    function CloseDiagnosisStatus() {
+        document.getElementById('DiagnosisInfo').ej2_instances[0].hide();
+    }
+</script>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group" style="float:right;display:none;">
+                <a class="list-group-item" target="_blank"
+                   style="width:8%;background-color:blue;color:white;padding-right:57px;" href="/Home/DiagnosisReport">Report</a>
+            </div>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group" style="float:right;">
+                <button type="button" id="btndiagreport" class="btn btn-info" style="background-color:blue;display:none;" onclick="DiagnosissPrint();">Report</button>
+                <button type="button" id="btnmorediag" class="btn" onclick="GetAllPatientDiagnosisHeaderByPatid();" title="More"><img src="~/images/MOREX.png" style="height:50px;width:50px;" /></button>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="panel panel-default DivBox">
+                <div class="row">
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-check-inline">
+                            <label class="form-check-label">
+                                <input type="radio" id="rdoProDig" class="form-check-input" name="di" value="" checked="checked"> Provisional Diagnosis
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-check-inline">
+                            <label class="form-check-label">
+                                <input type="radio" id="rdoFinalDig" class="form-check-input" name="di" value=""> Final Diagnosis
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <div class="row">
+                    <div class="col-xs-11 col-sm-11 col-md-11">
+                        <div class="form-group">
+                            <ejs-combobox id="cmbDiagnosis" autofill="true" allowFiltering="true" cssClass="inputEmr"
+                                          placeholder="Search Diagnosis" popupHeight="230px"
+                                          filtering="onDiagnosisfiltering" change="OnDiagnosisChange" focus="OnFocus" select="onDiagSelect">
+                                <e-data-manager url="/api/EmrApi/GetDiagnosisByFilltering/" adaptor="WebApiAdaptor"></e-data-manager>
+                                <e-combobox-fields text="Diagnosis_Name" value="Diagnosis_Seqid"></e-combobox-fields>
+                            </ejs-combobox>
+                        </div>
+                    </div>
+                    <div class="col-xs-1 col-sm-1 col-md-1">
+                        <div class="form-group">
+                            <span>
+                                <img src="~/images/ADD ITEM.png" style="height:45px;cursor:pointer;width:40px;margin-top:-8px;"
+                                     title="Add New Diagnosis" onclick="OpenAddDiagnosisPopup();" />
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="table-responsive">
+                        <table id="tblDiagnosis" class="table table-bordered table-striped dataTable table-reflow tableHB">
+                            <thead>
+                                <tr>
+                                    @*<td></td>*@
+                                    <td>Diagnosis</td>
+                                    <td>Remarks</td>
+                                    <td>Delete</td>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="form-group">
+                        <textarea class="form-control inputEmr" id="txtDiagNotes" placeholder="Comments"></textarea>
+                    </div>
+                </div>
+                <div class="row" id="diagnosisbtnDiv">
+                    <div class="col-xs-12 col-sm-12 col-md-12" style="padding:11px;border-bottom: 1px solid #e5e5e5;">
+                        <div class="form-group">
+                            <button type="button" id="btnDiagSave" class="btn" onclick="DiagnosisSave(false);" title="Save">
+                                <img src="~/images/SAVES.png" style="height:50px;width:50px;">
+                            </button>
+                            <button type="button" id="btnDiagSafy" class="btn" onclick="IsAlreadyDiagnosisExists();" title="Save and Verify">
+                                <img src="~/images/verify-512.png" style="height:50px;width:50px;">
+                            </button>
+                            <button type="button" id="btncancel" onclick="CancelViewclick();" class="btn" title="Cancel">
+                                <img src="~/images/CANCEL-512.png" style="height:50px;width:50px;">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="table-responsive">
+                        <table id="tblDiagnosis" class="table table-bordered table-striped dataTable table-reflow tableHB">
+                            <thead>
+                                <tr>
+                                    @*<td></td>*@
+                                    <td>Diagnosis</td>
+                                    <td>Remarks</td>
+                                    <td>Delete</td>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="form-group">
+                        <textarea class="form-control inputEmr" id="txtDiagNotes" placeholder="Comments"></textarea>
+                    </div>
+                </div>
+                <div class="row" id="diagnosisbtnDiv">
+                    <div class="col-xs-12 col-sm-12 col-md-12" style="padding:11px;border-bottom: 1px solid #e5e5e5;">
+                        <div class="form-group">
+                            <button type="button" id="btnDiagSave" class="btn" onclick="DiagnosisSave(false);" title="Save">
+                                <img src="~/images/SAVES.png" style="height:50px;width:50px;">
+                            </button>
+                            <button type="button" id="btnDiagSafy" class="btn" onclick="IsAlreadyDiagnosisExists();" title="Save and Verify">
+                                <img src="~/images/verify-512.png" style="height:50px;width:50px;">
+                            </button>
+                            <button type="button" id="btncancel" onclick="CancelViewclick();" class="btn" title="Cancel">
+                                <img src="~/images/CANCEL-512.png" style="height:50px;width:50px;">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="panel panel-default DivBox">
+                <div id="OldDiagnosis" class="row" style="padding:10px;">
+                </div>
+            </div>
+        </div>
+        <div>
+            <ejs-dialog id="AddDiagnosis" showCloseIcon="true" cssClass="ejs-dialog" header="Add Diagnosis" style="max-height:400px" visible="false" width="634px">
+                <e-content-template>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtAddNewDiagnosis" class="form-control inputEmr" placeholder="Enter Diagnosis" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <button type="button" id="btnAddNewDiagnosis" class="btn" onclick="AddNewDiagnosis();">
+                                    <img src="~/images/SAVES.png" style="height:50px;width:50px;" title="Save">
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </e-content-template>
+            </ejs-dialog>
+        </div>
+        <div>
+            <ejs-dialog id="DiagnosisInfo" showCloseIcon="true" cssClass="ejs-help" header="Inforamtion" style="max-height:400px" visible="false" width="634px">
+                <e-content-template>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <span style="font-size: 15px !important;font-family: Source Sans Pro,sans-serif !important;">
+                                    Already Diagnostic Entered for this Visit. Do you want Continue?
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <button type="button" id="btnDiagnosisStatusYes" class="btn EmrbtnPrimary" onclick="DiagnosisSave(true);" title="Yes">
+                                    Yes
+                                </button>
+                                <button type="button" id="btnDiagnosisStatusNo" class="btn EmrbtnPrimary" onclick="CloseDiagnosisStatus();" title="No">
+                                    No
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </e-content-template>
+            </ejs-dialog>
+        </div>
+    </div>
+</div>

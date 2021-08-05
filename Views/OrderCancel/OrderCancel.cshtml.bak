@@ -1,0 +1,276 @@
+﻿
+@{
+    ViewData["Title"] = "OrderCancel";
+}
+
+
+<style>
+    /*::placeholder {
+        color: gray;
+    }*/
+
+    .form-group {
+        font-family: serif;
+        font-size: 17px;
+        font-weight: 400;
+    }
+
+    .rows {
+        padding-left: 20px;
+    }
+
+    .Tex {
+        border-color: #80808030;
+    }
+
+    .head {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+        font-family: serif;
+        color: gray;
+        font-size: 14px;
+        background-color: #7e8ae33b;
+    }
+
+    th {
+        border: 1px solid #dddddd;
+        text-align: center;
+        padding: 8px;
+        font-size: 15px;
+        color: black;
+    }
+
+    td {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+    }
+
+    /*.container-fluid {
+        background-color: white;
+    }*/
+    .head1 {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+        font-family: serif;
+        color: black;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    tr:nth-child(even) {
+        background-color: #8080800d;
+    }
+
+    .container-fluid {
+        background-color: white;
+    }
+
+    table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 98%;
+        margin-left: 5px;
+        margin-top: 26px;
+    }
+</style>
+<script>
+    function getValues(url) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+    function postValues(url, jdata) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(jdata),
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+</script>
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        var today = new Date();
+        var currentyear = today.getFullYear();
+        var onetwentyyearback = currentyear - 120;
+        var daterange = onetwentyyearback + ':' + currentyear;
+
+        $('#txtFromDate').datepicker({
+            changeMonth: true,
+            changeYear: true,
+            yearRange: daterange,
+            dateFormat: 'dd/mm/yy',
+            endDate: "today",
+            maxDate: today,
+        });
+        $('#txtToDate').datepicker({
+            changeMonth: true,
+            changeYear: true,
+            yearRange: daterange,
+            dateFormat: 'dd/mm/yy',
+            endDate: "today",
+            maxDate: today,
+        });
+        $("#txtFromDate").datepicker('setDate', new Date());
+        $("#txtToDate").datepicker('setDate', new Date());
+        BindOrderCanceltable();
+    });
+    function BindOrderCanceltable() {
+        try {
+            var tData = getValues("/Order/GetTodayOrderCancelPatients");
+            BindOrderCancelList(tData);
+        }
+        catch (e) {
+
+        }
+    }
+    function BindOrderCancelList(tData) {
+        try {
+            var html = "";
+            if (tData != null && tData != '') {
+                $('#tblordercancel tbody').empty();
+                for (var i = 0; i < tData.length; i++) {
+                    var SNO = tData[i].SNO;
+                    var PatSeqID = tData[i].PatSeqID;
+                    var PatientID = tData[i].PatientID;
+                    var FirstName = tData[i].FirstName;
+                    var DoctorName = tData[i].DoctorName;
+                    var VisitID = tData[i].VisitID;
+                    var DoctorID = tData[i].DoctorID;
+                    var OrderID = tData[i].OrderID;
+                    var OrderDate = tData[i].OrderDate;
+                    var Nettotal = tData[i].Nettotal;
+
+                    html += "<tr class='head1'>";
+                    html += "<td>" + SNO + "</td>";
+                    html += " <td>" + PatientID + "</td>";
+                    html += "<td>" + FirstName + "</td>";
+                    html += "<td>" + OrderID + "</td>";
+                    html += "<td>" + OrderDate + "</td>";
+                    html += "<td style='text-align:right;'>" + Nettotal + "</td>";
+                    html += "<td>" + DoctorName + "</td>";
+                    html += "<td style='display:none;'>" + DoctorID + "</td>";
+                    html += "<td style='display:none;'>" + VisitID + "</td>";
+                    html += "<td style='display:none;'>" + PatSeqID + "</td>";
+                    html += "</tr>";
+                }
+            }
+            else if (tData == '' || tData == null) {
+                $('#tblordercancel tbody').empty();
+                html += "<tr class='head1'>";
+                html += "<td style='text-align:center;' colspan='9'>No Records Found</td>";
+                html += "</tr>";
+            }
+            $('#tblordercancel tbody').html(html);
+        }
+        catch (e) {
+
+        }
+    }
+    function BindFiltertable() {
+        try {
+            var Fromdatestr = $("#txtFromDate").val();
+            var Todatestr = $("#txtToDate").val();
+            var Search = $("#txtsearch").val();
+            var e = document.getElementById("drpdays");
+            var Days = e.options[e.selectedIndex].text;
+            var f = document.getElementById("drppatienttype");
+            var PatientType = f.options[f.selectedIndex].text;
+            var g = document.getElementById("drprowcount");
+            var RowCount = g.options[g.selectedIndex].text;
+            var Url = "/Order/GetTodayOrderCancelPatientsSearch?Fromdate=" + Fromdatestr + "&Todate=" + Todatestr + "&Search=" + Search + "&Days=" + Days + "&PatientType=" + PatientType + "&RowCount=" + RowCount + "";
+            var tData = getValues(Url);
+            BindOrderCancelList(tData);
+        }
+        catch (e) {
+
+        }
+    }
+</script>
+
+
+<div class="content-wrapper">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-primary">
+                    <div class="card-header" style="margin-top:15px;">
+                        <h3 class="card-title">Order Cancel</h3>
+                        <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" style="margin-left:-11px">
+            <div class="rows">
+                <label class="form-group">From:</label>
+                <input type="text" id="txtFromDate" class="Tex" onchange="BindFiltertable();" placeholder="DD/MM/YYYY" /> @*readonly="readonly"*@
+            </div>
+            <div class="rows">
+                <label class="form-group">To:</label>
+                <input type="text" id="txtToDate" onchange="BindFiltertable();" class="Tex" placeholder="DD/MM/YYYY"  />
+            </div>
+            <div class="rows">
+                <input type="text" id="txtsearch" onkeyup="BindFiltertable();" class="Tex" placeholder="Search" style="margin-top:0px;width: 230px;" />
+            </div>
+            <div class="rows">
+                <select class="Tex" id="drpdays" onchange="BindFiltertable();" style="width:134px;height:30px">
+                    <option>Today</option>
+                    <option>2 Days</option>
+                    <option>7 Days</option>
+                </select>
+            </div>
+            <div class="rows">
+                <select class="Tex" id="drppatienttype" onchange="BindFiltertable();" style="width:188px;height:30px">
+                    <option>Normal</option>
+                    <option>AT Patient</option>
+                </select>
+            </div>
+            <div class="rows">
+                <label class="form-group">Display Row :</label>
+                <select id="drprowcount" onchange="BindFiltertable();" style="border-color: #80808030; margin-top:5px">
+                    <option>10</option>
+                    <option>20</option>
+                    <option>30</option>
+                    <option>40</option>
+                </select>
+            </div>
+        </div>
+        <table id="tblordercancel">
+            <thead>
+                <tr class="head">
+                    <th style="width:1%">S.No</th>
+                    <th style="width:1%">UHID</th>
+                    <th style="width:7%">PATIENT NAME</th>
+                    <th style="width:2%">ORDER ID</th>
+                    <th style="width:1%">INV DATE</th>
+                    <th style="width:1%">INV VALUE</th>
+                    <th style="width:6%">DOCTOR NAME</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>

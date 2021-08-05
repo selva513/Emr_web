@@ -1,0 +1,449 @@
+﻿
+@{
+    ViewData["Title"] = "DoctorApproval";
+}
+@using Syncfusion.EJ2
+@using Newtonsoft.Json
+@model Emr_web.Models.DoctorView
+
+<link href="~/AutoComplete/jquery-ui_1.11.4.css" rel="stylesheet" />
+<script src="~/AutoComplete/jquery-1.10.2.js"></script>
+<script src="~/AutoComplete/jquery-ui_1.11.4.js"></script>
+
+<script src="~/Theme/plugins/summernote/summernote-bs4.min.js"></script>
+<link href="~/Theme/plugins/summernote/summernote-bs4.css" rel="stylesheet" />
+
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    function rowSelected(args) {
+        var selectedrecords = this.getSelectedRecords();
+        document.getElementById('txt_docid').ej2_instances[0].value = selectedrecords[0].DoctorSeqID;
+        document.getElementById('txt_docname').ej2_instances[0].value = selectedrecords[0].DoctorName;
+        document.getElementById('txt_docdegree').ej2_instances[0].value = selectedrecords[0].DoctorDegree;
+        document.getElementById('txt_hisdocid').ej2_instances[0].value = selectedrecords[0].HISDoctorID;
+        document.getElementById('txtdepartment').ej2_instances[0].value = selectedrecords[0].Departmentname;
+        document.getElementById('txtspeciality').ej2_instances[0].value = selectedrecords[0].Speciality_Name;
+        document.getElementById('txt_email').ej2_instances[0].value = selectedrecords[0].EmailId;
+        document.getElementById('txt_CountryCode').ej2_instances[0].value = selectedrecords[0].CountryCode;
+        document.getElementById('txt_mobno').ej2_instances[0].value = selectedrecords[0].MobileNumber;
+        document.getElementById('txt_registrationno').ej2_instances[0].value = selectedrecords[0].RegistrationNumber;
+        document.getElementById('drp_registrationcouncil').ej2_instances[0].value = selectedrecords[0].CouncilName;
+        document.getElementById('txt_mobno').ej2_instances[0].value = selectedrecords[0].MobileNumber;
+        var SpecialityID = selectedrecords[0].SpecialityID;
+        if (SpecialityID == null || SpecialityID == 0)
+            SpecialityID = "";
+
+        var Doctorid = selectedrecords[0].DoctorSeqID;
+        var HISDoctorid = selectedrecords[0].HISDoctorID;
+        if (HISDoctorid != 0)
+            GetHISDoctorName(HISDoctorid);
+
+        $("#btnupdate").show();
+        $("#btnreject").show();
+
+
+    }
+    function GetHISDoctorName(HISDoctorid) {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetHISDoctorname/?HISDoctorid=" + HISDoctorid,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    var data = response;
+                    if (data != "" && data != null) {
+                        document.getElementById('txthisdoc').ej2_instances[0].text = data[0].HISDoctorName;
+                        document.getElementById('txthisdoc').ej2_instances[0].value = data[0].HISDoctorID;
+                    }
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+
+        }
+    }
+
+    function CancelClick() {
+        try {
+            window.location.href = "/DoctorMaster/DoctorApproval";
+        } catch (e) {
+
+        }
+    }
+    function ShowPopup() {
+        $('#modal-default').modal('show');
+    }
+    function ClosePopup() {
+        $('#modal-default').modal('hide');
+    }
+    function RejectProfile() {
+        try {
+            var DoctorID = document.getElementById('txt_docid').ej2_instances[0].value;
+            var Email = document.getElementById('txt_email').ej2_instances[0].value;
+            var MobileNo = document.getElementById('txt_mobno').ej2_instances[0].value;
+            var Reason = $("#txtReason").val();
+            var DoctorName = document.getElementById('txt_docname').ej2_instances[0].value;
+            
+            $.ajax({
+                url: rootUrl + "/DoctorMaster/ProfileReject/?DoctorID=" + DoctorID + "&Reason=" + Reason + "&Email=" + Email + "&MobileNo=" + MobileNo + "&DoctorName=" + DoctorName+"",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    ClosePopup();
+                    CancelClick();
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        } catch (e) {
+
+        }
+    }
+</script>
+<style>
+    .main-page {
+        background: linear-gradient(-141deg, #FBFAFF 14%, #FBFAFF 100%);
+        margin: 0;
+    }
+
+    body,
+    text {
+        font-family: "Helvetica Neue", "Helvetica", "Arial", sans-serif, "-apple-system", "BlinkMacSystemFont";
+    }
+
+    .form-group.required .control-label:after {
+        content: "*";
+        color: red;
+    }
+
+    #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loadingcontent {
+        display: table;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loadingspinner {
+        display: table-cell;
+        vertical-align: middle;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+        padding-top: 80px;
+    }
+</style>
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div id="loading">
+            <div id="loadingcontent">
+                @*<p id="loadingspinner">
+                        Please Wait...
+                    </p>*@
+                <div id="loadingspinner">
+                    <img src="~/images/loading.gif" style="width:100px;height:100px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-primary">
+                        <div class="card-header" style="margin-top:15px;">
+                            <h3 class="card-title">Doctor Verification</h3>
+                            <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                        </div>
+                        <form role="form" autocomplete="off" style="font-size:small;" method="post" asp-controller="DoctorMaster" asp-action="ApproveDoctor" data-toggle="validator"
+                              onkeydown="return event.key != 'Enter';">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                        <div class="form-group">
+                                            <ejs-textbox id="txt_docid" placeholder="Main Menu Name" value="0" ejs-for="DoctorSeqID"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                        <div class="form-group">
+                                            <ejs-textbox id="txt_deptname" placeholder="Main Menu Name" ejs-for="DepartmentName"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                        <div class="form-group">
+                                            <ejs-textbox id="txt_specialityname" placeholder="Main Menu Name" ejs-for="Speciality_Name"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                        <div class="form-group">
+                                            <ejs-textbox id="txt_hisdocid" placeholder="Main Menu Name" value="0" ejs-for="HISDoctorID"></ejs-textbox>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-xs-4 col-sm-4 col-md-4" style="display:none;">
+                                        <div class="form-group">
+                                            <label class="control-label" style="color: black;">
+                                                HIS Doctor Name
+                                            </label>
+                                            @*<ejs-combobox id="txthisdoc" autofill="true" ejs-for="HISDoctorID"
+                                                              allowFiltering="true" filtering="HISDoconfiltering"
+                                                              dataSource="@ViewBag.HISDocDetail" change="GetHISDocid" placeholder="HIS Doctor Name" popupHeight="230px">
+                                                    <e-combobox-fields text="HISDoctorName" value="HISDoctorID"></e-combobox-fields>
+                                                </ejs-combobox>*@
+                                            <ejs-textbox id="txthisdoc" placeholder="HIS Doctor Name"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group">
+                                            <label class="control-label" style="color: black;">
+                                                Doctor Name
+                                            </label>
+                                            <ejs-textbox id="txt_docname" placeholder="Doctor Name" ejs-for="DoctorName" disabled="true"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group">
+                                            <label class="control-label" style="color: black;">
+                                                Email
+                                            </label>
+                                            <ejs-textbox id="txt_email" placeholder="Email" ejs-for="EmailId" disabled="true"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-2 col-sm-2 col-md-2">
+                                        <div class="form-group">
+                                            <label class="control-label" style="color: black;">
+                                                Country Code
+                                            </label>
+                                            @*<ejs-autocomplete id="txt_countrycode" cssclass="inputemr" ejs-for="countrycode"
+                                                                  filtertype="contains" highlight="true"
+                                                                  placeholder="country code" suggestioncount="10" autofill="true">
+                                                    <e-data-manager url="/api/patient/getcountrycodelist/" adaptor="webapiadaptor"></e-data-manager>
+                                                </ejs-autocomplete>*@
+                                            <ejs-textbox id="txt_CountryCode" ejs-for="CountryCode" placeholder="Country Code" disabled="true"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-2 col-sm-2 col-md-2">
+                                        <div class="form-group">
+                                            <label class="control-label" style="color: black;">
+                                                Mobile Number
+                                            </label>
+                                            <ejs-textbox id="txt_mobno" placeholder="Mobile Number" ejs-for="MobileNumber" disabled="true"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group">
+                                            <label class="control-label" style="color: black;">
+                                                Clinic/Hospital Name
+                                            </label>
+                                            <ejs-textbox id="txt_clinic_hospname" placeholder="Clinic/Hospital Name"
+                                                         ejs-for="Clinic_HospitalName" disabled="true"></ejs-textbox>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group">
+                                            <label class="control-label" style="color: black;">
+                                                Speciality
+                                            </label>
+                                            @*<ejs-combobox id="txtspeciality" autofill="true" ejs-for="SpecialityID" focus="OnFocusSpeciality"
+                                                              allowFiltering="true" filtering="Specialityonfiltering" change="SpecialityOnchange"
+                                                              dataSource="@ViewBag.Speciality" placeholder="Speciality" popupHeight="230px" required>
+                                                    <e-combobox-fields text="Speciality_Name" value="SpecialityID"></e-combobox-fields>
+                                                </ejs-combobox>*@
+                                            <ejs-textbox id="txtspeciality" ejs-for="Speciality_Name" placeholder="Speciality"
+                                                         disabled="true"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group">
+                                            <label class="control-label" style="color: black;">
+                                                Department
+                                            </label>
+                                            @*<ejs-combobox id="txtdepartment" autofill="true" ejs-for="DepartmentID" focus="OnFocusDepartment"
+                                                              allowFiltering="true" filtering="Deptonfiltering" change="DepartmentChange"
+                                                              dataSource="@ViewBag.DeptDetail" placeholder="Department" popupHeight="230px">
+                                                    <e-combobox-fields text="DepartmentName" value="DeptSeqID"></e-combobox-fields>
+                                                </ejs-combobox>*@
+                                            <ejs-textbox id="txtdepartment" ejs-for="Departmentname" placeholder="Department" disabled="true"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group">
+                                            <label class="control-label" style="color: black;">
+                                                Graduation Degree
+                                            </label>
+                                            <ejs-textbox id="txt_docdegree" placeholder="Graduation Degree"
+                                                         ejs-for="DoctorDegree" disabled="true"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group">
+                                            <label class="control-label" style="color: black;">
+                                                Medical Council Registration Number
+                                            </label>
+                                            <ejs-textbox id="txt_registrationno" placeholder="Registration Number"
+                                                         ejs-for="RegistrationNumber" disabled="true"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group">
+                                            <label class="control-label" style="color: black;">
+                                                Medical Council Name
+                                            </label>
+                                            @*<ejs-combobox id="drp_registrationcouncil" ejs-for="RegistrationCouncil" autofill="true"
+                                                              allowFiltering="true" blur="MedicalCouncilChange" focus="OnFocusCouncil"
+                                                              dataSource="@ViewBag.MedicalCouncil" showClearButton="true"
+                                                              placeholder="Medical Council" popupHeight="230px" required>
+                                                    <e-combobox-fields text="CouncilName" value="CouncilID"></e-combobox-fields>
+                                                </ejs-combobox>*@
+                                            <ejs-textbox id="drp_registrationcouncil" ejs-for="RegistrationCouncil" placeholder="Medical Council"
+                                                         disabled="true"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <div class="form-group">
+                                                <button type="submit" id="btnupdate" style="background-color:blue;display:none;" class="btn btn-info Update">
+                                                    Approve
+                                                </button>
+                                                <button type="button" id="btnreject" style="background-color:blue;display:none;" onclick="ShowPopup();" class="btn btn-info Update">
+                                                    Reject
+                                                </button>
+                                                <button type="button" id="btnCancel" style="background-color:blue;" onclick="CancelClick();" class="btn btn-info">
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
+                                            <ejs-grid id="GridDeptMaster" width="98%" style="padding:0px 20px;cursor:pointer;"
+                                                      dataSource="@ViewBag.AllHospital_Doctor" allowPaging="true"
+                                                      toolbar="@(new List<string>() { "Search"})" rowSelected="rowSelected">
+                                                <e-grid-searchsettings fields="@(new string[] { "DoctorSeqID","DoctorName"})"
+                                                                       operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                                <e-grid-selectionsettings type="Single"></e-grid-selectionsettings>
+                                                <e-grid-pagesettings pageSize="10" pageCount="10"></e-grid-pagesettings>
+                                                <e-grid-columns>
+                                                    <e-grid-column field="SNO" headerText="SNO" width="6%"></e-grid-column>
+                                                    <e-grid-column field="DoctorSeqID" visible="false" headerText="Doctor Id"></e-grid-column>
+                                                    <e-grid-column field="DoctorwithDegree" headerText="Doctor Name"></e-grid-column>
+                                                    <e-grid-column field="RegistrationNumber" visible="true" headerText="Registration Number"></e-grid-column>
+                                                    <e-grid-column field="RegistrationCouncil" visible="false" headerText="Registration Council"></e-grid-column>
+                                                    <e-grid-column field="CouncilName" headerText="Registration Council"></e-grid-column>
+                                                    <e-grid-column field="Departmentname" visible="false" headerText="Department"></e-grid-column>
+                                                    <e-grid-column field="DepartmentID" visible="false" headerText="DepartmentID"></e-grid-column>
+                                                    <e-grid-column field="HISDoctorID" visible="false" headerText="HIS DOCTOR ID"></e-grid-column>
+                                                    <e-grid-column field="DoctorDegree" visible="false" headerText="Doctor Degree"></e-grid-column>
+                                                    <e-grid-column field="DoctorName" visible="false" headerText="Doctor Name"></e-grid-column>
+                                                    <e-grid-column field="Speciality_Name" visible="false" headerText="Speciality"></e-grid-column>
+                                                    <e-grid-column field="SpecialityID" visible="false" headerText="SpcialityID"></e-grid-column>
+                                                    <e-grid-column field="EmailId" headerText="Email"></e-grid-column>
+                                                    <e-grid-column field="ConsultingFees" visible="false" headerText="Consulting Fees"></e-grid-column>
+                                                    <e-grid-column field="PassedOutYear" visible="false" headerText="Passed Out Year"></e-grid-column>
+                                                    <e-grid-column field="City" visible="false" headerText="City"></e-grid-column>
+                                                    <e-grid-column field="Gender" visible="false" headerText="Gender"></e-grid-column>
+                                                    <e-grid-column field="PostGraduationDegree" visible="false" headerText="Post Graduation Degree"></e-grid-column>
+                                                    <e-grid-column field="SuperSpecialityDegree" visible="false" headerText="Super Speciality Degree"></e-grid-column>
+                                                    <e-grid-column field="BankAccountNumber" visible="false" headerText="Account Number"></e-grid-column>
+                                                    <e-grid-column field="IFSC_Code" visible="false" headerText="IFSC Code"></e-grid-column>
+                                                    <e-grid-column field="SpecialityExperience" visible="false" headerText="Speciality Experience"></e-grid-column>
+                                                    <e-grid-column field="OverallExperience" visible="false" headerText="Overall Experience"></e-grid-column>
+                                                    <e-grid-column field="Others" visible="false" headerText="Others"></e-grid-column>
+                                                    <e-grid-column field="Comments" visible="false" headerText="Comments"></e-grid-column>
+                                                    <e-grid-column field="AlternativeNumber" visible="false" headerText="Alternative Number"></e-grid-column>
+                                                    <e-grid-column field="Resume" visible="false" headerText="Resume"></e-grid-column>
+                                                    <e-grid-column field="CountryCode" visible="false" headerText="Country Code"></e-grid-column>
+                                                    <e-grid-column field="MobileNumber" headerText="Mobile Number"></e-grid-column>
+                                                </e-grid-columns>
+                                            </ejs-grid>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <div class="modal fade" id="modal-default">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Profile Rejection</h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="doctorprofilemodal">
+                        <div class="row" style="display:none;">
+                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                <div class="form-group">
+                                    <label class="control-label" style="color: black;float:left;">
+                                        Doctor ID
+                                    </label>
+                                    <input type="text" id="txtdoctorid" disabled class="form-control"
+                                           placeholder="Doctor ID" autocomplete="off" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <div class="form-group required">
+                                    <label class="control-label" style="color: black;">
+                                        Reason
+                                    </label>
+                                    <textarea id="txtReason" class="form-control" style="height:115px;"
+                                              required></textarea>
+                                    <div class="help-block with-errors"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" id="btnprreject" onclick="RejectProfile();" class="btn btn-primary">Reject</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,502 @@
+﻿
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="panel panel-default DivBox" style="background-color: white;">
+                    <div class="card-body">
+                        <div class="col-md-12 text-right" style="display:none;">
+                            <a href="#" class="btn btn-primary" onclick="SupplierPopup();">Supplier Details </a>
+                            <a href="#" class="btn btn-primary" onclick="Draftpopup();">Draft-Invoices </a>
+                            <a href="#" class="btn btn-primary" onclick="ReprintPopup();">
+                                Re-Print
+                            </a>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div>
+                                    <label>Suppiler Name </label>
+                                    <select class="form-control" id="ddlSuplier"  onchange="GetStateDeatilsForGst();">
+                                        <option value="0">--Select--</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div class="form-group">
+                                    <label>
+                                        Ware house
+                                    </label>
+                                    <select class="form-control" id="ddlWherHouse" style="margin-left: 5px;" onchange="GetPurchaseExpiryDays();">
+                                        <option value="0">--Select--</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div class="form-group">
+                                    <label>
+                                        Supplier Invoice No
+                                    </label>
+                                    <input type="text" id="txtInvoiceNo" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div class="form-group">
+                                    <label>
+                                        Invoice Date
+                                    </label>
+                                    <input type="text" id="txtInvoiceDate" class="form-control" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2" style="display:none;">
+                                <div class="form-group">
+                                    <label>
+                                        GST Type
+                                    </label>
+                                    <select class="form-control" id="ddlGstType">
+                                        <option value="GST purchase">GST purchase</option>
+                                        <option value="IGST purchase">IGST purchase</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2" style="display:none;">
+                                <div class="form-group">
+                                    <label>
+                                        Item Type
+                                    </label>
+                                    <select class="form-control" id="ddlInvoiceType">
+                                        <option value="Medicine">Medicine</option>
+                                        <option value="Surgicals">Surgicals</option>
+                                        <option value="Others">Others</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                <label style="margin-left: 5px;"></label>
+                                <div class="form-group">
+                                    @*<button style="margin-left:7px;margin-top:7px;" class="btn btn-primary">Cancel</button>*@
+                                    <button style="margin-left:7px;margin-top:7px;" class="btn btn-primary" onclick="OpenInvoiceDraft();">Draft Invoice</button>
+                                    <button style="margin-left:7px;margin-top:7px;display:none;" class="btn btn-primary" onclick="OpenInvoice();">Invoice</button>
+                                   
+                                    <button style="margin-left:7px;margin-top:7px;" class="btn btn-primary" onclick="OpenInvoiceReturn();">Invoice Return</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div>
+                                    <label style="margin-left: 5px;">Brand Name </label>
+                                    <input type="text" id="txtBrandSearch" class="form-control" style="margin-left: 5px;" onkeyup="return SearchInvoiceDrug();" autocomplete="off" />
+                                    <input type="text" id="txtDrugCode" class="form-control" style="margin-left: 5px;display:none;" />
+                                    <input type="hidden" id="hidSeqID" />
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        Batch
+                                    </label>
+                                    <input type="text" id="txtBatch" class="form-control" style="margin-left: 5px;" autocomplete="off" />
+
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        Expiry Dt
+                                    </label>
+                                    <input type="text" id="txtExpiryDt" class="form-control" autocomplete="off" disabled />
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <label id="lblUom" style="margin-left: 5px;">UOM</label>
+                                <input type="text" id="txtStripNs" class="form-control" onkeypress='return isNumberAndDecimal(this,event)' onchange="PackQtyChange();" />
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        Order Qty
+                                    </label>
+                                    <input type="text" id="txtStripQty" class="form-control" autocomplete="off"
+                                           onkeypress='return isNumberAndDecimal(this,event)' onchange="StripQtyChange();" />
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        Free
+                                    </label>
+                                    <input type="text" id="txtFree" class="form-control" autocomplete="off"
+                                           onkeypress='return isNumberAndDecimal(this,event)' onchange="FreeQtyChange();" value="0" />
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <label style="margin-left: 5px;">Total Units</label>
+                                <div class="form-group">
+                                    <input type="text" id="txtTotalQty" autocomplete="off"
+                                           onkeypress='return isNumberAndDecimal(this,event)' class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        Rate
+                                    </label>
+                                    <input type="text" id="txtstripRate" class="form-control" autocomplete="off"
+                                           onkeypress='return isNumberAndDecimal(this,event)' onchange="return StripRateChange();" />
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        Disc %
+                                    </label>
+                                    <input type="text" id="txtDiscount" class="form-control" autocomplete="off" value="0"
+                                           onkeypress='return isNumberAndDecimal(this,event)' onchange="NewDiscountChange();" />
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        GST %
+                                    </label>
+                                    <input type="text" id="txtTax" class="form-control" autocomplete="off" onchange="GSTChange();" onkeypress='return isNumberAndDecimal(this,event)' />
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        MRP(Incl Tax)
+                                    </label>
+                                    <input type="text" id="txtStripMRP" class="form-control" onkeypress='return isNumberAndDecimal(this,event)' onchange="MRPChange();" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-11 col-sm-11 col-md-11">
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <label></label>
+                                <div class="form-group">
+                                    <button style="margin-left:7px;margin-top:7px;" class="btn btn-primary" onclick="OnDirectInvoiceAdd();">Add</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" style="display:none;">
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        Tax
+                                    </label>
+                                    <input type="text" id="txtTaxAmt" class="form-control" onkeypress='return isNumberAndDecimal(this,event)' />
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        TotalAmt
+                                    </label>
+                                    <input type="text" id="txtTotalAmt" class="form-control" onkeypress='return isNumberAndDecimal(this,event)' />
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        Unit Rate
+                                    </label>
+                                    <input type="text" id="txtUnitRate" class="form-control" onkeypress='return isNumberAndDecimal(this,event)' />
+
+                                </div>
+                            </div>
+
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        Unit  MRP
+                                    </label>
+                                    <input type="text" id="txtUnitMRP" class="form-control" />
+                                </div>
+                            </div>
+
+
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12" id="InvoiceDiv" style="font-size:13px;font-family:sans-serif;display:none;">
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <table class="table table-bordered table-striped" id="tblDrugBind">
+                                            <thead>
+                                                <tr>
+                                                    <th>S.NO</th>
+                                                    <th>Brand Name</th>
+                                                    <th>Batch</th>
+                                                    <th>Expiry Dt</th>
+                                                    <th>Qty</th>
+                                                    <th>Free</th>
+                                                    <th>Rate</th>
+                                                    <th>MRP</th>
+                                                    <th>Amount</th>
+                                                    <th>GST %</th>
+                                                    <th>Tax</th>
+                                                    <th>Discount %</th>
+                                                    <th>Net Amount</th>
+                                                    <th>Delete</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="col-xs-3 col-sm-3 col-md-3" style="display:none;">
+                                        <table class="table table-bordered table-striped" id="tblInvoiceSummary">
+                                            <thead>
+                                                <tr>
+                                                    <th>GST %</th>
+                                                    <th>Amount</th>
+                                                    <th>Tax</th>
+                                                    <th>Total Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            </tbody>
+                                        </table>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12" id="DivInvoiceTotal" style="display:none;">
+                                <div class="row">
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Total
+                                            </label>
+                                            <input type="text" id="txtSummaryAmt" class="form-control" onkeypress='return isNumberAndDecimal(this,event)' />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Tax
+                                            </label>
+                                            <input type="text" id="txtSummaryTax" class="form-control" onkeypress='return isNumberAndDecimal(this,event)' />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Total amount
+                                            </label>
+                                            <input type="text" id="txtSummaryNetAmt" class="form-control" onkeypress='return isNumberAndDecimal(this,event)' />
+
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Discount
+                                            </label>
+                                            <Select id="ddlDiscountType" class="form-control" onchange="TotalInvoiceDiscountCalculation();">
+                                                <option Value='PER'>PER</option>
+                                                <option Value='LS'>LS</option>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Dis Value
+                                            </label>
+                                            <input type="text" id="txtRateValue" class="form-control" onkeypress='return isNumberAndDecimal(this,event)' onchange="TotalInvoiceDiscountCalculation();" />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Dis Amt
+                                            </label>
+                                            <input type="text" id="txtDiscountAmt" class="form-control" onkeypress='return isNumberAndDecimal(this,event)' />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Net Amount
+                                            </label>
+                                            <input type="text" id="txtNetTotal" class="form-control" onkeypress='return isNumberAndDecimal(this,event)' />
+
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <label style="margin-left: 5px;"></label>
+                                        <div class="form-group">
+                                            <button style="margin-left:7px;margin-top:7px;" class="btn btn-primary" onclick="InvoiceSave();">Save Invoice</button>
+                                            <button style="margin-left:7px;margin-top:7px;" class="btn btn-primary" onclick="InvoiceClearAll();">Cancel</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- #region Habib -->
+                        <div class="row" id="divReturnBind" hidden>
+                            <div class="col-xs-12 col-sm-12 col-md-12" style="font-size: 13px; font-family: sans-serif; display: block;">
+                                <div class="row">
+                                    <div class="col-xs-2 col-sm-2 col-md-2">
+                                        <label>Return Type</label>
+                                        <select class="form-control" id="drpReturnType">
+                                            <option value='Goods Return'>Goods Return</option>
+                                            <option value='Expiry Return'>Expiry Return</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-xs-3 col-sm-3 col-md-3">
+                                        <label>Comments</label>
+                                        <textarea class="form-control" id="txtInvRetComments" style="height:37px;"></textarea>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <table class="table table-bordered table-striped" id="tblReturnBind">
+                                            <thead>
+                                                <tr>
+                                                    <th>S.NO</th>
+                                                    <th>Brand Name</th>
+                                                    <th>Batch</th>
+                                                    <th>Expiry Dt</th>
+                                                    <th>Received Qty</th>
+                                                    <th>Free Qty</th>
+                                                    <th>Purchase Cost</th>
+                                                    <th>MRP</th>
+                                                    <th>Amount</th>
+                                                    <th>Tax</th>
+                                                    <th>GST</th>
+                                                    <th>Net Amt</th>
+                                                    <th>Return Qty</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                @*<div class="form-group"></div>*@
+                                <button style="margin-top:4px;" class="btn btn-primary" onclick="SaveReturnInvoice();">Save</button>
+                                <button style="margin-top:4px;" class="btn btn-primary" onclick="Refresh();">Cancel</button>
+                            </div>
+                        </div>
+                        <!-- #endregion -->
+                    </div>
+                    <div id="ModelInvoiceDraft" style="display: none; width: 600px;font-family:'Microsoft Sans Serif'; font-size: small;">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="panel-body">
+                                        <div class="row">
+                                            @*<div class="col-xs-3 col-sm-3 col-md-3">
+                                                    <div class="form-group">
+                                                        <input type="text" id="txtBillNoCancel" placeholder="Bill No" class="form-control" style="margin-left: 5px;" onchange="GetBillCancelByBillNo();" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <input type="text" id="txtCancelBillSearch" placeholder="Search" class="form-control" style="margin-left: 5px;" onkeyup="GetCancelCashBillBySearch();" />
+                                                    </div>
+                                                </div>*@
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <table class="table table-bordered table-striped dataTable table-reflow tableHB" id="tblInvoiceDraft" style="color: black;margin-left: 5px;">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>S.NO</th>
+                                                            <th>Invoice Number</th>
+                                                            <th>Supplier Name</th>
+                                                            <th>Invoice Date</th>
+                                                            <th>Ware house</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="ModelInvoice" style="display: none; width: 600px;font-family:'Microsoft Sans Serif'; font-size: small;">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="panel-body">
+                                        <div class="row">
+
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <table class="table table-bordered table-striped dataTable table-reflow tableHB" id="tblInvoice" style="color: black;margin-left: 5px;">
+                                                    <thead>
+                                                        <tr>
+                                                            <th></th>
+                                                            <th>S.NO</th>
+                                                            <th>Supplier Name</th>
+                                                            <th>Invoice Number</th>
+                                                            <th>Invoice Date</th>
+                                                            <th>Invoice Type</th>
+                                                            <th>GST Type</th>
+                                                            <th>Amount</th>
+                                                            <th>Tax</th>
+                                                            <th>Discount</th>
+                                                            <th>Net Amount</th>
+                                                            <th>Report</th>
+                                                            @*<th>Delete</th>*@
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- #region Habib -->
+                    <div id="ModelInvoiceReturn" style="display: none; width: 600px;font-family:'Microsoft Sans Serif'; font-size: small;">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="panel-body">
+
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <table class="table table-bordered table-striped dataTable table-reflow tableHB" id="tblInvoiceReturn" style="color: black;margin-left: 5px;">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>S.NO</th>
+                                                            <th>Invoice Number</th>
+                                                            <th>Invoice Date</th>
+                                                            <th>WareHouse</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- #endregion -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

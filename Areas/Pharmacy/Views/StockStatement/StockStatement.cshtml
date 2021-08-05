@@ -1,0 +1,546 @@
+﻿
+
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+
+    $(document).ready(function () {
+        GetItemCategoryList();
+    });
+
+    function GetItemCategoryList() {
+        try {
+            var Urlpath = rootUrl + "/api/DrugMastersApi/GetItemCategoryList";
+
+            $.ajax({
+                url: Urlpath,
+                type: "GET",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    if (response.length > 0) {
+                        for (var i = 0; i < response.length; i++) {
+                            var ItemSeqId = response[i].ItemSeqId;
+                            var ItemName = response[i].ItemName;
+                            $('#drpItemCat').append($("<option></option>").val(ItemSeqId).html(ItemName));
+                        }
+                        GetWareHouseList();
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        catch (e) { console.log(e); }
+    }
+    function GetWareHouseList() {
+        try {
+            var Urlpath = rootUrl + "/api/SalesReturnApi/GetStoreDeatailsByHospitalId";
+            $.ajax({
+                url: Urlpath,
+                type: "GET",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    if (response.length > 0) {
+                        $("#ddlWarehouse").empty();
+                        $('#drpWarehouse').append($("<option></option>").val(0).html('All'));
+                        for (var i = 0; i < response.length; i++) {
+                            var SeqId = response[i].HIS_PH_STOREMASTER;
+                            var Name = response[i].HIS_PH_STORENAME;
+                            $('#drpWarehouse').append($("<option></option>").val(SeqId).html(Name));
+                        }
+                        GetProductStatementList();
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+
+        }
+        catch (e) { console.log(e); }
+    }
+
+    function GetProductStatementList() {
+        try {
+            var ItemCatId = $("#drpItemCat").val();
+            var StoreId = $("#drpWarehouse").val();
+            var StoreName = $("#drpWarehouse option:selected").text();
+            var Search = $("#txtSearch").val();
+            if (isNumeric(ItemCatId)) {
+                ItemCatId = parseInt(ItemCatId);
+            }
+            if (isNumeric(StoreId)) {
+                StoreId = parseInt(StoreId);
+            }
+
+            var Urlpath = rootUrl + "/api/CurrentStockApi/GetStockStatementProductList?ItemCatId=" + ItemCatId + "&Search=" + Search + "&StoreName=" + StoreName;
+            $.ajax({
+                url: Urlpath,
+                type: "GET",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: BindStockStatementOnSuccess,
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        catch (e) { console.log(e); }
+    }
+
+    function BindStockStatementOnSuccess(response) {
+        try {
+            var ItemCatId = $("#drpItemCat").val();
+            var ItemCatName = $("#drpItemCat option:selected").text();
+
+            var html = "";
+            var NetTotalValue = 0;
+            var NetTotalQty = 0;
+            $("#tblMedicines tbody").empty();
+            $("#tblSurDisposable tbody").empty();
+            $("#tblSurInstruments tbody").empty();
+            $("#tblOthers tbody").empty();
+            if (response.length > 0) {
+                NetTotalQty = response[0].GrandQty;
+                NetTotalValue = response[0].GrandValue;
+                switch (ItemCatName) {
+                    case "Medicines":
+                        $("#tblMedicines").prop('hidden', false);
+                        $("#tblSurDisposable").prop('hidden', true);
+                        $("#tblSurInstruments").prop('hidden', true);
+                        $("#tblOthers").prop('hidden', true);
+
+                        for (var med = 0; med < response.length; med++) {
+                            var sno = med + 1;
+                            var DrugCode = response[med].PH_CUR_DRUGCODE;
+                            var DrugName = response[med].PH_CUR_DRUGBRANDNAME;
+                            var AvgPurCost = response[med].AvgPurchaseCost;
+                            var TotalQty = response[med].TotalQty;
+                            var AvgValue = 0;
+                            var DtlBtn = "";
+                            if (isNumeric(AvgPurCost) && isNumeric(TotalQty)) {
+                                TotalQty = parseFloat(TotalQty);
+                                AvgPurCost = parseFloat(AvgPurCost);
+
+                                //if (TotalQty != 0 && AvgPurCost != 0) {
+                                var Value = TotalQty * AvgPurCost;
+                                AvgValue = Math.round((Value + Number.EPSILON) * 100) / 100
+                                //}
+                            }
+                            //NetTotalValue = NetTotalValue + AvgValue;
+                            //NetTotalQty = NetTotalQty + TotalQty;
+                            html += "<tr>";
+                            html += "<td style='display:none;'>" + DrugCode + "</td>";
+                            html += "<td style='text-align:center;'>" + sno + "</td>";
+                            html += "<td>" + DrugName + "</td>";
+                            html += "<td style='text-align:right;'>" + TotalQty + "</td>";
+                            html += "<td style='text-align:right;'>" + AvgPurCost + "</td>";
+                            html += "<td style='text-align:right;'>" + AvgValue + "</td>";
+                            html += "<td style='text-align:center;display:none;'><button class='btn btn-primary' onclick='GetStockMovementDetails(this)'>Details</button></td>";
+                            html += "</tr>";
+                        }
+
+                        $("#tblMedicines tbody").append(html);
+
+                        break;
+                    case "Surgical Disposable":
+                        $("#tblMedicines").prop('hidden', true);
+                        $("#tblSurDisposable").prop('hidden', false);
+                        $("#tblSurInstruments").prop('hidden', true);
+                        $("#tblOthers").prop('hidden', true);
+                        break;
+                    case 'Surgical Instruments':
+                        $("#tblMedicines").prop('hidden', true);
+                        $("#tblSurDisposable").prop('hidden', true);
+                        $("#tblSurInstruments").prop('hidden', false);
+                        $("#tblOthers").prop('hidden', true);
+
+                        for (var ins = 0; ins < response.length; ins++) {
+                            var sno = ins + 1;
+                            var ItemID = response[ins].ItemID;
+                            var ItemName = response[ins].ItemName;
+                            var Model = response[ins].PH_Model;
+                            var ModelNo = response[ins].PH_ModelNo;
+                            var AvgPurCost = response[ins].AvgPurchaseCost;
+                            var TotalQty = response[ins].TotalQty;
+                            var AvgValue = 0;
+
+                            if (isNumeric(AvgPurCost) && isNumeric(TotalQty)) {
+                                TotalQty = parseFloat(TotalQty);
+                                AvgPurCost = parseFloat(AvgPurCost);
+
+                                //if (TotalQty != 0 && AvgPurCost != 0) {
+                                var Value = TotalQty * AvgPurCost;
+                                AvgValue = Math.round((Value + Number.EPSILON) * 100) / 100
+                                //}
+                            }
+                            NetTotalValue = NetTotalValue + AvgValue;
+                            NetTotalQty = NetTotalQty + TotalQty;
+                            html += "<tr>";
+                            html += "<td style='display:none;'>" + ItemID + "</td>";
+                            html += "<td>" + sno + "</td>";
+                            html += "<td>" + ItemName + "</td>";
+                            html += "<td>" + Model + "</td>";
+                            html += "<td>" + ModelNo + "</td>";
+                            html += "<td style='text-align:right;'>" + TotalQty + "</td>";
+                            html += "<td style='text-align:right;'>" + AvgPurCost + "</td>";
+                            html += "<td style='text-align:right;'>" + AvgValue + "</td>";
+                            html += "</tr>";
+                        }
+                        $("#tblSurInstruments tbody").append(html);
+
+                        break;
+                    case 'Others':
+                        $("#tblMedicines").prop('hidden', true);
+                        $("#tblSurDisposable").prop('hidden', true);
+                        $("#tblSurInstruments").prop('hidden', true);
+                        $("#tblOthers").prop('hidden', false);
+                        break;
+                }
+                $("#divTotal").prop('hidden', false);
+            }
+            else {
+                $("#divTotal").prop('hidden', true);
+            }
+
+            //NetTotalValue = Math.round((NetTotalValue + Number.EPSILON) * 100) / 100
+            //$("#txtTotalQty").val(NetTotalQty);
+            //$("#txtTotalValue").val(NetTotalValue);
+            $("#lblTotalQty").text(NetTotalQty);
+            $("#lblTotalValue").text(NetTotalValue);
+        }
+        catch (e) { console.log(e); }
+    }
+    function GetStockMovementDetails(SelectedRow) {
+        try {
+            $('#modal-DrugStockMovementDtl').modal({ backdrop: 'static', keyboard: false });
+            var row = SelectedRow.parentNode.parentNode;
+            var StockDrugCode = row.cells[0].innerHTML;
+            var DrugName = row.cells[2].innerHTML;
+            $("#lblStockDrugName").text(DrugName);
+            if (StockDrugCode != null && StockDrugCode != "") {
+                StockDrugCode = parseInt(StockDrugCode);
+                $.ajax({
+                    url: rootUrl + '/api/CurrentStockApi/GetStockMovementDetailsByDrugCode',
+                    type: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    data: { DrugCode: StockDrugCode },
+                    dataType: "json",
+                    beforeSend: function () { $("#loading").css("display", "block"); },
+                    success: BindStockMovementDetails,
+                    complete: function () { $("#loading").css("display", "none"); }
+                });
+            }
+
+        }
+        catch (e) { console.log(e); }
+    }
+    function BindStockMovementDetails(response) {
+        try {
+            var html = "";
+            $("#tblDrugMovementDtl tbody").empty();
+            if (response.length > 0) {
+                for (var dtl = 0; dtl < response.length; dtl++) {
+                    var sno = dtl + 1;
+                    var DrugName = response[dtl].DrugName;
+                    var StockMovementId = response[dtl].ID;
+                    var DrugCode = response[dtl].DrugCode;
+                    var BatchNo = response[dtl].BatchNum;
+                    var InWard = response[dtl].InWard;
+                    var OutWard = response[dtl].OutWard;
+                    var NewStock = response[dtl].NewStock;
+                    var StoreName = response[dtl].StoreName;
+                    var Action = response[dtl].Action;
+                    var Createdatetime = response[dtl].Createdatetime;
+                    html += "<tr>";
+                    html += "<td style='display:none;'>" + StockMovementId + "</td>";
+                    html += "<td style='display:none;'>" + DrugCode + "</td>";
+                    html += "<td style='text-align:center;'>" + sno + "</td>";
+                    html += "<td style='text-align:center;'>" + Createdatetime + "</td>";
+                    html += "<td style='text-align:center;'>" + DrugName + "</td>";
+                    html += "<td style='text-align:center;'>" + BatchNo + "</td>";
+                    html += "<td style='text-align:right;'>" + Action + "</td>";
+                    html += "<td style='text-align:right;'>" + StoreName + "</td>";
+                    html += "<td style='text-align:right;'>" + InWard + "</td>";
+                    html += "<td style='text-align:center;'>" + OutWard + "</td>";
+                    html += "<td style='text-align:center;'>" + NewStock + "</td>";
+                    html += "</tr>";
+                }
+                $("#tblDrugMovementDtl tbody").append(html);
+            }
+        }
+        catch (e) { console.log('BindStockMovementDetails ' + e); }
+    }
+    function StockExportToExcel() {
+        try {
+            var tab_text = "<table border='2px'><tr>";
+            var a = document.createElement('a');
+            var tab = document.getElementById('tblMedicines');// id of table
+            var data_type = 'data:application/vnd.ms-excel';
+            var filename = "StockStatementExport";
+            for (j = 0; j < tab.rows.length; j++) {
+                tab_text = tab_text + tab.rows[j].innerHTML + "</tr>";
+            }
+            tab_text = tab_text.trim() + "</table><br />";
+
+            //var tab_text1 = "<table border='2px'><tr>";
+
+            //var tab1 = document.getElementById('tblInvoiceSummary');// id of table
+            //for (z = 0; z < tab1.rows.length; z++) {
+            //    tab_text1 = tab_text1 + tab1.rows[z].innerHTML + "</tr>";
+            //}
+            //tab_text1 = tab_text1.trim() + "</table>";
+            //tab_text = tab_text + tab_text1;
+            a.href = data_type + ', ' + encodeURIComponent(tab_text);
+            a.download = filename + '.xls';
+            a.click();
+        }
+        catch (e) {
+            alert('No Data Found');
+        }
+
+    }
+
+    function PrintStockStatement() {
+        var StoreName = $("#drpWarehouse option:selected").text();
+        var Urlpath = rootUrl + "/api/CurrentStockApi/CreateStockStatementByPrint?StoreName=" + StoreName;
+        $.ajax({
+            url: Urlpath,
+            type: "GET",
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+
+                var html = "";
+                for (j = 0; j < response.lstClientResult.length; j++) {
+
+                    var address1 = response.lstClientResult[j].Address1;
+                    var address2 = response.lstClientResult[j].Address2;
+               
+
+
+                    html += "<hr>";
+              
+                    html += "<div style='text-align: Center;font-size:20px;font-weight:bold;'>" + response.lstClientResult[j].ClientName + "</div><br/>";
+                    html += "<div style='text-align: Center;font-size:20px;font-weight:bold;'>" + address1 + "</div><br/>";
+                    if (address2 != "") {
+                        html += "<div style='text-align: Center;font-size:20px;font-weight:bold;'>" + address2 + "</div><br/>";
+                    }
+                    //html += "<br/>";
+                    html += "<div style='text-align: Center;font-size:20px;font-weight:bold;'>Stock Statment</div><br/>";
+                    html += "<hr>";
+                }
+                //html += "<br/>";
+                if (response.lstResult.length > 0) {
+                    html += "<table style='font-size:small;border-collapse: collapse;'>";
+                    html += "<thead>";
+                    html += "<tr style='font-weight:bold;'>";
+                    html += "<td style='padding-right: 10px;'>Item Name</td> ";
+                    html += "<td style='padding-right: 10px;'> Batch No </td> ";
+                    html += "<td style='padding-right: 10px;'> Expiry Date </td> ";
+                    html += "<td style='padding-right: 10px;'> Qty </td> ";
+                    html += "<td style='padding-right: 10px;'> Value </td> ";
+                    html += "</tr> ";
+                    html += "</thead> ";
+                    html += "<tbody> ";
+                    for (var i = 0; i < response.lstResult.length; i++) {
+                        html += "<tr>"
+                        html += "<td>" + response.lstResult[i].PH_CUR_DRUGBRANDNAME + "</td>";
+                        html += "<td>" + response.lstResult[i].PH_CUR_STOCK_BATCHNO + "</td>";
+                        html += "<td>" + response.lstResult[i].PH_CUR_STOCK_EXPIRYDT + "</td>";
+                        html += "<td>" + response.lstResult[i].PH_CUR_STOCK + "</td>";
+                        //html += "<td>" + response[i].AvgPurchaseCost + "</td>";
+                        html += "<td>" + response.lstResult[i].TotalValue + "</td>";
+
+                        html += "</tr>";
+
+                    }
+                    html += "<tr>";
+                    html += "<td><b>Total</b></td>";
+                    html += "<td></td>";
+                    html += "<td></td>";
+                    html += "<td><b>" + response.lstResult[0].GrandQty + "</b></td>";
+                    html += "<td><b>" + response.lstResult[0].GrandValue + "</b></td>";
+                    html += "</tr>";
+                    html += "</tbody> ";
+                    html += " </table  > ";
+                }
+                
+                var table = document.getElementById('review-products');
+
+                sessionStorage.setItem("PrintDetails", html);
+                openRequestedPopup()
+            },
+
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+</script>
+
+<script>
+    function isNumeric(n) {
+        return !isNaN(parseFloat(n)) && isFinite(n);
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+
+
+
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="panel panel-default DivBox" style="background-color: white;">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <input type="text" id="txtSearch" class="form-control" placeholder="Search" onkeyup="GetProductStatementList();" />
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <select id="drpItemCat" class="form-control" onchange="GetProductStatementList();"></select>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <select id="drpWarehouse" class="form-control" onchange="GetProductStatementList();"></select>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <button class="btn btn-primary" onclick="PrintStockStatement();">Print</button>
+                            </div>
+                            <div class="col-xs-4 col-sm-4 col-md-4" id="divTotal">
+                                <div class="row">
+                                    <div class="col-xs-3 col-sm-3 col-md-3">
+                                        <label style="float:right;">Total Qty:</label>
+                                    </div>
+                                    <div class="col-xs-3 col-sm-3 col-md-3">
+                                        <label id="lblTotalQty"></label>
+                                    </div>
+                                    <div class="col-xs-3 col-sm-3 col-md-3">
+                                        <label style="float:right;margin-left: -10px;">Total Value:</label>
+                                    </div>
+                                    <div class="col-xs-3 col-sm-3 col-md-3">
+                                        <label id="lblTotalValue"></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <table class="table table-bordered table-striped" id="tblMedicines" style="font-size:13px;overflow:auto;" hidden>
+                                    <thead style="line-height: 13px;">
+                                        <tr>
+                                            <th>S.No</th>
+                                            <th>Item Name</th>
+                                            <th>Stock Qty</th>
+                                            <th>Average Price</th>
+                                            <th>Stock Value</th>
+                                            @*<th>Action</th>*@
+                                            @*<th>Action</th>*@
+                                        </tr>
+                                    </thead>
+                                    <tbody style="line-height:20px;"></tbody>
+                                </table>
+                                <table class="table table-bordered table-striped" id="tblSurDisposable" style="font-size:13px;overflow:auto;" hidden>
+                                    <thead style="line-height: 13px;">
+                                        <tr>
+                                            <th>S.No</th>
+                                            <th>Item Name</th>
+                                            <th>Brand Name</th>
+                                            <th>Spec</th>
+                                            <th>Stock Qty</th>
+                                            <th>Average Cost</th>
+                                            <th>Average Value</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody style="line-height: 20px;"></tbody>
+                                </table>
+                                <table class="table table-bordered table-striped" id="tblSurInstruments" style="font-size:13px;overflow:auto;" hidden>
+                                    <thead style="line-height: 13px;">
+                                        <tr>
+                                            <th>S.No</th>
+                                            <th>Item Name</th>
+                                            <th>Model</th>
+                                            <th>Model No</th>
+                                            <th>Stock Qty</th>
+                                            <th>Average Cost</th>
+                                            <th>Average Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody style="line-height: 20px;"></tbody>
+                                </table>
+                                <table class="table table-bordered table-striped" id="tblOthers" style="font-size:13px;overflow:auto;" hidden>
+                                    <thead style="line-height: 13px;">
+                                        <tr>
+                                            <th>S.No</th>
+                                            <th>Item Name</th>
+                                            <th>Brand Name</th>
+                                            <th>Stock Qty</th>
+                                            <th>Average Cost</th>
+                                            <th>Average Value</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody style="line-height: 14px;"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row" hidden>
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <input type="button" class="btn btn-primary" id="btnExport" onclick="StockExportToExcel();" value="Export Excel" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal fade" id="modal-DrugStockMovementDtl">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h4 class="modal-title">Drug Movement Detials</h4>
+                                </div>
+                                <div class="modal-body eventInsForm">
+                                    <div class="row">
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <label style="text-align:right;">Drug Name: </label>
+                                            <label id="lblStockDrugName" style="text-align:left;"></label>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <table id="tblDrugMovementDtl" class="table table-bordered table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>S.No</th>
+                                                        <th>Date & Time</th>
+                                                        <th>Drug Name</th>
+                                                        <th>Batch</th>
+                                                        <th>Transaction Type</th>
+                                                        <th>Reference</th>
+                                                        <th>Inward</th>
+                                                        <th>Outward</th>
+                                                        <th>Stock Qty</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            @*<button type="button" class="btn btn-primary" id="" onclick="">Print</button>*@
+                                            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

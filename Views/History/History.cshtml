@@ -1,0 +1,2300 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@using Syncfusion.EJ2
+@using Newtonsoft.Json
+<style>
+</style>
+<script>
+    $(document).ready(function () {
+        var Patientid = $("#lblpatid").text();
+        var visitid = $("#lblvisitid").text();
+        if (sessionStorage.getItem('Status') == 'Check-In')
+            GetOldHistory(Patientid, visitid);
+    });
+    function GetOldHistory(Patientid, visitid) {
+        try {
+            var sendJsonData = {};
+            var response = postValues("/Emr/GetPatDetails", sendJsonData);
+            if (response.Pat.length > 0) {
+                var DoctorCompare = response.Pat[0].DoctorCompare;
+                if (DoctorCompare == false) {
+                    document.getElementById('btnHistorySaveVerifiy').disabled = true;
+                }
+                else {
+                    var verifyresponse = getValues("/Emr/GetVerifyDetails");
+                    if (verifyresponse == false) {
+                        $("#btnHistorySaveVerifiy").prop('disabled', true);
+                    }
+                    else {
+                        $("#btnHistorySaveVerifiy").prop('disabled', false);
+                    }
+                }
+            }
+            $.ajax({
+                url: "/Emr/GetHistoryLastData/?PatientID=" + Patientid + "&Visitid=" + visitid + "",
+                type: 'Get',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: OnSuccessHistory,
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+
+        } catch (e) {
+
+        }
+    }
+    function SaveHistory(IsActive) {
+        var BloodTransfusion = false;
+        if ($("#rdoYesBloodTrans").is(':checked')) {
+            BloodTransfusion = true;
+        }
+        if ($("#rdoNoBloodTrans").is(':checked')) {
+            BloodTransfusion = false;
+        }
+        if ($("#rdoNoBloodTrans").is(':checked')) {
+            BloodTransfusion = false;
+        }
+        var GenitalReproductiveHistory = "";
+        if ($("#rdoMarried").is(':checked')) {
+            GenitalReproductiveHistory = "Married";
+        }
+        if ($("#rdoUnMarried").is(':checked')) {
+            GenitalReproductiveHistory = "Unmarried";
+        }
+        var MenstrualHistory = "";
+        if ($("#rdoNoraml").is(':checked')) {
+            MenstrualHistory = "Noraml";
+        }
+        if ($("#rdoAbnormal").is(':checked')) {
+            MenstrualHistory = "Abnormal";
+        }
+
+        var Menopause = false;
+        if ($("#chkMenopause").is(':checked')) {
+            Menopause =true;
+        }
+        //var LmbDateAsString = "";
+        //var DateLmb = document.getElementById('txtLMBDate').ej2_instances[0].value;
+        //if (DateLmb !== null) {
+        //    var d = new Date(DateLmb);
+        //    var Month = parseInt(d.getMonth()) + 1;
+        //    LmbDateAsString = d.getDate() + "/" + Month + "/" + d.getFullYear();
+        //}
+        var ASNSAD = false;
+        if ($("#chkASNSAD").is(':checked')) {
+            ASNSAD = true;
+        }
+        var COX2 = false;
+        if ($("#ChkCOX2").is(':checked')) {
+            COX2 = true;
+        }
+        var Insulin = false;
+        if ($("#ChkInsulin").is(':checked')) {
+            Insulin = true;
+        }
+        var Anticoagulant = false;
+        if ($("#ChkAnticoagulant").is(':checked')) {
+            Anticoagulant = true;
+        }
+        var AntibioticProphylaxis = false;
+        if ($("#ChkAntibioticProphylaxis").is(':checked')) {
+            AntibioticProphylaxis = true;
+        }
+        // Habit table for loop
+        var PatHabitView = new Array();
+        var tblHabit = document.getElementById("tblHabits");
+        var rowtblHabit = tblHabit.rows.length;
+        for (k = 1; k < rowtblHabit; k++) {
+            var rowHabit = tblHabit.rows[k];
+            var checkbox = rowHabit.cells[0].getElementsByTagName("input");
+            if ($(checkbox).is(':checked')) {
+                var objDetails = new Object();
+                objDetails.HabitName = rowHabit.cells[1].innerHTML;
+                objDetails.HabitSeqID = parseFloat(rowHabit.cells[2].innerHTML);
+                objDetails.Comments = rowHabit.cells[3].getElementsByTagName("input")[0].value;
+                PatHabitView.push(objDetails);
+             }
+        }
+        //Allergies for loop
+        var Allergies = new Array();
+        var tblAllergies = document.getElementById("tblAllergy");
+        var rowtblAllergies = tblAllergies.rows.length;
+        for (J = 1; J < rowtblAllergies; J++) {
+            var rowAllergies = tblAllergies.rows[J];
+            var AllergyName = rowAllergies.cells[0].innerHTML;
+            Allergies.push(AllergyName);
+        }
+
+        //Medical History for loop
+        var MedicalHistory = new Array();
+        var tblMedicalHistory = document.getElementById("tblMedicalHistroy");
+        var rowtblMedicalHistory = tblMedicalHistory.rows.length;
+        for (M = 1; M < rowtblMedicalHistory; M++) {
+            var rowMedicalHistory = tblMedicalHistory.rows[M];
+            var ObjectDetails = new Object();
+            ObjectDetails.MedicalHistory = rowMedicalHistory.cells[0].innerHTML;
+            ObjectDetails.Duration = rowMedicalHistory.cells[2].getElementsByTagName("input")[0].value;
+            ObjectDetails.Remark = rowMedicalHistory.cells[3].getElementsByTagName("input")[0].value;
+            var CheckValue = ObjectDetails.Duration + ObjectDetails.Remark;
+            if(CheckValue!=="")
+               MedicalHistory.push(ObjectDetails);
+        }
+        //Medicine for loop
+        var Medicine = new Array();
+        var tblMedicine = document.getElementById("tblCurrentMedicine");
+        var rowtblMedicine = tblMedicine.rows.length;
+        for (N = 1; N < rowtblMedicine; N++) {
+            var rowMedicine = tblMedicine.rows[N];
+            var ObjectDetails = new Object();
+            ObjectDetails.Medicine = rowMedicine.cells[0].innerHTML;
+            ObjectDetails.Duration = rowMedicine.cells[1].getElementsByTagName("input")[0].value;
+            ObjectDetails.Remark = rowMedicine.cells[2].getElementsByTagName("input")[0].value;
+            Medicine.push(ObjectDetails);
+        }
+        //PatSurgical for loop
+        var PatSurgical = new Array();
+        var tblSurgical = document.getElementById("tblSurgicalHistory");
+        var rowtblSurgical = tblSurgical.rows.length;
+        for (P = 1; P < rowtblSurgical; P++) {
+            var rowSurgical = tblSurgical.rows[P];
+            var ObjectDetails = new Object();
+            ObjectDetails.SurgicalHistory = rowSurgical.cells[0].innerHTML;
+            ObjectDetails.Comments = rowSurgical.cells[1].getElementsByTagName("input")[0].value;
+            PatSurgical.push(ObjectDetails);
+        }
+        var DateArray = new Array();
+        DateArray.push($("#txtLMBDate").val());
+
+        //$("#txtFullTerm").val()
+        var sendJsonData = {
+            HistorySeqID: 0,
+            PatientID: $("#lblpatid").text(),
+            VisitID: $("#lblvisitid").text(),
+            SimilarEpisodes: $("#txtSimilarEpisodes").val(),
+            Duration: $("#txtDuration").val(),
+            TreatmentTaken: $("#txtTreatmentTaken").val(),
+            BloodTransfusion: BloodTransfusion,
+            ReactionComments: $("#txtReactionComments").val(),
+            GenitalReproductiveHistory: GenitalReproductiveHistory,
+            Gravida: $("#txtGravida").val(),
+            Para: $("#txtPara").val(),
+            Abortion: $("#txtAbortion").val(),
+            Proterm: $("#txtProterm").val(),
+            FullTerm: "",
+            LivingChildren: $("#txtLivingChildren").val(),
+            MenstrualHistory: MenstrualHistory,
+            MenopauseText: $("#txtMenopauseText").val(),
+            LmbDateAsString: "",
+            ASNSAD: ASNSAD,
+            COX2:COX2,
+            Insulin: Insulin,
+            Anticoagulant: Anticoagulant,
+            RelevantHistory: $("#txRelevantHistory").val(),
+            SurgicalHistory: $("#txSurgicalHistory").val(),
+            PatHabit: PatHabitView,
+            Allergies: Allergies,
+            PatMedicalHistory: MedicalHistory,
+            PatMedicine: Medicine,
+            patSurgical: PatSurgical,
+            DateArray: DateArray,
+            IsActive:IsActive
+        };
+        console.log(sendJsonData);
+        $.ajax({
+            url: "/Emr/CreateNewPatHistory",
+            type: 'post',
+            contentType: "application/json",
+            data: JSON.stringify(sendJsonData),
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (data) {
+                alert("Save Success");
+                $("#OldHistory").hide();
+                $("#AllHistory").show();
+                if (IsActive === true) {
+                    ClearAllHistory();
+                }
+                CloseHistoryStatus();
+                OnSuccessAllPatHistory(data);
+
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+    function GetLatestPatHistory() {
+        if ($("#chkHisPrevious").is(":checked")) {
+            //var sendJsonData = {};
+            //var response = postValues("/Emr/GetPatDetails", sendJsonData);
+            //if (response.Pat.length > 0) {
+            //    var DoctorCompare = response.Pat[0].DoctorCompare;
+            //    if (DoctorCompare == false) {
+            //        document.getElementById('btnHistorySaveVerifiy').disabled = true;
+            //    }
+            //    else {
+            //        var verifyresponse = getValues("/Emr/GetVerifyDetails");
+            //        if (verifyresponse == false) {
+            //            $("#btnHistorySaveVerifiy").prop('disabled', true);
+            //        }
+            //        else {
+            //            $("#btnHistorySaveVerifiy").prop('disabled', false);
+            //        }
+            //    }
+            //}
+            var arg = $("#lblpatid").text();
+            $.ajax({
+                url: "/Emr/GetLatestPatHistoryByVisitID/?PatientID=" + arg + "",
+                type: 'Get',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: OnSuccessHistory,
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        else {
+            ClearAllHistory();
+        }
+    }
+    function OnSuccessHistory(response) {
+        if (response.PatHistroy.length > 0) {
+            var html = "";
+            for (HistroyCount = 0; HistroyCount < response.PatHistroy.length; HistroyCount++) {
+                //html += "<span style='color: Blue;'>Similar Episodes:</span>";
+                //html += "<br/>";
+                //html += "<table class='table dataTable table-reflow'>";
+                //html += "<thead><tr><td>Create Date</td><td>Create User</td><td>Modified Date</td><td>Modified User</td></tr></thead>";
+                //html += "<tbody><tr><td>" + response.PatHistroy[HistroyCount].Createdatetime + "</td>";
+                //html += "<td>" + response.PatHistroy[HistroyCount].CreateUser + "</td><td>" + response.PatHistroy[HistroyCount].ModifiedDtString +"</td>";
+                //html += "<td>" + response.PatHistroy[HistroyCount].ModifiedUser +"</td></tr></tbody><table>";
+                //$("#txtSimilarEpisodes").val(response.PatHistroy[HistroyCount].SimilarEpisodes);
+                //$("#txtDuration").val(response.PatHistroy[HistroyCount].Duration);
+                //$("#txtTreatmentTaken").val(response.PatHistroy[HistroyCount].TreatmentTaken);
+
+                html += "<span style='color: Blue;'>Hx of Blood Transfusion:</span>";
+                var BloodTransfusion = response.PatHistroy[HistroyCount].BloodTransfusion;
+                if (BloodTransfusion === true) {
+                    html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span>Patient has undergone blood transfusion.</span><br/>";
+                    $("#rdoYesBloodTrans").attr('checked', 'checked');
+                }
+                else if (BloodTransfusion === false) {
+                    html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span>No blood transfusion.</span></div></div>";
+                    $("#rdoNoBloodTrans").attr('checked', 'checked');
+                }
+                if (response.PatHistroy[HistroyCount].ReactionComments !== "")
+                    html += "<br/><div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span>Reaction / Comments </span>" + response.PatHistroy[HistroyCount].ReactionComments + "</div></div>";
+
+                html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'>";
+                html += "<table class='table table-bordered table-striped dataTable table-reflow'>";
+                html += "<thead><tr style='color: Blue;'><td>Health Habits</td><td>Comments</td></tr></thead><tbody>";
+                if (response.Pathabits.length > 0) {
+                    $("#tblHabits tbody").empty();
+                    for (HabitCount = 0; HabitCount < response.Pathabits.length; HabitCount++) {
+                        html += "<tr><td>" + response.Pathabits[HabitCount].HabitName + "</td>";
+                        html += "<td>" + response.Pathabits[HabitCount].Comments + "</td></tr>";
+                        HabitCreateNewRow(response.Pathabits[HabitCount].HabitSeqID,response.Pathabits[HabitCount].HabitName,response.Pathabits[HabitCount].Comments,true);
+                    }
+                }
+                html += "</tbody><table></div></div>";
+                if (response.PatHistroy[HistroyCount].GenitalReproductiveHistory !== "") {
+                    html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span style='color: Blue;'>Genital / Reproductive History:</span><br/>";
+                    html += "<span>The patient is " + response.PatHistroy[HistroyCount].GenitalReproductiveHistory + "</span></div></div>";
+                }
+
+                if (response.PatHistroy[HistroyCount].GenitalReproductiveHistory === "Married")
+                    $("#rdoMarried").attr('checked', 'checked');
+                else if (response.PatHistroy[HistroyCount].GenitalReproductiveHistory === "Unmarried")
+                    $("#rdoUnMarried").attr('checked', 'checked');
+
+                var Gender = $("#lblgender").text();
+                if (Gender === "Female") {
+                    html += "<div class='row'><div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span style='color: Blue;'>Gravida:</span></div></div>";
+                    html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span>" + response.PatHistroy[HistroyCount].Gravida + "</span></div></div>";
+                    $("#txtGravida").val(response.PatHistroy[HistroyCount].Gravida);
+
+                    html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span style='color: Blue;'>Para:</span></div></div>";
+                    html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span>" + response.PatHistroy[HistroyCount].Para + "</span></div></div>";
+                    $("#txtPara").val(response.PatHistroy[HistroyCount].Para);
+
+                    html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span style='color: Blue;'>Abortion:</span></div></div>";
+                    html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span>" + response.PatHistroy[HistroyCount].Abortion + "</span></div></div></div>";
+                    $("#txtAbortion").val(response.PatHistroy[HistroyCount].Abortion);
+
+                    html += "<div class='row'><div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span style='color: Blue;'>Proterm:</span></div></div>";
+                    html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span>" + response.PatHistroy[HistroyCount].Proterm + "</span></div></div>";
+                    $("#txtProterm").val(response.PatHistroy[HistroyCount].Proterm);
+
+                    html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span style='color: Blue;'>Full Term:</span></div></div>";
+                    html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span>" + response.PatHistroy[HistroyCount].FullTerm + "</span></div></div>";
+                    $("#txtFullTerm").val(response.PatHistroy[HistroyCount].Proterm);
+
+                    html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span style='color: Blue;'>Living Children:</span></div></div>";
+                    html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span>" + response.PatHistroy[HistroyCount].LivingChildren + "</span></div></div></div>";
+                    $("#txtLivingChildren").val(response.PatHistroy[HistroyCount].LivingChildren);
+
+                    //html += "<div class='row'><div class='col-xs-3 col-sm-3 col-md-3'><div class='form-group'><span style='color: Blue;'>Menstrual History:</span></div></div>";
+                    //html += "<div class='col-xs-3 col-sm-3 col-md-3'><div class='form-group'><span>" + response.PatHistroy[HistroyCount].MenstrualHistory + "</span></div></div></div>";
+
+                    if (response.PatHistroy[HistroyCount].MenstrualHistory === "Noraml") {
+                        $("#rdoNoraml").attr('checked', 'checked');
+                    }
+                    else if (response.PatHistroy[HistroyCount].MenstrualHistory === "Abnormal") {
+                        $("#rdoAbnormal").attr('checked', 'checked');
+                    }
+                    var Menopause = response.PatHistroy[HistroyCount].Menopause;
+                    if (Menopause === true) {
+                        html += "<div class='row'><div class='col-xs-3 col-sm-3 col-md-3'><div class='form-check-inline'>"
+                        html += " <label class='form-check-label'>";
+                        html += "<input type='checkbox' class='form-check-input' checked> Menopause </label>";
+                        html += "</div></div> ";
+                        $("#chkMenopause").attr('checked', 'checked');
+                    }
+                    else {
+                        html += "<div class='row'><div class='col-xs-3 col-sm-3 col-md-3'><div class='form-check-inline'>"
+                        html += " <label class='form-check-label'>";
+                        html += "<input type='checkbox' class='form-check-input'> Menopause </label>";
+                        html += "</div></div>";
+                    }
+                    html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span>" + response.PatHistroy[HistroyCount].MenopauseText + "</span></div></div>";
+                    $("#txtMenopauseText").val(response.PatHistroy[HistroyCount].MenopauseText);
+                    html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span>LMP Date</span></div></div>";
+                    html += "<div class='col-xs-3 col-sm-3 col-md-3'><div class='form-group'><span>" + response.PatHistroy[HistroyCount].LmbDateAsString + "(mm/dd/yyyy)</span></div></div></div>";
+                    if (response.PatHistroy[HistroyCount].LmbDateAsString !== "")
+                        $("#txtLMBDate").val(response.PatHistroy[HistroyCount].LmbDateAsString);
+                 }
+                html += "<div class='row'><div class='col-xs-3 col-sm-3 col-md-3'><div class='form-group'>";
+                html += "<table class='table table-bordered table-striped dataTable table-reflow'>";
+                html += "<thead><tr><td style='color: red;'>Allergies</td></tr></thead><tbody>";
+                if (response.PatAllergy.length > 0) {
+                    $("#tblAllergy tbody").empty();
+                    for (AllergyCount = 0; AllergyCount < response.PatAllergy.length; AllergyCount++) {
+                        html += "<tr><td style='color: red;'>" + response.PatAllergy[AllergyCount] + "</td></tr>";
+                        AllergyCreateNewRow(response.PatAllergy[AllergyCount]);
+                    }
+                }
+                html += "</tbody><table></div></div>";
+
+                html += "<div class='row'><div class='col-xs-3 col-sm-3 col-md-3'><div class='form-group'>";
+                html += "<table class='table table-bordered table-striped dataTable table-reflow'>";
+                html += "<thead><tr style='color: Blue;'><td>Medical History</td><td>Duration</td><td>Remark</td></tr></thead><tbody>";
+                if (response.PatMedicalHstd.length > 0) {
+                    $("#tblMedicalHistroy tbody").empty();
+                    for (MediHstdCount = 0; MediHstdCount < response.PatMedicalHstd.length; MediHstdCount++) {
+                        html += "<tr><td>" + response.PatMedicalHstd[MediHstdCount].MedicalHistory + "</td>";
+                        html += "<td>" + response.PatMedicalHstd[MediHstdCount].Duration + "</td>";
+                        html += "<td>" + response.PatMedicalHstd[MediHstdCount].Remark + "</td></tr>";
+                        var SeqID = response.PatMedicalHstd[MediHstdCount].SeqID;
+                        var MedicalHistory = response.PatMedicalHstd[MediHstdCount].MedicalHistory;
+                        var Duration = response.PatMedicalHstd[MediHstdCount].Duration;
+                        var Remark = response.PatMedicalHstd[MediHstdCount].Remark;
+                        DiseasesCreateNewRow(SeqID, MedicalHistory, Duration, Remark)
+                    }
+                    html += "</tbody><table></div></div>";
+                }
+
+                html += "<div class='row'><div class='col-xs-3 col-sm-3 col-md-3'><div class='form-group'>";
+                html += "<table class='table table-bordered table-striped dataTable table-reflow'>";
+                html += "<thead><tr style='color: Blue;'><td>Medicine</td><td>Duration</td><td>Remark</td></tr></thead><tbody>";
+                if (response.PatMedicine.length > 0) {
+                    $("#tblCurrentMedicine tbody").empty();
+                    for (MediCount = 0; MediCount < response.PatMedicine.length; MediCount++) {
+                        html += "<tr><td>" + response.PatMedicine[MediCount].Medicine + "</td>";
+                        html += "<td>" + response.PatMedicine[MediCount].Duration + "</td>";
+                        html += "<td>" + response.PatMedicine[MediCount].Remark + "</td></tr>";
+                        MedicineCreateNewRow(response.PatMedicine[MediCount].Medicine, response.PatMedicine[MediCount].Duration, response.PatMedicine[MediCount].Remark);
+                    }
+                    html += "</tbody><table></div></div>";
+                }
+
+                html += "<div class='row'><div class='col-xs-3 col-sm-3 col-md-3'><div class='form-group'>";
+                html += "<table class='table table-bordered table-striped dataTable table-reflow'>";
+                html += "<thead><tr style='color: Blue;'><td>Surgical History</td><td>Comments</td></tr></thead><tbody>";
+                if (response.PatSurgical.length > 0) {
+                    $("#tblSurgicalHistory tbody").empty();
+                    for (SurCount = 0; SurCount < response.PatSurgical.length; SurCount++) {
+                        html += "<tr><td>" + response.PatSurgical[SurCount].SurgicalHistory + "</td>";
+                        html += "<td>" + response.PatSurgical[SurCount].Comments + "</td></tr>";
+                        SurgicalCreateNewRow(response.PatSurgical[SurCount].SurgicalHistory, response.PatSurgical[SurCount].Comments);
+                    }
+                }
+                html += "</tbody><table></div></div>";
+
+                html += "<div class='row'><div class='col-xs-4 col-sm-4 col-md-4'><div class='form-group'><span style='color: Blue;'></span></div></div>";
+                html += "<div class='col-xs-8 col-sm-8 col-md-8'><div class='form-group'><span>" + response.PatHistroy[HistroyCount].RelevantHistory + "</span></div></div></div>";
+                //html += "<div class='row'><div class='col-xs-4 col-sm-4 col-md-4'><div class='form-group'><span style='color: Blue;'>Surgical History:</span></div></div>";
+                //html += "<div class='col-xs-8 col-sm-8 col-md-8'><div class='form-group'><span>" + response.PatHistroy[HistroyCount].SurgicalHistory + "</span></div></div></div>";
+                $("#txRelevantHistory").val(response.PatHistroy[HistroyCount].RelevantHistory);
+                $("#txSurgicalHistory").val(response.PatHistroy[HistroyCount].SurgicalHistory);
+            }
+            $("#OldHistory").html(html);
+        }
+    }
+    function onHabitsfiltering(e) {
+        var Habits = document.getElementById('cmbHealtHabit').ej2_instances[0];
+        var query = new ej.data.Query();
+        query = (e.text !== '') ? query.where('Habits', 'Contains', e.text, true) : query;
+        e.updateData(Habits.dataSource, query);
+        if (document.getElementById('nodata')) {
+            document.getElementById('btnAddHabit').onclick = function () {
+                var customValue = (document.getElementById('cmbHealtHabit')).value;
+                var tData = getValues("/Emr/CreateNewHealthHabit/?HabitName=" + customValue + "");
+                var newItem = { 'Habits': tData.Habits, 'HealthHabitsSeqID': tData.HealthHabitsSeqID };
+                (Habits.dataSource).push(newItem);
+                Habits.hidePopup();
+                Habits.addItem(newItem);
+                // select the newly added item.
+                Habits.value = "";
+            };
+        }
+    }
+    function OnChangeHabits() {
+        var Habits = document.getElementById('cmbHealtHabit').ej2_instances[0];
+        var HabitSeqID = Habits.value;
+        var HabitsTxt = Habits.text;
+        if (Habits !== null) {
+            var table = $('#tblHabits');
+            var $tr = $('#tblHabits tr[data-id="' + HabitSeqID + '"]');
+            if ($tr.length === 0)
+                HabitCreateNewRow(HabitSeqID, HabitsTxt, "", false);
+
+            document.getElementById('cmbHealtHabit').ej2_instances[0].text = "";
+            document.getElementById('cmbHealtHabit').ej2_instances[0].value = "";
+
+        }
+    }
+    function HabitCreateNewRow(HabitSeqID,Habits,Comments,Cond) {
+        var html = "";
+        if (HabitSeqID > 0) {
+            if (Cond === true) {
+                html += "<tr data-id=\"" + HabitSeqID + "\"><td><input type=\"checkbox\" style=\"width:16px;height:16px;\" checked></td>";
+            }
+            else {
+                html += "<tr data-id=\"" + HabitSeqID + "\"><td><input type=\"checkbox\" style=\"width:16px;height:16px;\"></td>";
+            }
+            html += "<td style='color:blue;'>" + Habits + "</td>";
+            html += "<td style='display:none;'>" + HabitSeqID + "</td>";
+            html += "<td><input type=\"Text\" value='" + Comments + "'  onchange='HealthHabitChekedRow(this);'></td>";
+            html += "<td style='text-align: center;'>";
+            html += "<img src='../Images/Delete.png'  onclick='return DeleteHabits(this)' style='cursor:pointer;width: 25px !important;height:25px !important;'>";
+            html += "</td></tr>";
+            $("#tblHabits tbody").append(html);
+        }
+        return html;
+    }
+    function DeleteHabits(SelectedRow) {
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = myrow.rowIndex;
+        document.getElementById("tblHabits").deleteRow(myrow.rowIndex);
+        var table = document.getElementById("tblHabits");
+        var rowCount = table.rows.length;
+        var i = myrow.rowIndex;
+        document.getElementById('cmbHealtHabit').ej2_instances[0].text = "";
+        document.getElementById('cmbHealtHabit').ej2_instances[0].value = "";
+        //regroup(i, rowCount, "tblComplaints");
+        return false;
+    }
+    function OpenHabitAsPickList() {
+        var tbl12 = document.getElementById("tblHabits");
+        var html = "";
+        var row12 = tbl12.rows.length;
+        $("#tblHabitSaveAsNewPickLsit tbody").empty();
+        for (k = 1; k < row12; k++) {
+            var sval12 = tbl12.rows[k];
+            var checkbox = sval12.cells[0].getElementsByTagName("input");
+            if ($(checkbox).is(':checked')) {
+                var Habit = sval12.cells[1].innerHTML;
+                var HabitSeqID = parseFloat(sval12.cells[2].innerHTML);
+                var Comments = sval12.cells[3].getElementsByTagName("input")[0].value;
+                html += "<tr><td>" + Habit + "</td></tr>";
+            }
+        }
+        $("#tblHabitSaveAsNewPickLsit tbody").append(html);
+        document.getElementById('HabitPickLstdialog').ej2_instances[0].show();
+    }
+    function SaveAsHabitNewPickList() {
+        var tbl12 = document.getElementById("tblHabits");
+        var PickListName = document.getElementById("txtHabitNewPickListName").value;
+
+        var HealthPickLst = new Array();
+        if (PickListName.length > 0) {
+            var row12 = tbl12.rows.length;
+            for (k = 1; k < row12; k++) {
+                var sval12 = tbl12.rows[k];
+                var checkbox = sval12.cells[0].getElementsByTagName("input");
+                if ($(checkbox).is(':checked')) {
+                    var objDetails = new Object();
+                    objDetails.PickListSeqID = 0;
+                    objDetails.PickListName = PickListName;
+                    objDetails.HabitHeaderSeqID = 0;
+                    objDetails.HabitSeqID = parseFloat(sval12.cells[2].innerHTML);
+                    objDetails.Habits = sval12.cells[1].innerHTML;
+                    objDetails.HPicklstClick = "New";
+                    HealthPickLst.push(objDetails);
+                }
+            }
+            //var response = postValues("/Emr/CreateNewHabitLsit", HealthPickLst);
+            $.ajax({
+                url: "/Emr/CreateNewHabitLsit",
+                type: 'post',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(HealthPickLst),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    alert(data);
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+            document.getElementById('HabitPickLstdialog').ej2_instances[0].hide();
+        }
+        else {
+            alert("Please Enter Pick List Name");
+        }
+        return false;
+    }
+    function OnHabitPickListChange() {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        var arg = document.getElementById('txtHabitPickHeader').ej2_instances[0].value;
+        if (arg.length > 0) {
+            $.ajax({
+                url: "/Emr/GetHabitsByPickListName/?PickListName=" + arg + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    //$("#tblHabits tbody").empty();
+                    for (Count = 0; Count < response.Header.length; Count++) {
+                        var HabitHeaderSeqID = response.Header[Count].HabitSeqID;
+                        var Habits = response.Header[Count].Habits;
+                        var $tr = $('#tblHabits tr[data-id="' + HabitHeaderSeqID + '"]');
+                        if ($tr.length === 0)
+                            HabitCreateNewRow(HabitHeaderSeqID, Habits, "", false);
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+    }
+    function SaveHabitToPickList() {
+        var tbl12 = document.getElementById("tblHabits");
+        var PickListName = document.getElementById('txtHabitPickHeader').ej2_instances[0].value;
+        var HealthPickLst = new Array();
+        if (PickListName.length > 0) {
+            var row12 = tbl12.rows.length;
+            for (k = 1; k < row12; k++) {
+                var sval12 = tbl12.rows[k];
+                var checkbox = sval12.cells[0].getElementsByTagName("input");
+                if ($(checkbox).is(':checked')) {
+                    var objDetails = new Object();
+                    objDetails.PickListSeqID = 0;
+                    objDetails.PickListName = PickListName;
+                    objDetails.HabitHeaderSeqID = 0;
+                    objDetails.HabitSeqID = parseFloat(sval12.cells[2].innerHTML);
+                    objDetails.Habits = sval12.cells[1].innerHTML;
+                    objDetails.HPicklstClick = "Old";
+                    HealthPickLst.push(objDetails);
+                }
+            }
+            //var response = postValues("/Emr/CreateNewHabitLsit", HealthPickLst);
+            $.ajax({
+                url: "/Emr/CreateNewHabitLsit",
+                type: 'post',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(HealthPickLst),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    alert(data);
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        else {
+            alert("Please Enter Pick List Name");
+        }
+        return false;
+    }
+    function OnChangeAllergies() {
+        var Allergy = document.getElementById('txtAllergy').ej2_instances[0].value;
+        if (Allergy !== null) {
+            var table = $('#tblAllergy');
+            var $tr = $('#tblAllergy tr[data-id="' + Allergy + '"]');
+            if ($tr.length === 0)
+                AllergyCreateNewRow(Allergy);
+            document.getElementById('txtAllergy').ej2_instances[0].value = "";
+        }
+    }
+    function AllergyCreateNewRow(Allergy) {
+        var html = "";
+        if (Allergy !== "") {
+            var tData = getValues("/Emr/CreateNewAllergy/?Allergy=" + Allergy + "");
+            html += "<tr data-id=\"" + Allergy + "\">";
+            html += "<td style='color:Red;'>" + Allergy + "</td>";
+            html += "<td style='text-align: center;'>";
+            html += "<img src='../Images/Delete.png'  onclick='return DeleteAllergy(this)' style='cursor:pointer;width: 25px !important;height:25px !important;'>";
+            html += "</td></tr>";
+            $("#tblAllergy tbody").append(html);
+        }
+        return html;
+    }
+    function DeleteAllergy(SelectedRow) {
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = myrow.rowIndex;
+        document.getElementById("tblAllergy").deleteRow(myrow.rowIndex);
+        var table = document.getElementById("tblAllergy");
+        var rowCount = table.rows.length;
+        var i = myrow.rowIndex;
+        document.getElementById('txtAllergy').ej2_instances[0].value = "";
+        return false;
+    }
+    function onDiseasesfiltering(e) {
+        var Diseases = document.getElementById('cmbDiseases').ej2_instances[0];
+        var query = new ej.data.Query();
+        query = (e.text !== '') ? query.where('DiseasesName', 'Contains', e.text, true) : query;
+        e.updateData(Diseases.dataSource, query);
+        if (document.getElementById('nodata')) {
+            document.getElementById('btnAddDiseases').onclick = function () {
+                var customValue = (document.getElementById('cmbDiseases')).value;
+                var tData = getValues("/Emr/CreateNewDiseases/?DiseasesName=" + customValue + "");
+                var newItem = { 'DiseasesName': tData.DiseasesName, 'SeqID': tData.SeqID };
+                (Diseases.dataSource).push(newItem);
+                Diseases.hidePopup();
+                Diseases.addItem(newItem);
+               // select the newly added item.
+                Diseases.value = "";
+            };
+        }
+    }
+    function OnChangeDiseases() {
+        var Diseases = document.getElementById('cmbDiseases').ej2_instances[0];
+        var SeqID = Diseases.value;
+        var DiseasesTxt = Diseases.text;
+        if (DiseasesTxt !== null) {
+            var table = $('#tblMedicalHistroy');
+            var $tr = $('#tblMedicalHistroy tr[data-id="' + DiseasesTxt + '"]');
+            if ($tr.length === 0)
+                DiseasesCreateNewRow(SeqID, DiseasesTxt, "", "");
+
+            document.getElementById('cmbDiseases').ej2_instances[0].text = "";
+            document.getElementById('cmbDiseases').ej2_instances[0].value = "";
+        }
+    }
+    function DiseasesCreateNewRow(SeqID, DiseasesTxt, Duration,Remark) {
+        var html = "";
+        if (SeqID > 0) {
+            html += "<tr data-id=\"" + DiseasesTxt + "\">";
+            html += "<td style='color:blue;'>" + DiseasesTxt + "</td>";
+            html += "<td style='display:none;'>" + SeqID + "</td>";
+            html += "<td><input type=\"Text\" value='" + Duration + "'></td>";
+            html += "<td><input type=\"Text\" value='" + Remark + "'></td>";
+            html += "<td style='text-align: center;'>";
+            html += "<img src='../Images/Delete.png'  onclick='return DeleteDiseases(this)' style='cursor:pointer;width: 25px !important;height:25px !important;'>";
+            html += "</td></tr>";
+            $("#tblMedicalHistroy tbody").append(html);
+        }
+
+        return html;
+    }
+    function DeleteDiseases(SelectedRow) {
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = myrow.rowIndex;
+        document.getElementById("tblMedicalHistroy").deleteRow(myrow.rowIndex);
+        var table = document.getElementById("tblMedicalHistroy");
+        var rowCount = table.rows.length;
+        var i = myrow.rowIndex;
+        document.getElementById('cmbDiseases').ej2_instances[0].text = "";
+        document.getElementById('cmbDiseases').ej2_instances[0].value = "";
+        //regroup(i, rowCount, "tblComplaints");
+        return false;
+    }
+    function OpenDiseasesAsPickList() {
+        var tbl12 = document.getElementById("tblMedicalHistroy");
+        var html = "";
+        var row12 = tbl12.rows.length;
+        $("#tblDiesasesSaveAsNewPickLsit tbody").empty();
+        for (k = 1; k < row12; k++) {
+            var sval12 = tbl12.rows[k];
+            var DiseasesName = sval12.cells[0].innerHTML;
+            html += "<tr><td>" + DiseasesName + "</td></tr>";
+        }
+        $("#tblDiesasesSaveAsNewPickLsit tbody").append(html);
+        document.getElementById('DiseasesPickLstdialog').ej2_instances[0].show();
+    }
+    function SaveAsDiseasesNewPickList() {
+        var tbl12 = document.getElementById("tblMedicalHistroy");
+        var PickListName = document.getElementById("txtDisesaseNewPickListName").value;
+        var DiseasesArray = new Array();
+        if (PickListName.length > 0) {
+            var row12 = tbl12.rows.length;
+            for (k = 1; k < row12; k++) {
+                var sval12 = tbl12.rows[k];
+                var ObjectDetails = new Object();
+                ObjectDetails.PickLstSeqId = 0;
+                ObjectDetails.PickListName = PickListName;
+                ObjectDetails.Diseases = sval12.cells[0].innerHTML;
+                ObjectDetails.DiseasesSeqId = parseFloat(sval12.cells[1].innerHTML);
+                ObjectDetails.DPickClick = "New";
+                DiseasesArray.push(ObjectDetails);
+            }
+           // var response = postValues("/Emr/CreateNewDiseasesLsit", DiseasesArray);
+            $.ajax({
+                url: "/Emr/CreateNewDiseasesLsit",
+                type: 'post',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(DiseasesArray),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    alert(data);
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+            document.getElementById('DiseasesPickLstdialog').ej2_instances[0].hide();
+        }
+        else {
+            alert("Please Enter Pick List Name");
+        }
+        return false;
+    }
+    function SaveAsDiseasesToPickList() {
+        var tbl12 = document.getElementById("tblMedicalHistroy");
+        var PickListName = document.getElementById('txtMedicalHistoryPickLst').ej2_instances[0].value;
+        var DiseasesArray = new Array();
+        if (PickListName.length > 0) {
+            var row12 = tbl12.rows.length;
+            for (k = 1; k < row12; k++) {
+                var sval12 = tbl12.rows[k];
+                var sval12 = tbl12.rows[k];
+                var ObjectDetails = new Object();
+                ObjectDetails.PickLstSeqId = 0;
+                ObjectDetails.PickListName = PickListName;
+                ObjectDetails.Diseases = sval12.cells[0].innerHTML;
+                ObjectDetails.DiseasesSeqId = parseFloat(sval12.cells[1].innerHTML);
+                ObjectDetails.DPickClick = "Old";
+                DiseasesArray.push(ObjectDetails);
+            }
+
+            $.ajax({
+                url: "/Emr/CreateNewDiseasesLsit",
+                type: 'post',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(DiseasesArray),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    alert(data);
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        else {
+            alert("Please Enter Pick List Name");
+        }
+        return false;
+    }
+    function OnDiseasesPickLstChange() {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        var arg = document.getElementById('txtMedicalHistoryPickLst').ej2_instances[0].value;
+        if (arg.length > 0) {
+            $.ajax({
+                url: "/Emr/GetDiseasesByPickListName/?PickListName=" + arg + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    //$("#tblMedicalHistroy tbody").empty();
+                    for (Count = 0; Count < response.length; Count++) {
+                        var DiseasesSeqId = response[Count].DiseasesSeqId;
+                        var Diseases = response[Count].Diseases;
+                        var $tr = $('#tblMedicalHistroy tr[data-id="' + DiseasesSeqId + '"]');
+                        if ($tr.length === 0)
+                            DiseasesCreateNewRow(DiseasesSeqId, Diseases, "", "");
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+
+    }
+    function OnChangeMedicine() {
+        var Medicine = document.getElementById('txtMedicine').ej2_instances[0].value;
+        if (Medicine !== null) {
+            var tData = getValues("/Emr/CreateNewMedicine/?Medicine=" + Medicine + "");
+            var table = $('#tblCurrentMedicine');
+            var $tr = $('#tblCurrentMedicine tr[data-id="' + Medicine + '"]');
+            if ($tr.length === 0)
+                MedicineCreateNewRow(Medicine, "", "");
+
+            document.getElementById('txtMedicine').ej2_instances[0].value = "";
+        }
+    }
+    function MedicineCreateNewRow(Medicine,Duration,Remark) {
+        var html = "";
+        if (Medicine !== "") {
+            html += "<tr data-id=\"" + Medicine + "\">";
+            html += "<td style='color:blue;'>" + Medicine + "</td>";
+            html += "<td><input type=\"Text\" value='"+Duration+"'></td>";
+            html += "<td><input type=\"Text\" value='"+Remark+"'></td>";
+            html += "<td style='text-align: center;'>";
+            html += "<img src='../Images/Delete.png'  onclick='return DeleteMedicine(this)' style='cursor:pointer;width: 25px !important;height:25px !important;'>";
+            html += "</td></tr>";
+            $("#tblCurrentMedicine tbody").append(html);
+            document.getElementById('txtMedicine').ej2_instances[0].value = "";
+        }
+        return html;
+    }
+    function DeleteMedicine(SelectedRow) {
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = myrow.rowIndex;
+        document.getElementById("tblCurrentMedicine").deleteRow(myrow.rowIndex);
+        var table = document.getElementById("tblCurrentMedicine");
+        var rowCount = table.rows.length;
+        var i = myrow.rowIndex;
+        document.getElementById('txtMedicine').ej2_instances[0].value = "";
+        //regroup(i, rowCount, "tblComplaints");
+        return false;
+    }
+    function GetAllPatHistory() {
+        $("#OldHistory").hide();
+        $("#AllHistory").show();
+        var arg = $("#lblpatid").text();
+        $.ajax({
+            url: "/Emr/GetLatestPatientHistoryByPatientID/?PatientID=" + arg + "",
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: OnSuccessAllPatHistory,
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function OnSuccessAllPatHistory(response) {
+        if (response.PatHistroy.length > 0) {
+            var Sno = 0;
+            var html = "";
+            $("#tblOldHistory tbody").empty();
+            for (HistroyCount = 0; HistroyCount < response.PatHistroy.length; HistroyCount++) {
+                Sno = HistroyCount + 1;
+                var status = response.PatHistroy[HistroyCount].IsActive;
+                html += "<tr>";
+                html += "<td><input type='image' style='width:21px;height:21px;' src='../Images/details_open.png' onclick='javascript:return CheckHistorySelect(this)'></td>";
+                html += "<td style='display:none;'>" + response.PatHistroy[HistroyCount].HistorySeqID + "</td>";
+                html += "<td>" + response.PatHistroy[HistroyCount].Createdatetime + "</td>";
+                html += "<td style='display:none;'>" + response.PatHistroy[HistroyCount].BloodTransfusion + "</td>";
+                html += "<td style='display:none;'>" + response.PatHistroy[HistroyCount].ReactionComments + "</td>";
+                html += "<td style='display:none;'>" + response.PatHistroy[HistroyCount].GenitalReproductiveHistory + "</td>";
+                html += "<td style='display:none;'>" + response.PatHistroy[HistroyCount].Gravida + "</td>";
+                html += "<td style='display:none;'>" + response.PatHistroy[HistroyCount].Para + "</td>";
+                html += "<td style='display:none;'>" + response.PatHistroy[HistroyCount].Abortion + "</td>";
+                html += "<td style='display:none;'>" + response.PatHistroy[HistroyCount].Proterm + "</td>";
+                html += "<td style='display:none;'>" + response.PatHistroy[HistroyCount].FullTerm + "</td>";
+                html += "<td style='display:none;'>" + response.PatHistroy[HistroyCount].LivingChildren + "</td>";
+                html += "<td style='display:none;'>" + response.PatHistroy[HistroyCount].MenstrualHistory + "</td>";
+                html += "<td style='display:none;'>" + response.PatHistroy[HistroyCount].Menopause + "</td>";
+                html += "<td style='display:none;'>" + response.PatHistroy[HistroyCount].MenopauseText + "</td>";
+                html += "<td style='display:none;'>" + response.PatHistroy[HistroyCount].LmbDateAsString + "</td>";
+                html += "<td style='display:none;'>" + response.PatHistroy[HistroyCount].RelevantHistory + "</td>";
+                html += "<td style='display:none;'>" + response.PatHistroy[HistroyCount].SurgicalHistory + "</td>";
+                if (status === true) {
+                    html += "<td>Verified</td>";
+                    html += "<td><input type='image'   style='height:60px;' src='../Images/Print.png' title='Print'  onclick='javascript:return HistoryRePrint(this)'></td>";
+                }
+                else {
+                    html += "<td style='color:red;'>As Reported by patient</td>";
+                   // html += "<td><input type='image'   style='height:60px;' src='../Images/Print.png' title='Print'  onclick='javascript:return HistoryRePrint(this)'></td>";
+                }
+                html += "<tr>";
+            }
+            $("#tblOldHistory tbody").append(html);
+        }
+    }
+    function CheckHistorySelect(SelectedRow) {
+        var html = "";
+        var row = SelectedRow.parentNode.parentNode;
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = row.rowIndex - 1;
+        var HistorySeqID = parseFloat(row.cells[1].innerHTML);
+        var BloodTransfusion = row.cells[3].innerHTML;
+        var ReactionComments = row.cells[4].innerHTML;
+        var GenitalReproductiveHistory = row.cells[5].innerHTML;
+        var Gravida = row.cells[6].innerHTML;
+        var Para = row.cells[7].innerHTML;
+        var Abortion = row.cells[8].innerHTML;
+        var Proterm = row.cells[9].innerHTML;
+        var FullTerm = row.cells[10].innerHTML;
+        var LivingChildren = row.cells[11].innerHTML;
+        var MenstrualHistory = row.cells[12].innerHTML;
+        var Menopause = row.cells[13].innerHTML;
+        var MenopauseText = row.cells[14].innerHTML;
+        var LmbDateAsString = row.cells[15].innerHTML;
+        var RelevantHistory = row.cells[16].innerHTML;
+        var SurgicalHistory = row.cells[17].innerHTML;
+        var className = myrow.cells[0].getElementsByTagName("input")[0].className;
+        if (className === "shown") {
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', '../Images/details_open.png');
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'abc');
+            $('#tblOldHistory > tbody > tr').eq(rowIndex).next().remove();
+        }
+        else {
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', '../Images/details_close.png');
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'shown');
+
+            var arg = HistorySeqID;
+            $.ajax({
+                url: "/Emr/GetPatHistoryByHistoryID/?HistoryID=" + arg + "",
+                type: 'Get',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    html += "<span style='color: Blue;'>Hx of Blood Transfusion:</span>";
+                    if (BloodTransfusion === "true") {
+                        html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span>Patient has undergone blood transfusion.</span><br/>";
+                    }
+                    else if (BloodTransfusion === "false") {
+                        html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span>No blood transfusion.</span></div></div>";
+                    }
+                    if (ReactionComments !== "" && ReactionComments !== null)
+                        html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span>Reaction / Comments </span>" + ReactionComments + "</div></div>";
+
+                    html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'>";
+                    html += "<table class='table table-bordered table-striped dataTable table-reflow'>";
+                   
+                    if (response.Pathabits.length > 0) {
+                        for (HabitCount = 0; HabitCount < response.Pathabits.length; HabitCount++) {
+                            if (HabitCount == 0)
+                                html += "<thead><tr style='color: Blue;'><td>Health Habits</td><td>Comments</td></tr></thead>";
+                            html += "<tr><td>" + response.Pathabits[HabitCount].HabitName + "</td>";
+                            html += "<td>" + response.Pathabits[HabitCount].Comments + "</td></tr>";
+                        }
+                    }
+                    html += "<table></div></div>";
+
+                    if (GenitalReproductiveHistory !== "" && GenitalReproductiveHistory != null) {
+                        html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span style='color: Blue;'>Genital / Reproductive History:</span><br/>";
+                        html += "<span>The patient is " + GenitalReproductiveHistory + "</span></div></div>";
+                    }
+                    var Gender = $("#lblgender").text();
+                    if (Gender === "Female") {
+                        if (Gravida != "" && Gravida != null) {
+                            html += "<div class='row'><div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span style='color: Blue;'>Gravida:</span></div></div>";
+                            html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span>" + Gravida + "</span></div></div>";
+                        }
+                        if (Para != "" && Para != null) {
+                            html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span style='color: Blue;'>Para:</span></div></div>";
+                            html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span>" + Para + "</span></div></div>";
+                        }
+                        if (Abortion != "" && Abortion != null) {
+                            html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span style='color: Blue;'>Abortion:</span></div></div>";
+                            html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span>" + Abortion + "</span></div></div></div>";
+                        }
+                        if (Proterm != "" && Proterm != null) {
+                            html += "<div class='row'><div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span style='color: Blue;'>Proterm:</span></div></div>";
+                            html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span>" + Proterm + "</span></div></div>";
+                        }
+                        if (FullTerm != "" && FullTerm != null) {
+                            html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span style='color: Blue;'>Full Term:</span></div></div>";
+                            html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span>" + FullTerm + "</span></div></div>";
+                        }
+                        if (LivingChildren != "" && LivingChildren != null) {
+                            html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span style='color: Blue;'>Living Children:</span></div></div>";
+                            html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span>" + LivingChildren + "</span></div></div></div>";
+                        }
+                        //if (MenstrualHistory !== "false") {
+                        //    html += "<div class='row'><div class='col-xs-3 col-sm-3 col-md-3'><div class='form-group'><span style='color: Blue;'>Menstrual History:</span></div></div>";
+                        //    html += "<div class='col-xs-3 col-sm-3 col-md-3'><div class='form-group'><span>" + MenstrualHistory + "</span></div></div></div>";
+                        //}
+                        //else {
+
+                        //}
+                        if (Menopause === true) {
+                            html += "<div class='row'><div class='col-xs-3 col-sm-3 col-md-3'><div class='form-check-inline'>"
+                            html += " <label class='form-check-label'>";
+                            html += "<input type='checkbox' class='form-check-input' checked> Menopause </label>";
+                            html += "</div></div> ";
+                        }
+                        else {
+                            html += "<div class='row'><div class='col-xs-3 col-sm-3 col-md-3'><div class='form-check-inline'>"
+                            html += " <label class='form-check-label'>";
+                            html += "<input type='checkbox' class='form-check-input'> Menopause </label>";
+                            html += "</div></div>";
+                        }
+                        html += "<div class='col-xs-3 col-sm-3 col-md-3'><div class='form-group'><span>" + MenopauseText + "</span></div></div>";
+                        html += "<div class='col-xs-2 col-sm-2 col-md-2'><div class='form-group'><span>LMP Date</span></div></div>";
+                        html += "<div class='col-xs-3 col-sm-3 col-md-3'><div class='form-group'><span>" + LmbDateAsString + "(mm/dd/yyyy)</span></div></div></div>";
+                    }
+                    html += "<div class='row'><div class='col-xs-3 col-sm-3 col-md-3'><div class='form-group'>";
+                    html += "<table class='table table-bordered table-striped dataTable table-reflow'>";
+                    
+                    if (response.PatAllergy.length > 0) {
+                        for (AllergyCount = 0; AllergyCount < response.PatAllergy.length; AllergyCount++) {
+                            if (AllergyCount == 0)
+                                html += "<thead><tr><td style='color: red;'>Allergies</td></tr></thead>";
+                            html += "<tr><td style='color: red;'>" + response.PatAllergy[AllergyCount] + "</td></tr>";
+                        }
+                    }
+                    html += "<table></div></div>";
+
+                    html += "<div class='row'><div class='col-xs-3 col-sm-3 col-md-3'><div class='form-group'>";
+                   
+                    if (response.PatMedicalHstd.length > 0) {
+                        for (MediHstdCount = 0; MediHstdCount < response.PatMedicalHstd.length; MediHstdCount++) {
+                            if (MediHstdCount == 0) {
+                                html += "<table class='table table-bordered table-striped dataTable table-reflow'>";
+                                html += "<thead><tr style='color: Blue;'><td>Medical History</td><td>Duration</td><td>Remark</td></tr></thead>";
+                            }
+                            html += "<tr><td>" + response.PatMedicalHstd[MediHstdCount].MedicalHistory + "</td>";
+                            html += "<td>" + response.PatMedicalHstd[MediHstdCount].Duration + "</td>";
+                            html += "<td>" + response.PatMedicalHstd[MediHstdCount].Remark + "</td></tr>";
+                            var SeqID = response.PatMedicalHstd[MediHstdCount].SeqID;
+                            var MedicalHistory = response.PatMedicalHstd[MediHstdCount].MedicalHistory;
+                            var Duration = response.PatMedicalHstd[MediHstdCount].Duration;
+                            var Remark = response.PatMedicalHstd[MediHstdCount].Remark;
+                        }
+                    }
+                    html += "<table></div></div>";
+                    html += "<div class='row'><div class='col-xs-3 col-sm-3 col-md-3'><div class='form-group'>";
+                    
+                    if (response.PatMedicine.length > 0) {
+                        for (MediCount = 0; MediCount < response.PatMedicine.length; MediCount++) {
+                            if (MediCount == 0) {
+                                html += "<table class='table table-bordered table-striped dataTable table-reflow'>";
+                                html += "<thead><tr style='color: Blue;'><td>Medicine</td><td>Duration</td><td>Remark</td></tr></thead>";
+                            }
+                            html += "<tr><td>" + response.PatMedicine[MediCount].Medicine + "</td>";
+                            html += "<td>" + response.PatMedicine[MediCount].Duration + "</td>";
+                            html += "<td>" + response.PatMedicine[MediCount].Remark + "</td></tr>";
+                        }
+                    }
+                    html += "<table></div></div>";
+
+                    html += "<div class='row'><div class='col-xs-3 col-sm-3 col-md-3'><div class='form-group'>";
+                    
+                    if (response.PatSurgical.length > 0) {
+                        for (SurCount = 0; SurCount < response.PatSurgical.length; SurCount++) {
+                            if (SurCount == 0) {
+                                html += "<table class='table table-bordered table-striped dataTable table-reflow'>";
+                                html += "<thead><tr style='color: Blue;'><td>Surgical History</td><td>Comments</td></tr></thead>";
+                            }
+                            html += "<tr><td>" + response.PatSurgical[SurCount].SurgicalHistory + "</td>";
+                            html += "<td>" + response.PatSurgical[SurCount].Comments + "</td></tr>";
+                        }
+                    }
+                    html += "<table></div></div>";
+
+                    if (RelevantHistory != "" && RelevantHistory != null) {
+                        html += "<div class='row'><div class='col-xs-4 col-sm-4 col-md-4'><div class='form-group'><span style='color: Blue;'></span></div></div>";
+                        html += "<div class='col-xs-8 col-sm-8 col-md-8'><div class='form-group'><span>" + RelevantHistory + "</span></div></div></div>";
+                    }
+                   
+                    //html += "<div class='row'><div class='col-xs-4 col-sm-4 col-md-4'><div class='form-group'><span style='color: Blue;'>Surgical History:</span></div></div>";
+                    //html += "<div class='col-xs-8 col-sm-8 col-md-8'><div class='form-group'><span>" + SurgicalHistory + "</span></div></div></div>";
+
+                    var newRow = $('<tr><td></td><td colspan="7">' + html + '</td></tr>');
+                    $('#tblOldHistory > tbody > tr').eq(rowIndex).after(newRow);
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+    }
+    function GoBackHistory() {
+        $("#OldHistory").show();
+        $("#AllHistory").hide();
+    }
+    function HistoryRePrint(SelectedRow) {
+        var row = SelectedRow.parentNode.parentNode;
+        var PSeqID = row.cells[1].innerHTML;
+        var Hospitaldtl = "";
+        var Patdtl = "";
+        var html = "";
+        try {
+            var arg = parseFloat(PSeqID);
+            $.ajax({
+                url: "/Emr/GetPatHistoryByHistoryID/?HistoryID=" + arg + "",
+                type: 'Get',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    if (response.PatHistroy.length > 0) {
+                        for (HistroyCount = 0; HistroyCount < response.PatHistroy.length; HistroyCount++) {
+                            var BloodTransfusion = response.PatHistroy[HistroyCount].BloodTransfusion;
+                            var ReactionComments = response.PatHistroy[HistroyCount].ReactionComments;
+                            var GenitalReproductiveHistory = response.PatHistroy[HistroyCount].GenitalReproductiveHistory;
+                            var Gravida = response.PatHistroy[HistroyCount].Gravida;
+                            var Para = response.PatHistroy[HistroyCount].Para;
+                            var Abortion = response.PatHistroy[HistroyCount].Abortion;
+                            var Proterm = response.PatHistroy[HistroyCount].Proterm;
+                            var FullTerm = response.PatHistroy[HistroyCount].FullTerm;
+                            var LivingChildren = response.PatHistroy[HistroyCount].LivingChildren;
+                            var MenstrualHistory = response.PatHistroy[HistroyCount].MenstrualHistory;
+                            var Menopause = response.PatHistroy[HistroyCount].Menopause;
+                            var MenopauseText = response.PatHistroy[HistroyCount].MenopauseText;
+                            var LmbDateAsString = response.PatHistroy[HistroyCount].LmbDateAsString;
+                            var RelevantHistory = response.PatHistroy[HistroyCount].RelevantHistory;
+                            var SurgicalHistory = response.PatHistroy[HistroyCount].SurgicalHistory;
+
+                            if (response.ClinicDtl.length > 0) {
+                                Hospitaldtl += "<table style='width:95%;font-size:small;'><tr>";
+                                Hospitaldtl += "<td><img src='data:image/jpeg;base64," + response.ClinicDtl[0].CliniclLogo + "' style='width:100%; max-width:100px;height:100px;'></td>";
+                                Hospitaldtl += "<td><table style='float:right;'>";
+                                Hospitaldtl += "<tr><td style='float:left;'>" + response.PatientDtl[0].RefDoctor + "</td></tr>";
+                                Hospitaldtl += "<tr><td style='float:left;'>" + response.ClinicDtl[0].ClinicName + "</td></tr>";
+                                Hospitaldtl += "<tr><td style='float:left;'>" + response.ClinicDtl[0].ClinicAddress + "" + response.ClinicDtl[0].ClinicAddress1 + "</td></tr>";
+                                if (response.ClinicDtl[0].Pin != "" && response.ClinicDtl[0].Pin != null)
+                                    Hospitaldtl += "<tr><td style='float:left;'>" + response.ClinicDtl[0].ClinicAddress2 + "," + response.ClinicDtl[0].City + " - " + response.ClinicDtl[0].Pin + "</td></tr>";
+                                else
+                                    Hospitaldtl += "<tr><td style='float:left;'>" + response.ClinicDtl[0].ClinicAddress2 + "," + response.ClinicDtl[0].City + "</td></tr>";
+                                if (response.ClinicDtl[0].ClinicLandlineNo != 0 && response.ClinicDtl[0].ClinicLandlineNo != "" && response.ClinicDtl[0].ClinicLandlineNo!=null)
+                                    Hospitaldtl += "<tr><td style='float:left;'>Mobile : " + response.ClinicDtl[0].ClinicMobileNo + ",Phone : " + response.ClinicDtl[0].ClinicLandlineNo + "</td></tr>";
+                                else
+                                    Hospitaldtl += "<tr><td style='float:left;'>Mobile : " + response.ClinicDtl[0].ClinicMobileNo + "</td></tr>";
+                                Hospitaldtl += "</table></td>";
+                                Hospitaldtl += "</tr></table>";
+                                Hospitaldtl += "<table style='width:100%;'><tr><td style='font-weight:bold;border-top:solid 1px black;'></td></tr></table><br/>";
+                                html += Hospitaldtl;
+                            }
+                            if (response.PatientDtl.length > 0) {
+                                Patdtl += "<table style='float:left;width:50%;'>";
+                                Patdtl += "<tr>";
+                                Patdtl += "<td>UHID No </td><td>:</td><td>" + response.PatientDtl[0].PatientID + "</td>";
+                                Patdtl += "</tr>";
+                                Patdtl += "<tr>";
+                                Patdtl += "<td>Age </td><td>:</td><td>" + response.PatientDtl[0].Age + "</td>";
+                                Patdtl += "</tr>";
+                                Patdtl += "<tr>";
+                                Patdtl += "<td>Doctor Name </td><td>:</td><td>" + response.PatientDtl[0].RefDoctor + "</td>";
+                                Patdtl += "</tr>";
+                                Patdtl += "</table>";
+
+                                Patdtl += "<table style='float: right;width:50%;'>";
+                                Patdtl += "<tr>";
+                                Patdtl += "<td>Patient Name</td><td>:</td><td>" + response.PatientDtl[0].FirstName + "</td>";
+                                Patdtl += "</tr>";
+                                Patdtl += "<tr>";
+                                Patdtl += "<td>Gender</td><td>:</td><td>" + response.PatientDtl[0].Gender + "</td>";
+                                Patdtl += "</tr>";
+                                Patdtl += "</table>";
+
+                                Patdtl += "<table style='width:100%;'><tr><td style='font-weight: bold;border-top: solid 1px black;'></td></tr></table>";
+                            }
+                            html += Patdtl;
+                            var isactive = response.PatHistroy[HistroyCount].IsActive;
+                            if (isactive == false)
+                                html += "<br/><span><u>Date -" + response.PatHistroy[HistroyCount].Createdatetime + "</u> (As Reported by paient) </span><br/><br/><table>";
+                            else
+                                html += "<br/><span><u>Date -" + response.PatHistroy[HistroyCount].Createdatetime + "</u></span><br/><br/><table>";
+                            if (BloodTransfusion === true) {
+                                html += "<tr><td>Hx of Blood Transfusion:</td><td>Patient has undergone blood transfusion .</td></tr></table>";
+                            }
+                            else {
+                                html += "<tr><td>Hx of Blood Transfusion:</td><td>No blood transfusion.</td></tr></table>";
+                            }
+                            if (ReactionComments != "" && ReactionComments!=null)
+                                html += "</br><table><tr><td>Reaction / Comments:</td><td>" + ReactionComments + "</td></tr></table>";
+                           
+                            if (response.Pathabits.length > 0) {
+                                html += "</br><table style='width:50%;'>";
+                                html += "<thead><tr><td>Health Habits</td><td>Comments</td></tr></thead><tbody>";
+                                for (HabitCount = 0; HabitCount < response.Pathabits.length; HabitCount++) {
+                                    html += "<tr><td>" + response.Pathabits[HabitCount].HabitName + "</td>";
+                                    html += "<td>" + response.Pathabits[HabitCount].Comments + "</td></tr>";
+                                }
+                                html += "</tbody><table>";
+                            }
+
+                            if (GenitalReproductiveHistory !== "" && GenitalReproductiveHistory!=null) {
+                                html += "<br/><table>";
+                                html += "<tr><td>Genital / Reproductive History</td><td>The patient is " + GenitalReproductiveHistory + "</td>";
+                                html += "</tr></table>";
+                            }
+                            var Gender = $("#lblgender").text();
+                            if (Gender === "Female") {
+                                html += "<br/><table style='width:50%;'>";
+                                html += "<tr><td>Gravida:</td><td>" + Gravida + "</td>";
+                                html += "<td>Para:</td><td>" + Para + "</td>";
+                                html += "<td>Abortion:</td><td>" + Abortion + "</td></tr>";
+                                html += "<tr><td>Proterm:</td><td>" + Proterm + "</td>";
+                                html += "<td>Full Term:</td><td>" + FullTerm + "</td>";
+                                html += "<td>Living Children:</td><td>" + LivingChildren + "</td>";
+                                html += "</tr></table>";
+                                html += "<br/><table>";
+                                html += "<tr><td>Menstrual History:</td><td>" + MenstrualHistory + "</td></tr></table>";
+                                if (Menopause === true) {
+                                    html += "<br/><table>";
+                                    html += "<tr><td><input type='checkbox' class='form-check-input' checked> Menopause</td></tr></table>";
+                                }
+                                else {
+                                    html += "<br/><table>";
+                                    html += "<tr><td><input type='checkbox' class='form-check-input'> Menopause</td><td>" + MenopauseText + "</td></tr></table>";
+                                }
+                                if (LmbDateAsString != "" && LmbDateAsString != null) {
+                                    html += "<br/><table>";
+                                    html += "<tr>";
+                                    html += "<td>LMP Date</td><td>" + LmbDateAsString + " (mm/dd/yyyy)</td>";
+                                    html += "</tr>";
+                                    html += "</table>";
+                                }
+                            }
+                            
+                            if (response.PatAllergy.length > 0) {
+                                html += "<br/><table style='width:50%;'>";
+                                html += "<thead><tr><td style='color: red;'>Allergies</td></tr></thead><tbody>";
+                                for (AllergyCount = 0; AllergyCount < response.PatAllergy.length; AllergyCount++) {
+                                    html += "<tr><td style='color: red;'>" + response.PatAllergy[AllergyCount] + "</td></tr>";
+                                }
+                                html += "</tbody><table>";
+                            }
+                           
+                            if (response.PatMedicalHstd.length > 0) {
+                                html += "<br/><table style='width:50%;'>";
+                                html += "<thead><tr style='color: Blue;'><td>Medical History</td><td>Duration</td><td>Remark</td></tr></thead><tbody>";
+                                for (MediHstdCount = 0; MediHstdCount < response.PatMedicalHstd.length; MediHstdCount++) {
+                                    html += "<tr><td>" + response.PatMedicalHstd[MediHstdCount].MedicalHistory + "</td>";
+                                    html += "<td>" + response.PatMedicalHstd[MediHstdCount].Duration + "</td>";
+                                    html += "<td>" + response.PatMedicalHstd[MediHstdCount].Remark + "</td></tr>";
+                                    var SeqID = response.PatMedicalHstd[MediHstdCount].SeqID;
+                                    var MedicalHistory = response.PatMedicalHstd[MediHstdCount].MedicalHistory;
+                                    var Duration = response.PatMedicalHstd[MediHstdCount].Duration;
+                                    var Remark = response.PatMedicalHstd[MediHstdCount].Remark;
+                                }
+                                html += "</tbody><table>";
+                            }
+                            
+                            if (response.PatMedicine.length > 0) {
+                                html += "<br/><table style='width:50%;'>";
+                                html += "<thead><tr style='color: Blue;'><td>Medicine</td><td>Duration</td><td>Remark</td></tr></thead><tbody>";
+                                for (MediCount = 0; MediCount < response.PatMedicine.length; MediCount++) {
+                                    html += "<tr><td>" + response.PatMedicine[MediCount].Medicine + "</td>";
+                                    html += "<td>" + response.PatMedicine[MediCount].Duration + "</td>";
+                                    html += "<td>" + response.PatMedicine[MediCount].Remark + "</td></tr>";
+                                }
+                                html += "</tbody><table>";
+                            }
+
+                           
+                            if (response.PatSurgical.length > 0) {
+                                html += "<br/><div class='row'><div class='col-xs-3 col-sm-3 col-md-3'><div class='form-group'>";
+                                html += "<table class='table table-bordered table-striped dataTable table-reflow'>";
+                                html += "<thead><tr style='color: Blue;'><td>Surgical History</td><td>Comments</td></tr></thead><tbody>";
+                                for (SurCount = 0; SurCount < response.PatSurgical.length; SurCount++) {
+                                    html += "<tr><td>" + response.PatSurgical[SurCount].SurgicalHistory + "</td>";
+                                    html += "<td>" + response.PatSurgical[SurCount].Comments + "</td></tr>";
+                                }
+                                html += "</tbody><table></div></div>";
+                            }
+
+                            if (RelevantHistory != "" && RelevantHistory != null) {
+                                html += "<br/><table>";
+                                html += "<tr><td></td>";
+                                html += "<td>" + RelevantHistory + "</td></tr></table>";
+                            }
+                        }
+                        sessionStorage.setItem("PrintDetails", html);
+                        openHistoryPrint();
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+
+        }
+        catch (e) {
+
+        }
+        return false;
+    }
+    function openHistoryPrint() {
+        var url = '@Url.Action("Print", "Home")';
+        window.open(url, '_blank');
+        sessionStorage.setItem("PrintDetails", "");
+    }
+    function SurgicalCreateNewRow(Surgical, Comments) {
+        var html = "";
+        if (Surgical !== "") {
+            html += "<tr data-id=\"" + Surgical + "\">";
+            html += "<td style='color:blue;'>" + Surgical + "</td>";
+            html += "<td><input type=\"Text\" value='" + Comments + "' class='form-control'></td>";
+            html += "<td style='text-align: center;'>";
+            html += "<img src='../Images/Delete.png'  onclick='return DeleteSurgical(this)' style='cursor:pointer;width: 25px !important;height:25px !important;'>";
+            html += "</td></tr>";
+            $("#tblSurgicalHistory tbody").append(html);
+            document.getElementById('txtSurgicalHistory').ej2_instances[0].value = "";
+        }
+        return html;
+    }
+    function OnChangeSurgicalHistory() {
+        var SurgicalName = document.getElementById('txtSurgicalHistory').ej2_instances[0].value;
+        if (SurgicalName !== null) {
+            var tData = getValues("/Emr/CreateNewSurgicalHistory/?SurgicalName=" + SurgicalName + "");
+            var table = $('#tblSurgicalHistory');
+            var $tr = $('#tblSurgicalHistory tr[data-id="' + SurgicalName + '"]');
+            if ($tr.length === 0)
+                SurgicalCreateNewRow(SurgicalName, "");
+
+            document.getElementById('txtSurgicalHistory').ej2_instances[0].value = "";
+        }
+    }
+    function DeleteSurgical(SelectedRow) {
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = myrow.rowIndex;
+        document.getElementById("tblSurgicalHistory").deleteRow(myrow.rowIndex);
+        var table = document.getElementById("tblSurgicalHistory");
+        var rowCount = table.rows.length;
+        var i = myrow.rowIndex;
+        document.getElementById('txtSurgicalHistory').ej2_instances[0].value = "";
+        //regroup(i, rowCount, "tblComplaints");
+        return false;
+    }
+    function OpenAddHealthHabitPopup() {
+        $("#txtAddNewHealthHabit").val("");
+        document.getElementById('AddHealthHabit').ej2_instances[0].show();
+    }
+    function AddNewHealthHabit() {
+        var HealthHabit = $("#txtAddNewHealthHabit").val();
+        if (HealthHabit.length > 0) {
+            var tData = getValues("/Emr/CreateNewHealthHabit/?HabitName=" + HealthHabit + "");
+            if (tData.Habits === "Already Exists") {
+                alert("Already Exists");
+            }
+            else {
+                alert("Save Success");
+                var newItem = { 'Habits': tData.Habits, 'HealthHabitsSeqID': tData.HealthHabitsSeqID };
+                var Habits = document.getElementById('cmbHealtHabit').ej2_instances[0];
+                Habits.addItem(newItem);
+                document.getElementById('AddHealthHabit').ej2_instances[0].hide();
+            }
+        }
+        else {
+            alert("please Enter Health Habit");
+        }
+    }
+    function OpenAddDiseasesPopup() {
+        $("#txtAddNewDiseases").val("");
+        document.getElementById('AddDiseases').ej2_instances[0].show();
+    }
+    function AddNewDiseases() {
+        var DiseasesName = $("#txtAddNewDiseases").val();
+        if (DiseasesName.length > 0) {
+            var tData = getValues("/Emr/CreateNewDiseases/?DiseasesName=" + DiseasesName + "");
+            if (tData.DiseasesName === "Already Exists") {
+                alert("Already Exists");
+            }
+            else {
+                alert("Save Success");
+                var newItem = { 'DiseasesName': tData.DiseasesName, 'SeqID': tData.SeqID };
+                var Diseases = document.getElementById('cmbDiseases').ej2_instances[0];
+                Diseases.addItem(newItem);
+                document.getElementById('AddDiseases').ej2_instances[0].hide();
+            }
+
+        }
+        else {
+            alert("please Enter Diseases");
+        }
+    }
+    function ClearAllHistory() {
+        $("#rdoYesBloodTrans").prop("checked", false);
+        $("#rdoNoBloodTrans").prop("checked", true);
+        $("#rdoMarried").prop("checked", false);
+        $("#rdoAbnormal").prop("checked", false);
+        $("#chkMenopause").prop("checked", false);
+        $("#chkMenopause").prop("checked", false);
+        $("#tblHabits tbody").empty();
+        $("#tblAllergy tbody").empty();
+        $("#tblMedicalHistroy tbody").empty();
+        $("#tblCurrentMedicine tbody").empty();
+        $("#tblSurgicalHistory tbody").empty();
+        $("#txtDuration").val("");
+        $("#txtTreatmentTaken").val("");
+        $("#txtReactionComments").val("");
+        $("#txtGravida").val("");
+        $("#txtPara").val("");
+        $("#txtAbortion").val("");
+        $("#txtProterm").val("");
+        $("#txtFullTerm").val("");
+        $("#txtLivingChildren").val("");
+        $("#txtMenopauseText").val("");
+        $("#txRelevantHistory").val("");
+        $("#txSurgicalHistory").val("");
+        $("#chkHisPrevious").prop("checked", false);
+    }
+    function OnFocus(args) {
+        this.showPopup();
+    }
+    function OnFocusDisease(args) {
+        this.showPopup();
+    }
+    function HistopenPopup() {
+        var multiselectObj = document.getElementById("txtHabitPickHeader");
+        multiselectObj.ej2_instances[0].showPopup();
+    }
+    function histonCreate() {
+        document.getElementById("txtHabitPickHeader").addEventListener("click", HistopenPopup);
+    }
+    function histactionComplete(e) {
+        if (this.suggestionCount) {
+            e.result = e.result.slice(0, this.suggestionCount)
+        }
+    }
+    function histfiltering(args) {
+        var dataSource;
+        new ej.data.DataManager({ url: "/api/EmrApi/GetHabitPickListHeader/", adaptor: new ej.data.WebApiAdaptor }).executeQuery(new ej.data.Query().where('PickListName', 'Contains', args.text, true)).then((e) => {
+            dataSource = e.result;
+            var dropdown_query = new ej.data.Query();
+            if (args.text !== '') {
+                dropdown_query = dropdown_query.where('PickListName', 'Contains', args.text, true);
+                args.updateData(dataSource, dropdown_query);
+            } else {
+                args.updateData(dataSource);
+            }
+        });
+    }
+    function AllonopenPopup() {
+        var multiselectObj = document.getElementById("txtAllergy");
+        multiselectObj.ej2_instances[0].showPopup();
+    }
+    function AllonCreated() {
+        document.getElementById("txtAllergy").addEventListener("click", AllonopenPopup);
+    }
+    function AllonactionComplete(e) {
+        if (this.suggestionCount) {
+            e.result = e.result.slice(0, this.suggestionCount)
+        }
+    }
+    function Allonfiltering(args) {
+        var dataSource;
+        new ej.data.DataManager({ url: "/api/EmrApi/GetAllergySearch/", adaptor: new ej.data.WebApiAdaptor }).executeQuery(new ej.data.Query().where('Allergy', 'Contains', args.text, true)).then((e) => {
+            dataSource = e.result;
+            var dropdown_query = new ej.data.Query();
+            if (args.text !== '') {
+                dropdown_query = dropdown_query.where('Allergy', 'Contains', args.text, true);
+                args.updateData(dataSource, dropdown_query);
+            } else {
+                args.updateData(dataSource);
+            }
+        });
+    }
+    function onMediopenPopup() {
+        var multiselectObj = document.getElementById("txtMedicalHistoryPickLst");
+        multiselectObj.ej2_instances[0].showPopup();
+    }
+    function onMedicalCreated() {
+        document.getElementById("txtMedicalHistoryPickLst").addEventListener("click", onMediopenPopup);
+    }
+    function onMedicalactionComplete(e) {
+        if (this.suggestionCount) {
+            e.result = e.result.slice(0, this.suggestionCount)
+        }
+    }
+    function onMedicalfiltering(args) {
+        var dataSource;
+        new ej.data.DataManager({ url: "/api/EmrApi/GetDiseasesPikHeaderSearch/", adaptor: new ej.data.WebApiAdaptor }).executeQuery(new ej.data.Query().where('PickListName', 'Contains', args.text, true)).then((e) => {
+            dataSource = e.result;
+            var dropdown_query = new ej.data.Query();
+            if (args.text !== '') {
+                dropdown_query = dropdown_query.where('PickListName', 'Contains', args.text, true);
+                args.updateData(dataSource, dropdown_query);
+            } else {
+                args.updateData(dataSource);
+            }
+        });
+    }
+    function onMedicineopenPopup() {
+        var multiselectObj = document.getElementById("txtMedicine");
+        multiselectObj.ej2_instances[0].showPopup();
+    }
+    function onMedicineCreated() {
+        document.getElementById("txtMedicine").addEventListener("click", onMedicineopenPopup);
+    }
+    function onMedicineactionComplete(e) {
+        if (this.suggestionCount) {
+            e.result = e.result.slice(0, this.suggestionCount)
+        }
+    }
+    function onMedicinefiltering(args) {
+        var dataSource;
+        new ej.data.DataManager({ url: "/api/EmrApi/GetMedicineSearch/", adaptor: new ej.data.WebApiAdaptor }).executeQuery(new ej.data.Query().where('Medicine', 'Contains', args.text, true)).then((e) => {
+            dataSource = e.result;
+            var dropdown_query = new ej.data.Query();
+            if (args.text !== '') {
+                dropdown_query = dropdown_query.where('Medicine', 'Contains', args.text, true);
+                args.updateData(dataSource, dropdown_query);
+            } else {
+                args.updateData(dataSource);
+            }
+        });
+    }
+    function onSurgeoryopenPopup() {
+        var multiselectObj = document.getElementById("txtSurgicalHistory");
+        multiselectObj.ej2_instances[0].showPopup();
+    }
+    function onSurgeryCreated() {
+        document.getElementById("txtSurgicalHistory").addEventListener("click", onSurgeoryopenPopup);
+    }
+    function onSurgeryactionComplete(e) {
+        if (this.suggestionCount) {
+            e.result = e.result.slice(0, this.suggestionCount)
+        }
+    }
+    function onSurgeryfiltering(args) {
+        var dataSource;
+        new ej.data.DataManager({ url: "/api/EmrApi/SurgicalHistoryhBySearch/", adaptor: new ej.data.WebApiAdaptor }).executeQuery(new ej.data.Query().where('SurgicalHistory', 'Contains', args.text, true)).then((e) => {
+            dataSource = e.result;
+            var dropdown_query = new ej.data.Query();
+            if (args.text !== '') {
+                dropdown_query = dropdown_query.where('SurgicalHistory', 'Contains', args.text, true);
+                args.updateData(dataSource, dropdown_query);
+            } else {
+                args.updateData(dataSource);
+            }
+        });
+    }
+    function onhabSelect(e) {
+        this.onBlur(e);
+    }
+    function onCombSelect(e) {
+        this.onBlur(e);
+    }
+    function IsAlreadyHistoryExists(IsVerified) {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        var PatID = $("#lblpatid").text();
+        var VisitId = $("#lblvisitid").text();
+        var Reaction = $("#txtReactionComments").val();
+        var healthhabit = document.getElementById("tblHabits");
+        var allergy = document.getElementById("tblAllergy");
+        var comorbidity = document.getElementById("tblMedicalHistroy");
+        var medication = document.getElementById("tblCurrentMedicine");
+        var surgicalhistory = document.getElementById("tblSurgicalHistory");
+        var relevanthistory = $("#txRelevantHistory").val();
+        if (Reaction == "" && relevanthistory=="" && healthhabit.rows.length == 1 && allergy.rows.length == 1 && comorbidity.rows.length == 1 && medication.rows.length == 1 && surgicalhistory.rows.length == 1) {
+            alert('Please Enter atleast one Data to save');
+        }
+        else {
+            $.ajax({
+                url: rootUrl + "/Emr/IsAlreadyHistoryExists/?PatientID=" + PatID + "&VisitID=" + VisitId + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    const verify = data.verified;
+                    const notverify = data.notverified;
+                    if (notverify == 1) {
+                        if (IsVerified === true)
+                            SaveHistory(true);
+                        else
+                            SaveHistory(false);
+                    }
+                    else if (verify == 1)
+                        OpenHistoryStatus();
+
+                    else {
+                        if (IsVerified === true)
+                            SaveHistory(true);
+                        else
+                            SaveHistory(false);
+                    }
+
+                    //if (data === "Already Exists") {
+                    //    OpenHistoryStatus();
+                    //}
+                    //else {
+                    //    if (IsVerified === true)
+                    //        SaveHistory(true);
+                    //    else
+                    //        SaveHistory(false);
+                    //}
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+    }
+    function OpenHistoryStatus() {
+        document.getElementById('HistoryInfo').ej2_instances[0].show();
+    }
+    function CloseHistoryStatus() {
+        document.getElementById('HistoryInfo').ej2_instances[0].hide();
+    }
+    function LMBDisable() {
+        if ($("#chkMenopause").is(':checked')) {
+            $("#txtLMBDate").prop("disabled", true);
+            $("#rdoNoraml").prop("disabled", true);
+            $("#rdoAbnormal").prop("disabled", true);
+            $("#rdoNoraml").prop("checked", false);
+            $("#rdoAbnormal").prop("checked", false);
+        }
+        else {
+            $("#txtLMBDate").prop("disabled", false);
+            $("#rdoNoraml").prop("disabled", false);
+            $("#rdoAbnormal").prop("disabled", false);
+        }
+    }
+    function HealthHabitChekedRow(SelectedRow) {
+        var myrow = SelectedRow.parentNode.parentNode;
+        var cellValue = SelectedRow.parentNode.cellIndex;
+        var table = document.getElementById("tblHabits");
+        var i = myrow.rowIndex;
+        var sval12 = table.rows[i];
+        var comments = sval12.cells[cellValue].getElementsByTagName("input")[0].value;
+        if (comments!=="")
+            sval12.cells[0].getElementsByTagName("input")[0].checked = true;
+        else
+            sval12.cells[0].getElementsByTagName("input")[0].checked = false;
+
+    }
+</script>
+<div class="container-fluid">
+    <br />
+    <div class="row">
+        <div class="col-xs-7 col-sm-7 col-md-7">
+            <div class="panel panel-default DivBox">
+                <div id="CurrentHistoryDiv">
+                    <div class="row" style="display:none;">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <div class="table-responsive">
+                                    <table id="tblSimilar" class="table table-bordered table-striped dataTable table-reflow">
+                                        <thead>
+                                            <tr>
+                                                <td>Similar Episodes If any</td>
+                                                <td>Duration</td>
+                                                <td>Treatment Taken</td>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>
+                                                    <input type="text" class="form-control form-control-lg" id="txtSimilarEpisodes">
+                                                </td>
+                                                <td>
+                                                    <input type="text" class="form-control form-control-sm" id="txtDuration">
+                                                </td>
+                                                <td>
+                                                    <input type="text" class="form-control form-control-sm" id="txtTreatmentTaken">
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-1 col-sm-1 col-md-1">
+                            <div class="form-check">
+                                <input type="checkbox" style="height:22px;width:30px" onclick="GetLatestPatHistory();" class="form-check-input" id="chkHisPrevious" title="Load Previous Data">
+                                <label class="form-check-label" for="chkPrevious"></label>
+                            </div>
+                        </div>
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <label for="lblBloodTransfusion">Hx of Blood Transfusion</label>
+                            </div>
+                        </div>
+                        <div class="col-xs-2 col-sm-2 col-md-2">
+                            <div class="form-check-inline">
+                                <label class="form-check-label">
+                                    <input type="radio" id="rdoYesBloodTrans" class="form-check-input" name="a" value="">Yes
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-xs-2 col-sm-2 col-md-2">
+                            <div class="form-check-inline">
+                                <label class="form-check-label">
+                                    <input type="radio" id="rdoNoBloodTrans" class="form-check-input" name="a" value="" checked="checked">No
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-xs-3 col-sm-3 col-md-3">
+                            <div class="form-check-inline">
+                                <label class="form-check-label">
+                                    <input type="text" id="txtReactionComments" class="form-control inputEmr" placeholder="Reaction / Comments" value="">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <ejs-combobox id="cmbHealtHabit" allowFiltering="true" cssClass="inputEmr"
+                                              placeholder="Search Health Habit Pick" popupHeight="230px"
+                                              filtering="onHabitsfiltering" change="OnChangeHabits" focus="OnFocus" select="onhabSelect">
+                                    <e-data-manager url="/api/EmrApi/GetAllHealthHabitsBySearchTearm/" adaptor="WebApiAdaptor"></e-data-manager>
+                                    <e-combobox-fields text="Habits" value="HealthHabitsSeqID"></e-combobox-fields>
+                                </ejs-combobox>
+                            </div>
+                        </div>
+                        <div class="col-xs-1 col-sm-1 col-md-1">
+                            <div class="form-group">
+                                <span>
+                                    <img src="~/images/ADD ITEM.png" style="height:45px;cursor:pointer;width:40px;margin-top:-8px;"
+                                         title="Add New Health Habit" onclick="OpenAddHealthHabitPopup();" />
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-xs-5 col-sm-5 col-md-5">
+                            <div class="form-group">
+                                <ejs-autocomplete id="txtHabitPickHeader" filterType="Contains" highlight="true" cssClass="inputEmr"
+                                                  placeholder="Health Habit Pick list" suggestionCount="10"
+                                                  change="OnHabitPickListChange" filtering="histfiltering" actionComplete="histactionComplete" created="histonCreate">
+                                    <e-data-manager url="/api/EmrApi/GetHabitPickListHeader/" adaptor="WebApiAdaptor"></e-data-manager>
+                                    <e-autocomplete-fields value="PickListName"></e-autocomplete-fields>
+                                </ejs-autocomplete>
+                            </div>
+                        </div>
+                        <div class="col-xs-1 col-sm-1 col-md-1" style="width:50px;">
+                            <div class="form-group">
+                                <img src="~/images/SAVEA PICKLISTX.png" style="height:40px;cursor:pointer;" title="Save As PickList" onclick="OpenHabitAsPickList();" />
+                            </div>
+                        </div>
+                        <div class="col-xs-1 col-sm-1 col-md-1" style="width:50px;">
+                            <div class="form-group">
+                                <img src="~/images/SAVE TO PICK LIST.png" style="height:40px;cursor:pointer;" title="Save To PickList" onclick="SaveHabitToPickList();" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="padding:10px;">
+                        <div class="col-xs-12 col-sm-12 col-md-12">
+                            <div class="table-responsive">
+                                <table id="tblHabits" class="table table-bordered table-striped dataTable table-reflow tableHB">
+                                    <thead>
+                                        <tr>
+                                            <td></td>
+                                            <td>Health Habits</td>
+                                            <td>Comments</td>
+                                            <td>Delete</td>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="tableHB"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-6 col-sm-6 col-md-6">
+                            <div class="form-group">
+                                <label for="lblBloodTransfusion">Genital / Reproductive History</label>
+                            </div>
+                        </div>
+                        <div class="col-xs-3 col-sm-3 col-md-3">
+                            <div class="form-check-inline">
+                                <label class="form-check-label">
+                                    <input type="radio" id="rdoMarried" class="form-check-input" name="c" value="">Married
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-xs-3 col-sm-3 col-md-3">
+                            <div class="form-check-inline">
+                                <label class="form-check-label">
+                                    <input type="radio" id="rdoUnMarried" class="form-check-input" name="c" value="">Unmarried
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" id="FemaleContent">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:11px;border-bottom: 1px solid #e5e5e5;">
+
+                            <div class="form-group">
+                                <fieldset>
+                                    <legend style="font-size:18px;">Pregnancy:</legend>
+                                    <div class="row">
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <div class="form-group">
+                                                <input type="text" id="txtGravida" class="form-control inputEmr" placeholder="Gravida" />
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <div class="form-group">
+                                                <input type="text" id="txtPara" class="form-control inputEmr" placeholder="Para" />
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <div class="form-group">
+                                                <input type="text" class="form-control inputEmr" id="txtAbortion" placeholder="Abortion" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <div class="form-group">
+                                                <input type="text" class="form-control inputEmr" id="txtProterm" placeholder="Proterm" />
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <div class="form-group">
+                                                <input type="text" class="form-control inputEmr" id="txtFullTerm " placeholder="Full Term" />
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <div class="form-group">
+                                                <input type="text" class="form-control inputEmr" id="txtLivingChildren" placeholder="Living Children" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <div class="form-check-inline">
+                                                <label for="lblBloodTransfusion">Menstrual History</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-3 col-sm-3 col-md-3">
+                                            <div class="form-check-inline">
+                                                <label class="form-check-label">
+                                                    <input type="radio" id="rdoNoraml" class="form-check-input" name="b" value=""> Normal
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-3 col-sm-3 col-md-3">
+                                            <div class="form-check-inline">
+                                                <label class="form-check-label">
+                                                    <input type="radio" id="rdoAbnormal" class="form-check-input" name="b" value=""> Abnormal
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-3 col-sm-3 col-md-3">
+                                            <div class="form-check-inline">
+                                                <label class="form-check-label">
+                                                    <input type="checkbox" id="chkMenopause" class="form-check-input" value="" onchange="LMBDisable();"> Menopause
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-3 col-sm-3 col-md-3">
+                                            <div class="form-group">
+                                                <input type="text" class="form-control inputEmr" id="txtMenopauseText" />
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <div class="form-group">
+                                                <input type="text" id="txtLMBDate" class="form-control inputEmr" placeholder="LMP Date" />
+                                                @*<ejs-datepicker id="txtLMBDate" format="dd/MM/yyyy" name="LMBDate" placeholder="LMP Date"></ejs-datepicker>*@
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </fieldset>
+                            </div>
+
+
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <ejs-autocomplete id="txtAllergy" filterType="Contains" highlight="true" cssClass="inputEmr"
+                                                  placeholder="Search Allergy" suggestionCount="10"
+                                                  change="OnChangeAllergies" filtering="Allonfiltering" actionComplete="AllonactionComplete" created="AllonCreated">
+                                    <e-data-manager url="/api/EmrApi/GetAllergySearch/" adaptor="WebApiAdaptor"></e-data-manager>
+                                    <e-autocomplete-fields value="Allergy"></e-autocomplete-fields>
+                                </ejs-autocomplete>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <div class="table-responsive">
+                                    <table id="tblAllergy" class="table table-bordered table-striped dataTable table-reflow tableHB">
+                                        <thead>
+                                            <tr>
+                                                <td>Allergies</td>
+                                                <td align="center">Delete</td>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="tableHB"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="display:none;">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:11px;border-bottom: 1px solid #e5e5e5;">
+                            <div class="form-group">
+                                <fieldset>
+                                    <legend style="font-size:18px;">Medical History & Medication</legend>
+                                </fieldset>
+                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                    <div class="form-check-inline">
+                                        <label class="form-check-label">
+                                            <input type="checkbox" id="chkASNSAD" class="form-check-input" value="">ASA / NSAD
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                    <div class="form-check-inline">
+                                        <label class="form-check-label">
+                                            <input type="checkbox" id="chkCOX2" class="form-check-input" value="">COX 2
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                    <div class="form-check-inline">
+                                        <label class="form-check-label">
+                                            <input type="checkbox" id="ChkInsulin" class="form-check-input" value="">Insulin
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-xs-3 col-sm-3 col-md-3">
+                                    <div class="form-check-inline">
+                                        <label class="form-check-label">
+                                            <input type="checkbox" id="ChkAnticoagulant" class="form-check-input" value="">Anti-coagulant
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-xs-3 col-sm-3 col-md-3">
+                                    <div class="form-check-inline">
+                                        <label class="form-check-label">
+                                            <input type="checkbox" class="form-check-input" id="ChkAntibioticProphylaxis" value="">Antibiotic Prophylaxis
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <div class="form-group">
+                                    <ejs-combobox id="cmbDiseases" allowFiltering="true" cssClass="inputEmr"
+                                                  placeholder="Comorbadities" popupHeight="230px"
+                                                  filtering="onDiseasesfiltering" change="OnChangeDiseases" focus="OnFocusDisease" select="onCombSelect">
+                                        <e-data-manager url="/api/EmrApi/GetAllDiseasesBySearch/" adaptor="WebApiAdaptor"></e-data-manager>
+                                        <e-combobox-fields text="DiseasesName" value="SeqID"></e-combobox-fields>
+                                    </ejs-combobox>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-1 col-sm-1 col-md-1">
+                            <div class="form-group">
+                                <span>
+                                    <img src="~/images/ADD ITEM.png" style="height:45px;cursor:pointer;width:40px;margin-top:-8px;"
+                                         title="Add New Comorbidity" onclick="OpenAddDiseasesPopup();" />
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-xs-5 col-sm-5 col-md-5">
+                            <div class="form-group">
+                                <ejs-autocomplete id="txtMedicalHistoryPickLst" filterType="Contains" highlight="true" cssClass="inputEmr"
+                                                  placeholder="Search Pick List" suggestionCount="10"
+                                                  change="OnDiseasesPickLstChange" filtering="onMedicalfiltering" actionComplete="onMedicalactionComplete" created="onMedicalCreated">
+                                    <e-data-manager url="/api/EmrApi/GetDiseasesPikHeaderSearch/" adaptor="WebApiAdaptor"></e-data-manager>
+                                    <e-autocomplete-fields value="PickListName"></e-autocomplete-fields>
+                                </ejs-autocomplete>
+                            </div>
+                        </div>
+                        <div class="col-xs-1 col-sm-1 col-md-1" style="width:50px;">
+                            <div class="form-group">
+                                <img src="~/images/SAVEA PICKLISTX.png" style="height:40px;cursor:pointer;" title="Save As PickList" onclick="OpenDiseasesAsPickList();" />
+                            </div>
+                        </div>
+                        <div class="col-xs-1 col-sm-1 col-md-1" style="width:50px;">
+                            <div class="form-group">
+                                <img src="~/images/SAVE TO PICK LIST.png" style="height:40px;cursor:pointer;" title="Save To PickList" onclick="SaveAsDiseasesToPickList();" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="padding:10px;">
+                        <div class="col-xs-12 col-sm-12 col-md-12">
+                            <div class="form-group">
+                                <div class="table-responsive">
+                                    <table id="tblMedicalHistroy" class="table table-bordered table-striped dataTable table-reflow tableHB">
+                                        <thead>
+                                            <tr>
+                                                <td>Medical History</td>
+                                                <td>Duration</td>
+                                                <td>Remark</td>
+                                                <td>Delete</td>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="tableHB"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <ejs-autocomplete id="txtMedicine" filterType="Contains" highlight="true" cssClass="inputEmr"
+                                                  placeholder="Current Medication" suggestionCount="10" change="OnChangeMedicine"
+                                                  filtering="onMedicinefiltering" actionComplete="onMedicineactionComplete" created="onMedicineCreated">
+                                    <e-data-manager url="/api/EmrApi/GetMedicineSearch/" adaptor="WebApiAdaptor"></e-data-manager>
+                                    <e-autocomplete-fields value="Medicine"></e-autocomplete-fields>
+                                </ejs-autocomplete>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <div class="table-responsive">
+                                    <table id="tblCurrentMedicine" class="table table-bordered table-striped dataTable table-reflow tableHB">
+                                        <thead>
+                                            <tr>
+                                                <td>Medicine</td>
+                                                <td>Duration</td>
+                                                <td>Remark</td>
+                                                <td>Delete</td>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="tableHB"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <ejs-autocomplete id="txtSurgicalHistory" filterType="Contains" highlight="true" cssClass="inputEmr"
+                                                  placeholder="Surgical History" suggestionCount="10" change="OnChangeSurgicalHistory"
+                                                  filtering="onSurgeryfiltering" actionComplete="onSurgeryactionComplete" created="onSurgeryCreated">
+                                    <e-data-manager url="/api/EmrApi/SurgicalHistoryhBySearch/" adaptor="WebApiAdaptor"></e-data-manager>
+                                    <e-autocomplete-fields value="SurgicalHistory"></e-autocomplete-fields>
+                                </ejs-autocomplete>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <div class="table-responsive">
+                                    <table id="tblSurgicalHistory" class="table table-bordered table-striped dataTable table-reflow tableHB">
+                                        <thead>
+                                            <tr>
+                                                <td>Surgical History</td>
+                                                <td>Comments</td>
+                                                <td>Delete</td>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="tableHB"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <textarea id="txRelevantHistory" class="form-control inputEmr" placeholder="Any other relevant history"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="display:none;">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <textarea id="txSurgicalHistory" class="form-control" placeholder="Surgical History"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" id="HistorybtnDiv">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <button type="button" id="btnHistorySave" class="btn" onclick="IsAlreadyHistoryExists(false);" title="Save">
+                                <img src="~/images/SAVES.png" style="height:50px;width:50px;">
+                            </button>
+                            <button type="button" id="btnHistorySaveVerifiy" class="btn" onclick="IsAlreadyHistoryExists(true);" title="Save and Verify">
+                                <img src="~/images/verify-512.png" style="height:50px;width:50px;">
+                            </button>
+                            <button type="button" id="btncancel" onclick="CancelViewclick();" class="btn" title="Cancel">
+                                <img src="~/images/CANCEL-512.png" style="height:50px;width:50px;">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-5 col-sm-5 col-md-5">
+            <div class="panel panel-default DivBox">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="form-group" style="float:right;">
+                            <button type="button" id="btnOldExamintion" class="btn" onclick="GetAllPatHistory();" title="More">
+                                <img src="~/images/MOREX.png" style="height:50px;width:50px;" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="OldHistory" class="row" style="padding:15px;">
+
+                </div>
+                <div id="AllHistory" class="row" style="display:none;padding:10px;">
+                    <div class="col-xs-12 col-sm-12 col-md-12">
+                        <div class="table-responsive">
+                            <table id="tblOldHistory" class="table table-bordered table-striped dataTable table-reflow tableHB">
+                                <thead>
+                                    <tr>
+                                        <td></td>
+                                        <td>Date</td>
+                                        <td>Status</td>
+                                        <td>Print</td>
+                                    </tr>
+                                </thead>
+                                <tbody class="tableHB"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="row" style="display:none;">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:17px;">
+                            <div class="form-group">
+                                <button type="button" id="btnBack" class="btn" onclick="GoBackHistory();" title="Back">
+                                    <img src="~/images/Back.png" style="height:50px;width:50px;" title="Back">
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <ejs-dialog id="HabitPickLstdialog" showCloseIcon="true" cssClass="ejs-dialog" header="Health Habit Pick Lsit Name" style="max-height:400px" visible="false" width="634px">
+                <e-content-template>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtHabitNewPickListName" class="form-control" placeholder="Enter Pick List Name" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <div class="table-responsive">
+                                    <table id="tblHabitSaveAsNewPickLsit" class="table table-bordered table-striped dataTable table-reflow">
+                                        <thead>
+                                            <tr>
+                                                <td style="font-weight: 700;color: Blue;">Habit</td>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <button type="button" id="btnHabitSavePickList" class="btn" onclick="SaveAsHabitNewPickList();">
+                                    <img src="~/images/SAVES.png" style="height:50px;width:50px;" title="Save">
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </e-content-template>
+            </ejs-dialog>
+        </div>
+        <div>
+            <ejs-dialog id="DiseasesPickLstdialog" showCloseIcon="true" cssClass="ejs-dialog" header="Mecical History Pick Lsit Name" style="max-height:400px" visible="false" width="634px">
+                <e-content-template>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtDisesaseNewPickListName" class="form-control" placeholder="Enter Pick List Name" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <div class="table-responsive">
+                                    <table id="tblDiesasesSaveAsNewPickLsit" class="table table-bordered table-striped dataTable table-reflow">
+                                        <thead>
+                                            <tr>
+                                                <td style="font-weight: 700;color: Blue;">Mecical History</td>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <button type="button" id="btnDiseasesSavePickList" class="btn" onclick="SaveAsDiseasesNewPickList();">
+                                    <img src="~/images/SAVES.png" style="height:50px;width:50px;" title="Save">
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </e-content-template>
+            </ejs-dialog>
+        </div>
+        <div>
+            <div>
+                <ejs-dialog id="AddHealthHabit" showCloseIcon="true" cssClass="ejs-dialog" header="Add Health Habit" style="max-height:400px" visible="false" width="634px">
+                    <e-content-template>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                                <div class="form-group">
+                                    <input type="text" id="txtAddNewHealthHabit" class="form-control inputEmr" placeholder="Enter Health Habit" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                                <div class="form-group">
+                                    <button type="button" id="btnAddNewHealthHabit" class="btn" onclick="AddNewHealthHabit();">
+                                        <img src="~/images/SAVES.png" style="height:50px;width:50px;" title="Save">
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </e-content-template>
+                </ejs-dialog>
+            </div>
+            <div>
+                <ejs-dialog id="AddDiseases" showCloseIcon="true" cssClass="ejs-dialog" header="Add Diseases" style="max-height:400px" visible="false" width="634px">
+                    <e-content-template>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                                <div class="form-group">
+                                    <input type="text" id="txtAddNewDiseases" class="form-control inputEmr" placeholder="Enter Diseases" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                                <div class="form-group">
+                                    <button type="button" id="btnAddNewDiseass" class="btn" onclick="AddNewDiseases();">
+                                        <img src="~/images/SAVES.png" style="height:50px;width:50px;" title="Save">
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </e-content-template>
+                </ejs-dialog>
+            </div>
+        </div>
+        <div>
+            <ejs-dialog id="HistoryInfo" showCloseIcon="true" cssClass="ejs-help" header="Inforamtion" style="max-height:400px" visible="false" width="634px">
+                <e-content-template>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <span style="font-size: 15px !important;font-family: Source Sans Pro,sans-serif !important;">
+                                    There are data in the current visit Do you want to add new data?
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <button type="button" id="btnHistoryStatusYes" class="btn EmrbtnPrimary" onclick="SaveHistory(false);" title="Save">
+                                    Save
+                                </button>
+                                <button type="button" id="btnHistoryStatusYes" class="btn EmrbtnPrimary" onclick="SaveHistory(true);" title="Save and Verify">
+                                    Save & Verify
+                                </button>
+                                <button type="button" id="btnHistoryStatusNo" class="btn EmrbtnPrimary" onclick="CloseHistoryStatus();" title="Cancel">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </e-content-template>
+            </ejs-dialog>
+        </div>
+    </div>
+</div>

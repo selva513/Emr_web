@@ -1,0 +1,23 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script type="text/javascript">
+        function bind() {
+            var PID = sessionStorage.getItem("PdfPrint");
+            document.getElementById("divprint").innerHTML = PID;
+        }
+    </script>
+</head>
+<body onload="bind()">
+    <div id="divprint" style="color:black;font-size:large;height:1000px;">
+    </div>
+</body>
+</html>
+

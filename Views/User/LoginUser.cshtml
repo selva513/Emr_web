@@ -1,0 +1,1439 @@
+﻿
+@{
+    ViewData["Title"] = "LoginUser";
+}
+@using Syncfusion.EJ2.Navigations;
+<link href="~/AutoComplete/jquery-ui_1.11.4.css" rel="stylesheet" />
+<script src="~/AutoComplete/jquery-1.10.2.js"></script>
+<script src="~/AutoComplete/jquery-ui_1.11.4.js"></script>
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        var tabObj = new ej.navigations.Tab({
+            heightAdjustMode: "Auto"
+        });
+        tabObj.appendTo('#wholetabs');
+        GetHospitalName();
+        Rolebind();
+        Departmentbind();
+        Specialitybind();
+        UserTypebind();
+        Hospitalbind();
+        Doctorbind();
+        RoleModifybind();
+        Departmentmodifybind();
+        SpecialityModifybind();
+        UserTypeModifybind();
+        HospitalModifybind();
+        DoctorModifybind();
+    });
+    function GetHospitalName() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetHospitalname",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    var data = response;
+                    if (data[0].HospitalMobileNo != 0 && data[0].Cityid != 0 && data[0].Countryid != 0 && data[0].Pin != "") {
+                    }
+                    else {
+                        var alerttxt = "You are not Update Hospital Master.Please Update Using \n";
+                        alerttxt += "Setup -> Hospital Master";
+                        alert(alerttxt);
+                    }
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function CheckExistusername() {
+        try {
+            var username = $("#txtusername").val();
+            if (username == '')
+                alert('Please Enter User Name');
+            else {
+                $.ajax({
+                    type: "GET",
+                    url: rootUrl + "/api/Patient/CheckLoginUsername/?UserName=" + username,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    success: function (response) {
+                        var data = response;
+                        if (data == 'success') {
+                            alert('User Name Exist.Please Enter Other User Name');
+                            $("#txtusername").val('');
+                            $("#txtusername").focus();
+                        }
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+            }
+        }
+        catch (e) {
+        }
+    }
+    function CheckExistUserid() {
+        try {
+            var userid = $("#txtuserid").val();
+            if (userid == '')
+                alert('Please Enter User Id');
+            else {
+                $.ajax({
+                    type: "GET",
+                    url: rootUrl + "/api/Patient/CheckLoginUserid/?UserID=" + userid,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    success: function (response) {
+                        var data = response;
+                        if (data == 'success') {
+                            alert('User Id Exist.Please Enter Other User Id');
+                            $("#txtuserid").val('');
+                            $("#txtuserid").focus();
+                        }
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+            }
+        }
+        catch (e) {
+        }
+    }
+    function Checkconfirmpwd() {
+        try {
+            var Pwd = $("#txtpassword").val();
+            var ConfirmPwd = $("#txtcnfpwd").val();
+            if (Pwd == '') {
+                alert('Please Enter Password First');
+                $("#txtcnfpwd").val('');
+            }
+            else {
+                if (Pwd != ConfirmPwd) {
+                    alert('Password Not Match.Please Enter Correct Password');
+                    $("#txtcnfpwd").val('');
+                }
+            }
+        }
+        catch (e) {
+        }
+    }
+    function CheckPwd() {
+        try {
+            var Pwd = $("#txtpassword").val();
+            var ConfirmPwd = $("#txtcnfpwd").val();
+            if (ConfirmPwd == '')
+                return;
+            else {
+                if (Pwd != ConfirmPwd) {
+                    alert('Password Not Match.Please Enter Correct Password');
+                    $("#txtpassword").val('');
+                }
+            }
+        }
+        catch (e) {
+        }
+    }
+    function Rolebind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/UserRoleApi/GetRoles",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#drproleselect").empty();
+                    $("#drproleselect").append($("<option></option>").val(0).html('-Select-'));
+                    $.each(data, function (key, value) {
+                        $("#drproleselect").append($("<option></option>").val(value.Roleseqid).html(value.Rolename));
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function Departmentbind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetDepartment",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#drpdepartment").empty();
+                    $("#drpdepartment").append($("<option></option>").val(0).html('-Select-'));
+                    $.each(data, function (key, value) {
+                        $("#drpdepartment").append($("<option></option>").val(value.DeptSeqID).html(value.DepartmentName));
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function Doctorbind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetDoctors",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#drpdoctor").empty();
+                    $("#drpdoctor").append($("<option></option>").val(0).html('-Select-'));
+                    if (data.length == 0) {
+                        var alerttxt = "Please Create at least one doctor in the Doctor master \n";
+                        alerttxt += "Setup -> Doctor Master";
+                        alert(alerttxt);
+                    }
+                    $.each(data, function (key, value) {
+                        $("#drpdoctor").append($("<option></option>").val(value.DoctorSeqID).html(value.DoctorName));
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function Specialitybind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetSpeciality",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#drpspeciality").empty();
+                    $("#drpspeciality").append($("<option></option>").val(0).html('-Select-'));
+                    $.each(data, function (key, value) {
+                        $("#drpspeciality").append($("<option></option>").val(value.SpecialityID).html(value.Speciality_Name));
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function UserTypebind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetUserType",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#drpdtype").empty();
+                    $("#drpdtype").append($("<option></option>").val(0).html('-Select-'));
+                    $.each(data, function (key, value) {
+                        $("#drpdtype").append($("<option></option>").val(value.Type_Seqid).html(value.Type_Name));
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function Hospitalbind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/UserRoleApi/GetHospitals",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#drphospital").empty();
+                    //$("#drphospital").append($("<option></option>").val(0).html('-Select-'));
+                    $.each(data, function (key, value) {
+                        $("#drphospital").append($("<option></option>").val(value.HospitalID).html(value.HospitalName));
+                        Clinicbind(value.HospitalID);
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function Clinicbind(Hosid) {
+        try {
+            //var e = document.getElementById("drphospital");
+            //var Hosid = e.options[e.selectedIndex].value;
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetClinic/?hospitalid=" + Hosid,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#drpdclinic").empty();
+                    $("#drpdclinic").append($("<option></option>").val(0).html('-Select-'));
+                    $.each(data, function (key, value) {
+                        $("#drpdclinic").append($("<option></option>").val(value.ClinicID).html(value.ClinicName));
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function hospital_change() {
+        try {
+            Clinicbind();
+        }
+        catch (e) {
+        }
+    }
+    function ValidateEmail() {
+        try {
+            var email = document.getElementById("txtuserid").value;
+            var expr = /^([\w-\.]+)@@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([\w-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/;
+            if (!expr.test(email)) {
+                alert("Invalid email address.");
+                $("#txtuserid").val('');
+                $("#txtuserid").focus();
+                return;
+            }
+            //$.ajax({
+            //    type: "GET",
+            //    url: rootUrl + "/api/Patient/Checkemail?useremail=" + email,
+            //    contentType: "application/json; charset=utf-8",
+            //    dataType: "json",
+            //    async: true,
+            //    success: function (response) {
+            //        var data = response;
+            //        if (data == 'success') {
+            //            alert('Email already Exist.!');
+            //            $("#txtuserid").focus();
+            //            $("#txtuserid").val('');
+            //        }
+            //    },
+            //    failure: function (response) {
+            //    },
+            //    error: function (response) {
+            //    }
+            //});
+        }
+        catch (e) {
+        }
+    }
+    function SaveClick() {
+        try {
+            var Username = $("#txtusername").val();
+            var Userid = $("#txtuserid").val();
+            //if (CheckExistUserid()) {
+            //    alert('Enter');
+            //}
+            //else
+            //    alert('Not in');
+            var Password = $("#txtpassword").val();
+            var Cnfpwd = $("#txtcnfpwd").val();
+            var e = document.getElementById("drproleselect");
+            var roleid = e.options[e.selectedIndex].value;
+            var rolename = e.options[e.selectedIndex].text;
+
+            var f = document.getElementById("drpdepartment");
+            var deptid = f.options[f.selectedIndex].value;
+            var deptname = f.options[f.selectedIndex].text;
+
+            var g = document.getElementById("drpspeciality");
+            var specid = g.options[g.selectedIndex].value;
+            var specname = g.options[g.selectedIndex].text;
+
+            var i = document.getElementById("drpdtype");
+            var usertypeid = i.options[i.selectedIndex].value;
+            var usertypename = i.options[i.selectedIndex].text;
+
+            var j = document.getElementById("drphospital");
+            var hosid = j.options[j.selectedIndex].value;
+            var hosname = j.options[j.selectedIndex].text;
+
+            var k = document.getElementById("drpdclinic");
+            var clinicid = k.options[k.selectedIndex].value;
+
+            var l = document.getElementById("drpdoctor");
+            var Doctorid = l.options[l.selectedIndex].value;
+            var Doctorname = l.options[l.selectedIndex].text;
+            if (specname == '-Select-')
+                specname = null;
+
+            var Email = $("#txtemail").val();
+            var Mobno = $("#txtmobno").val();
+            if (Username == '')
+                alert('Please Enter User Name');
+            else if (Userid == '')
+                alert('Please Enter User Id');
+            //else if (Password == '')
+            //    alert('Please Enter Password');
+            //else if (Cnfpwd == '')
+            //    alert('Please Enter Conform Password');
+            else if (rolename == '-Select-')
+                alert('Please Enter Role Name');
+            //else if (deptname == '-Select-')
+            //    alert('Please Enter Department Name');
+            //else if (specname == '-Select-')
+            //    alert('Please Enter Speciality Name');
+            //else if (usertypename == '-Select-')
+            //    alert('Please Enter User Type Name');
+            else if (hosname == '-Select-')
+                alert('Please Enter Hospital Name');
+            //else if (Doctorname == '-Select-')
+            //    alert('Please Enter Doctor Name');
+            else if (Mobno == '')
+                alert('Please Enter Mobile Number');
+            else {
+                var Login = new Object();
+                Login.UserName = Username;
+                Login.Userid = Userid;
+                Login.Password = Password;
+                Login.RoleID = parseInt(roleid);
+                Login.DoctorID = 0;
+                Login.DepartmentID = parseInt(deptid);
+                Login.SpecialityID = parseInt(specid);
+                Login.UserType = 2;
+                Login.HospitalID = parseInt(hosid);
+                Login.ClinicID = parseInt(clinicid);
+                Login.ForgotPwdEmail = Email;
+                Login.MobileNumber = parseInt(Mobno);
+                Login.IsActive = true;
+                //console.log(Login);
+                $.ajax({
+                    url: "/User/InsertNewUser",
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify(Login),
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data == true) {
+                            Clear();
+                            alert('User Created Successfully.Please check your mail to see the log in credentials.');
+                        }
+                        else
+                            alert('User Count Exceeded.Please Contact Allied Business Solutions.');
+                    },
+                    failure: function (response) {
+                        alert(response);
+                    },
+                    error: function (response) {
+                        alert(response);
+                    }
+                });
+            }
+        }
+        catch (e) {
+        }
+    }
+    function Clear() {
+        try {
+            Rolebind();
+            Departmentbind();
+            Specialitybind();
+            UserTypebind();
+            Hospitalbind();
+            Doctorbind();
+            $("#txtusername").val('');
+            $("#txtuserid").val('');
+            $("#txtpassword").val('');
+            $("#txtcnfpwd").val('');
+            $("#txtemail").val('');
+            $("#txtmobno").val('');
+            $("#drproleselect")[0].selectedIndex = 0;
+            $("#drpdepartment")[0].selectedIndex = 0;
+            $("#drpspeciality")[0].selectedIndex = 0;
+            $("#drpdtype")[0].selectedIndex = 0;
+            $("#drphospital")[0].selectedIndex = 0;
+            $("#drpdclinic")[0].selectedIndex = 0;
+            $("#drpdoctor")[0].selectedIndex = 0;
+        }
+        catch (e) {
+        }
+    }
+    function Cancelclick() {
+        try {
+            window.location.href = "/User/LoginUser";
+        }
+        catch (e) {
+        }
+    }
+    function ValidateEmailMod() {
+        try {
+            var email = document.getElementById("txtemailmod").value;
+            var expr = /^([\w-\.]+)@@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([\w-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/;
+            if (!expr.test(email)) {
+                alert("Invalid email address.");
+                $("#txtemailmod").val('');
+                return;
+            }
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/Checkemail?useremail=" + email,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    var data = response;
+                    if (data == 'success') {
+                        alert('Email already Exist.!');
+                        $("#txtemailmod").focus();
+                        $("#txtemailmod").val('');
+                    }
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function RoleModifybind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/UserRoleApi/GetRoles",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    if (data.length > 0) {
+                        $("#drprolemodify").empty();
+                        $("#drprolemodify").append($("<option></option>").val(0).html('-Select-'));
+                        $.each(data, function (key, value) {
+                            $("#drprolemodify").append($("<option></option>").val(value.Roleseqid).html(value.Rolename));
+                        });
+                    }
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function UseridModifybind() {
+        try {
+            var e = document.getElementById("drprolemodify");
+            var roleid = e.options[e.selectedIndex].value;
+            var rolevalue = e.options[e.selectedIndex].text;
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetUserid/?Roleid=" + roleid,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    setSelectedIndex(document.getElementById("drpdeptmodify"), '-Select-');
+                    setSelectedIndex(document.getElementById("drpspecialitymod"), '-Select-');
+                    setSelectedIndex(document.getElementById("drpdtypemod"), '-Select-');
+                    setSelectedIndex(document.getElementById("drphospitalmod"), '-Select-');
+                    setSelectedIndex(document.getElementById("drpdoctormod"), '-Select-');
+                    setSelectedIndex(document.getElementById("drpdclinicmod"), '-Select-');
+                    document.getElementById('txtmobnomodify').value = '';
+                    if (data.length > 0) {
+                        $("#drpuseridmodify").empty();
+                        $("#drpuseridmodify").append($("<option></option>").val(0).html('-Select-'));
+                        $.each(data, function (key, value) {
+                            $("#drpuseridmodify").append($("<option></option>").val(value.UserSeqid).html(value.Userid));
+                        });
+                    }
+                    else {
+                        $("#drpuseridmodify").empty();
+                        $("#drpuseridmodify").append($("<option></option>").val(0).html('-Select-'));
+                        if (rolevalue != '-Select-')
+                            alert('No User Name found under this role');
+                    }
+
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function Departmentmodifybind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetDepartment",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#drpdeptmodify").empty();
+                    $("#drpdeptmodify").append($("<option></option>").val(0).html('-Select-'));
+                    $.each(data, function (key, value) {
+                        $("#drpdeptmodify").append($("<option></option>").val(value.DeptSeqID).html(value.DepartmentName));
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function SpecialityModifybind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetSpeciality",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#drpspecialitymod").empty();
+                    $("#drpspecialitymod").append($("<option></option>").val(0).html('-Select-'));
+                    $.each(data, function (key, value) {
+                        $("#drpspecialitymod").append($("<option></option>").val(value.SpecialityID).html(value.Speciality_Name));
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function UserTypeModifybind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetUserType",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#drpdtypemod").empty();
+                    $("#drpdtypemod").append($("<option></option>").val(0).html('-Select-'));
+                    $.each(data, function (key, value) {
+                        $("#drpdtypemod").append($("<option></option>").val(value.Type_Seqid).html(value.Type_Name));
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function HospitalModifybind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/UserRoleApi/GetHospitals",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#drphospitalmod").empty();
+                    //$("#drphospitalmod").append($("<option></option>").val(0).html('-Select-'));
+                    $.each(data, function (key, value) {
+                        $("#drphospitalmod").append($("<option></option>").val(value.HospitalID).html(value.HospitalName));
+                        ClinicModifybind(value.HospitalID);
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function DoctorModifybind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetDoctors",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#drpdoctormod").empty();
+                    $("#drpdoctormod").append($("<option></option>").val(0).html('-Select-'));
+                    $.each(data, function (key, value) {
+                        $("#drpdoctormod").append($("<option></option>").val(value.DoctorSeqID).html(value.DoctorName));
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function ClinicModifybind(Hosid) {
+        try {
+            //var e = document.getElementById("drphospitalmod");
+            //var Hosid = e.options[e.selectedIndex].value;
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetClinic/?hospitalid=" + Hosid,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#drpdclinicmod").empty();
+                    $("#drpdclinicmod").append($("<option></option>").val(0).html('-Select-'));
+                    $.each(data, function (key, value) {
+                        $("#drpdclinicmod").append($("<option></option>").val(value.ClinicID).html(value.ClinicName));
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function UseridchangeModify() {
+        try {
+            var e = document.getElementById("drprolemodify");
+            var roleid = e.options[e.selectedIndex].value;
+            var f = document.getElementById("drpuseridmodify");
+            var userid = f.options[f.selectedIndex].value;
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetuserDetailsByUserid/?Roleid=" + roleid + "&ModUserid=" + userid,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    var xmlDoc = $.parseXML(response);
+                    var xml = $(xmlDoc);
+                    var BillDetails = xml.find("AllUsers");
+                    if (BillDetails.length > 0) {
+                        $.each(BillDetails, function () {
+                            var Username = ($(this).find("UserName").text());
+                            var Userid = ($(this).find("Userid").text());
+                            var Password = ($(this).find("Password").text());
+                            var Email = ($(this).find("ForgotPwdEmail").text());
+                            var Key = ($(this).find("ActivationKey").text());
+                            var Department = ($(this).find("DepartmentName").text()).trim();
+                            var Speciaality = ($(this).find("Speciality_Name").text()).trim();
+                            var UserType = ($(this).find("Type_Name").text()).trim();
+                            var Hospital = ($(this).find("HospitalName").text()).trim();
+                            var Clinicname = ($(this).find("ClinicName").text()).trim();
+                            var Doctorname = ($(this).find("DoctorName").text()).trim();
+                            var Mobilenumber = ($(this).find("MobileNumber").text()).trim();
+                            if (Speciaality == '' || Speciaality == null)
+                                Speciaality = "-Select-";
+                            if (Clinicname == '' || Clinicname == null)
+                                Clinicname = '-Select-';
+                            if (Department == '' || Department == null)
+                                Department == '-Select';
+                            if (Hospital == '' || Hospital == null)
+                                Hospital = '-Select-';
+                            if (Doctorname == '' || Doctorname == null)
+                                Doctorname = '-Select-';
+                            if (UserType == '' || UserType == null)
+                                UserType = '-Select-';
+                            $("#txtusernamemod").val(Username);
+                            $("#txtemailmod").val(Email);
+                            $("#txtmobnomodify").val(Mobilenumber);
+                            setSelectedIndex(document.getElementById("drpdeptmodify"), Department);
+                            setSelectedIndex(document.getElementById("drpspecialitymod"), Speciaality);
+                            setSelectedIndex(document.getElementById("drpdtypemod"), UserType);
+                            setSelectedIndex(document.getElementById("drphospitalmod"), Hospital);
+                            setSelectedIndex(document.getElementById("drpdoctormod"), Doctorname);
+                            setSelectedIndex(document.getElementById("drpdclinicmod"), Clinicname);
+                        });
+                    }
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function setSelectedIndex(s, v) {
+        try {
+            for (var i = 0; i < s.options.length; i++) {
+                if (s.options[i].text == v) {
+                    s.options[i].selected = true;
+                    return;
+                }
+            }
+        }
+        catch (e) {
+        }
+    }
+    function Updatelick() {
+        try {
+            var Username = $("#txtusernamemod").val();
+
+            var d = document.getElementById("drpuseridmodify");
+            var UserSeqid = d.options[d.selectedIndex].value;
+            var Userid = d.options[d.selectedIndex].text;
+
+            var e = document.getElementById("drprolemodify");
+            var roleid = e.options[e.selectedIndex].value;
+            var rolename = e.options[e.selectedIndex].text;
+
+            var f = document.getElementById("drpdeptmodify");
+            var deptid = f.options[f.selectedIndex].value;
+            var deptname = f.options[f.selectedIndex].text;
+
+            var g = document.getElementById("drpspecialitymod");
+            var specid = g.options[g.selectedIndex].value;
+            var specname = g.options[g.selectedIndex].text;
+
+            var i = document.getElementById("drpdtypemod");
+            var usertypeid = i.options[i.selectedIndex].value;
+            var usertypename = i.options[i.selectedIndex].text;
+
+            var j = document.getElementById("drphospitalmod");
+            var hosid = j.options[j.selectedIndex].value;
+            var hosname = j.options[j.selectedIndex].text;
+
+            var k = document.getElementById("drpdclinicmod");
+            var clinicid = k.options[k.selectedIndex].value;
+
+            var l = document.getElementById("drpdoctormod");
+            var Doctorid = l.options[l.selectedIndex].value;
+            var Doctorname = l.options[l.selectedIndex].text;
+
+            var Email = $("#txtemailmod").val();
+            var Mobno = $('#txtmobnomodify').val();
+            if (specname == '-Select-')
+                specname = null;
+
+            if (Username == '')
+                alert('Please Enter User Name');
+            else if (UserSeqid == '-Select-')
+                alert('Please Enter User ID');
+            else if (rolename == '-Select-')
+                alert('Please Enter Role Name');
+            //else if (deptname == '-Select-')
+            //    alert('Please Enter Department Name');
+            //else if (specname == '-Select-')
+            //    alert('Please Enter Speciality Name');
+            //else if (usertypename == '-Select-')
+            //    alert('Please Enter User Type Name');
+            else if (hosname == '-Select-')
+                alert('Please Enter Hospital Name');
+            //else if (Doctorname == '-Select-')
+            //    alert('Please Enter Doctor Name');
+            else if (Mobno == '')
+                alert('Please Enter Mobile Number');
+            else {
+                var Login = new Object();
+                Login.UserName = Username;
+                Login.UserSeqid = parseInt(UserSeqid);
+                Login.RoleID = parseInt(roleid);
+                Login.DoctorID = 0;
+                Login.DepartmentID = parseInt(deptid);
+                Login.SpecialityID = parseInt(specid);
+                Login.UserType = 2;
+                Login.HospitalID = parseInt(hosid);
+                Login.ClinicID = parseInt(clinicid);
+                Login.ForgotPwdEmail = Email;
+                Login.MobileNumber = parseInt(Mobno);
+                Login.IsActive = true;
+                //console.log(Login);
+                $.ajax({
+                    url: "/User/UpdateUser",
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify(Login),
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data != 0) {
+                            alert('Successfully Updated');
+                            Cancelclick();
+                        }
+                        else
+                            alert('Update Failed');
+                    },
+                    failure: function (response) {
+                        alert(response);
+                    },
+                    error: function (response) {
+                        alert(response);
+                    }
+                });
+            }
+        }
+        catch (e) {
+        }
+    }
+    function statusbtnclick() {
+        try {
+            document.getElementById('specialitydialogue').ej2_instances[0].show();
+        }
+        catch (e) {
+
+        }
+    }
+    function CancelAllclick() {
+        try {
+            document.getElementById('specialitydialogue').ej2_instances[0].hide();
+        }
+        catch (e) {
+
+        }
+    }
+    function SpecialityCheck() {
+        try {
+            var specname = $("#txtspeciality").val();
+
+            if (specname == "")
+                alert('Please Enter Speciality Name');
+            else {
+                $.ajax({
+                    type: "GET",
+                    url: rootUrl + "/api/Patient/CheckSpeciality/?Speciality=" + specname,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    success: function (response) {
+                        var data = response;
+                        if (data != "" && data != null) {
+                            alert('Speciality Name Already Exist');
+                            $("#txtspeciality").val("");
+                        }
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function SpecialitySave() {
+        try {
+            var specname = $("#txtspeciality").val();
+            var desc = $("#txtdescription").val();
+            if (specname == "")
+                alert('Please Enter Speciality Name');
+            else {
+                if (desc == "")
+                    alert('Please Enter Description');
+                else {
+                    var sendJSONData = {
+                        Speciality_Name: specname,
+                        Description: desc
+                    }
+                    $.ajax({
+                        url: "/User/InsertSpeciality",
+                        type: "POST",
+                        contentType: "application/json; charset=utf-8",
+                        data: JSON.stringify(sendJSONData),
+                        dataType: 'json',
+                        success: function (data) {
+                            if (data != 0) {
+                                alert('Successfully Updated');
+                                document.getElementById('specialitydialogue').ej2_instances[0].hide();
+                                SpecialityModifybind();
+                                Specialitybind();
+                            }
+                            else
+                                alert('Update Failed');
+                        },
+                        failure: function (response) {
+                            alert(response);
+                        },
+                        error: function (response) {
+                            alert(response);
+                        }
+                    });
+                }
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function DoctorChange() {
+        var l = document.getElementById("drpdoctor");
+        var Doctorid = l.options[l.selectedIndex].value;
+        var Doctorname = l.options[l.selectedIndex].text;
+        if (Doctorid !== null) {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/DepartmentByDocId/?DocID=" + Doctorid,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    setSelectedIndex(document.getElementById("drpdepartment"), response.DepartmentName);
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+    }
+    function DoctorChangeModify() {
+        var l = document.getElementById("drpdoctormod");
+        var Doctorid = l.options[l.selectedIndex].value;
+        var Doctorname = l.options[l.selectedIndex].text;
+        if (Doctorid !== null) {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/DepartmentByDocId/?DocID=" + Doctorid,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    setSelectedIndex(document.getElementById("drpdeptmodify"), response.DepartmentName);
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+    function onlyNumberKey(evt) {
+        var ASCIICode = (evt.which) ? evt.which : evt.keyCode
+        if (ASCIICode > 31 && (ASCIICode < 48 || ASCIICode > 57))
+            return false;
+        return true;
+    }
+</script>
+<style>
+    .main-page {
+        background: linear-gradient(-141deg, #FBFAFF 14%, #FBFAFF 100%);
+        margin: 0;
+    }
+
+    body,
+    text {
+        font-family: "Helvetica Neue", "Helvetica", "Arial", sans-serif, "-apple-system", "BlinkMacSystemFont";
+    }
+
+    .form-group.required .control-label:after {
+        content: "*";
+        color: red;
+    }
+</style>
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-primary">
+                        <div class="card-header" style="margin-top:15px;">
+                            <h3 class="card-title">User</h3>
+                            <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                        </div>
+                        <form autocomplete="off">
+                            <div class="card-body">
+                                <div id="wholetabs">
+                                    <div class="e-tab-header">
+                                        <div>New User </div>
+                                        <div>Modify User </div>
+                                    </div>
+                                    <div class="e-content">
+                                        <div id="newuser">
+                                            <br />
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            User Role
+                                                        </label>
+                                                        <select id="drproleselect" class="form-control" style="cursor:pointer;">
+                                                            <option value="-Select-">-Select-</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            User Id (Email Id)
+                                                        </label>
+                                                        <input type="text" id="txtuserid" class="form-control" onchange="CheckExistUserid(); ValidateEmail();"
+                                                               placeholder="User Id" autocomplete="off" autofocus required />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            User Name
+                                                        </label>
+                                                        <input type="text" id="txtusername" class="form-control"
+                                                               placeholder="User Name" autocomplete="off" autofocus required />
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            Mobile Number
+                                                        </label>
+                                                        <input type="text" id="txtmobno" class="form-control" onkeypress="return onlyNumberKey(event)"
+                                                               placeholder="Mobile Number" autocomplete="off" autofocus required />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row" style="display:none;">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            Password
+                                                        </label>
+                                                        <input type="password" id="txtpassword" class="form-control" onchange="CheckPwd();"
+                                                               placeholder="Password" autocomplete="off" autofocus required />
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            Confirm Password
+                                                        </label>
+                                                        <input type="password" id="txtcnfpwd" class="form-control" onchange="Checkconfirmpwd();"
+                                                               placeholder="Confirm Password" autocomplete="off" autofocus required />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Speciality
+                                                        </label>
+                                                        <select id="drpspeciality" class="form-control" style="cursor:pointer;">
+                                                            <option value="-Select-">-Select-</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                @*<div class="col-xs-1 col-sm-1 col-md-1">
+                                                        <div class="form-group">
+                                                            <img src="../images/Add_button.png" width="25" height="25" onclick="statusbtnclick()"
+                                                                 style="cursor:pointer;margin-top:32px;" />
+                                                        </div>
+                                                    </div>*@
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Department
+                                                        </label>
+                                                        <select id="drpdepartment" class="form-control">
+                                                            <option value="-Select-">-Select-</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Hospital Name
+                                                        </label>
+                                                        <select id="drphospital" onchange="hospital_change()" disabled class="form-control">
+                                                            <option value="-Select-">-Select-</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Clinic Name
+                                                        </label>
+                                                        <select id="drpdclinic" class="form-control" style="cursor:pointer;">
+                                                            <option value="-Select-">-Select-</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            User Type
+                                                        </label>
+                                                        <select id="drpdtype" class="form-control" style="cursor:pointer;width:580px;">
+                                                            <option value="-Select-">-Select-</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                @*<div class="col-xs-1 col-sm-1 col-md-1">
+                                                        <div class="form-group">
+                                                            <img src="../images/Add_button.png" width="25" height="25"
+                                                                    style="cursor:pointer;margin-left:52px;margin-top:25px;"  />
+                                                        </div>
+                                                    </div>*@
+                                                <div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Email
+                                                        </label>
+                                                        <input type="email" id="txtemail" class="form-control" onchange="ValidateEmail();"
+                                                               placeholder="Email" autocomplete="off" autofocus required />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row" style="display:none;">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Doctor Name
+                                                        </label>
+                                                        <select id="drpdoctor" class="form-control" onchange="DoctorChange();" style="cursor:pointer;">
+                                                            <option value="-Select-">-Select-</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <ejs-button id="btnsave" content="Save" onclick="SaveClick();" isPrimary="true"></ejs-button>
+                                                    <ejs-button id="btnCancel" content="Cancel" onclick="Cancelclick();" isPrimary="true"></ejs-button>
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    @if (TempData["UserFailed"] != null)
+                                                    {
+                                                        <label class="alert alert-danger">@TempData["UserFailed"]</label>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="updateuser">
+                                            <br />
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            User Role
+                                                        </label>
+                                                        <select id="drprolemodify" class="form-control" onchange="UseridModifybind();" style="cursor:pointer;">
+                                                            <option value="-Select-">-Select-</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            User Id
+                                                        </label>
+                                                        <select id="drpuseridmodify" class="form-control" onchange="UseridchangeModify();" style="cursor:pointer;"></select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            User Name
+                                                        </label>
+                                                        <input type="text" id="txtusernamemod" disabled="disabled" class="form-control"
+                                                               placeholder="User Name" autocomplete="off" autofocus required />
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            Mobile Number
+                                                        </label>
+                                                        <input type="text" id="txtmobnomodify" class="form-control" onkeypress="return onlyNumberKey(event)"
+                                                               placeholder="Mobile Number" autocomplete="off" autofocus required />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Speciality
+                                                        </label>
+                                                        <select id="drpspecialitymod" class="form-control" style="cursor:pointer;">
+                                                            <option value="-Select-">-Select-</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                @*<div class="col-xs-1 col-sm-1 col-md-1">
+                                                        <div class="form-group">
+                                                            <img src="../images/Add_button.png" width="25" height="25" onclick="statusbtnclick()"
+                                                                 style="cursor:pointer;margin-top:32px;" />
+                                                        </div>
+                                                    </div>*@
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Department
+                                                        </label>
+                                                        <select id="drpdeptmodify" class="form-control">
+                                                            <option value="-Select-">-Select-</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Hospital Name
+                                                        </label>
+                                                        <select id="drphospitalmod" disabled class="form-control">
+                                                            <option value="-Select-">-Select-</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Clinic Name
+                                                        </label>
+                                                        <select id="drpdclinicmod" class="form-control" style="cursor:pointer;">
+                                                            <option value="-Select-">-Select-</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            User Type
+                                                        </label>
+                                                        <select id="drpdtypemod" class="form-control" style="cursor:pointer;">
+                                                            <option value="-Select-">-Select-</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Email
+                                                        </label>
+                                                        <input type="email" id="txtemailmod" class="form-control" onchange="ValidateEmailMod();"
+                                                               placeholder="Email" autocomplete="off" autofocus required />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row" style="display:none;">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Doctor Name
+                                                        </label>
+                                                        <select id="drpdoctormod" class="form-control" onchange="DoctorChangeModify();" style="cursor:pointer;">
+                                                            <option value="-Select-">-Select-</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <ejs-button id="btnupdate" content="Update" onclick="Updatelick();" isPrimary="true"></ejs-button>
+                                                    <ejs-button id="btnModCancel" content="Cancel" onclick="Cancelclick();" isPrimary="true"></ejs-button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div>
+                    <ejs-dialog id="specialitydialogue" showCloseIcon="true" allowDragging="true" cssClass="ejs-dialog"
+                                header="Add Speciality" style="max-height:100px" visible="false" width="820px">
+                        <e-dialog-position X="center" Y="top">
+                            <e-content-template>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6" style="padding:10px;">
+                                        <input type="text" class="form-control" placeholder="Enter Speciality" id="txtspeciality" onchange="SpecialityCheck();" />
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6" style="padding:10px;">
+                                        <input type="text" class="form-control" placeholder="Enter Description" id="txtdescription" />
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <ejs-button id="btnAllsave" content="Save" onclick="SpecialitySave();" isPrimary="true"></ejs-button>
+                                        <ejs-button id="btnAllCancel" content="Cancel" onclick="CancelAllclick();" isPrimary="true"></ejs-button>
+                                    </div>
+                                </div>
+                            </e-content-template>
+                        </e-dialog-position>
+                    </ejs-dialog>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+

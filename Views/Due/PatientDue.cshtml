@@ -1,0 +1,899 @@
+﻿
+@{
+    ViewData["Title"] = "PateintDue";
+}
+<style>
+    .Tex-Input {
+        width: 120px;
+        border-color: #80808030;
+    }
+
+    .DivBox {
+        border: 1px solid;
+        width: 500px;
+        padding: 20px;
+    }
+
+    .header {
+        margin-left: 0px;
+        padding-left: 0px;
+        font-family: sherif;
+        color: white;
+    }
+
+    .head {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+        font-family: serif;
+        color: gray;
+        font-size: 12px;
+        background-color: #7e8ae33b;
+        line-height: 1.5;
+    }
+
+    .head1 {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+        font-family: serif;
+        color: black;
+        font-size: 14px;
+    }
+
+    th {
+        border: 1px solid #dddddd;
+        text-align: center;
+        padding: 8px;
+        font-size: 15px;
+        color: black;
+        width: 250px;
+    }
+
+    td {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+    }
+    /*tr:nth-child(even) {
+            background-color: #dddddd;
+        }*/
+    .container-fluid {
+        background-color: white;
+    }
+
+    .Search {
+        margin-top: 23px;
+        margin-left: 20px;
+    }
+
+    .container-fluid {
+        background-color: white;
+    }
+
+    .form-group {
+        margin-left: 0px;
+        padding-left: 0px;
+        font-family: sherif;
+        color: black;
+    }
+
+    .header {
+        margin-left: 0px;
+        padding-left: 0px;
+        font-family: sherif;
+        color: white;
+    }
+
+    .btn {
+        height: 34px;
+        width: 94px;
+        border-color: white;
+        padding-top: 5px;
+        padding-left: 11px;
+        color: white;
+    }
+
+    .search {
+        margin-top: 23px;
+        margin-left: 20px;
+        width: 100%;
+    }
+
+    .Tex {
+        width: 106px;
+        height: 30px;
+    }
+
+    .detail {
+        margin-left: 35px;
+    }
+
+    .lab {
+        font-size: 14px;
+        font-family: serif;
+        color: black;
+    }
+
+    .text {
+        width: 120px;
+    }
+
+    .Tex {
+        border-color: #80808030;
+        width: 149px;
+    }
+
+    ::placeholder {
+        color: gray;
+    }
+
+    .form-control {
+        height: 35px;
+        margin-top: -36px;
+    }
+
+    .DivPay {
+        margin-top: 26px;
+        margin-left: 140px;
+    }
+
+    #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loading1 {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loadingcontent {
+        display: table;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loadingspinner {
+        display: table-cell;
+        vertical-align: middle;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+        padding-top: 80px;
+    }
+</style>
+<script>
+    function getValues(url) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+    function postValues(url, jdata) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(jdata),
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+</script>
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        document.getElementById('lblPatid').innerHTML = sessionStorage.getItem("PatientID");
+        document.getElementById('lblname').innerHTML = sessionStorage.getItem("FirstName");
+        document.getElementById('lblopdue').innerHTML = sessionStorage.getItem("Due");
+        document.getElementById('lblipdue').innerHTML = "0";
+        document.getElementById('lbltotaldue').innerHTML = sessionStorage.getItem("Due");
+        BindDueListTable();
+    });
+    function BindDueListTable() {
+        try {
+            var html = "";
+            var PatientID = sessionStorage.getItem("PatientID");
+            var FirstName = sessionStorage.getItem("FirstName");
+            var OrderID = sessionStorage.getItem("OrderID");
+            var OrderDate = sessionStorage.getItem("OrderDate");
+            var TotalAmount = sessionStorage.getItem("TotalAmount");
+            var TotalDiscount = sessionStorage.getItem("TotalDiscount");
+            var TotalPaid = sessionStorage.getItem("TotalPaid");
+            var Due = sessionStorage.getItem("Due");
+            var NetTotal = sessionStorage.getItem("NetTotal");
+
+            $('#tblduedetails tbody').empty();
+            html += "<tr onclick='SelectedBillNo(this);' class='head1' style='background-color:white;'>";
+            html += "<td>1</td>";
+            html += "<td>OP</td>";
+            html += "<td >" + OrderID + "</td>";
+            html += "<td style='text-align:center;'>" + OrderDate + "</td>";
+            html += "<td style='text-align:right;'>" + TotalAmount + "</td>";
+            html += "<td style='text-align:right;'>" + TotalDiscount + "</td>";
+            html += "<td style='text-align:right;'>" + NetTotal + "</td>";
+            html += "<td style='text-align:right;'>" + TotalPaid + "</td>";
+            html += "<td style='text-align:right;'>" + Due + "</td>";
+            html += "<td><input  type=\"Text\" onchange='DueBillChange(this);' onkeypress='return isNumberKey(event)'></td>";
+            html += "</tr>";
+            $('#tblduedetails tbody').html(html);
+        }
+        catch (e) {
+
+        }
+    }
+    function DueBillChange(SelectedRow) {
+        try {
+            var PendingDueAmt = 0;
+            var row = SelectedRow.parentNode.parentNode;
+            var AvailableDueAmt = parseFloat(row.cells[8].innerHTML);
+            var DueCollected = row.cells[9].getElementsByTagName("input")[0].value;
+            if (DueCollected == "" || DueCollected == null || DueCollected == "0") {
+                alert('Please Enter Valid Amount');
+                row.cells[9].getElementsByTagName("input")[0].value = "";
+            }
+            else {
+                DueCollected = parseFloat(DueCollected);
+                if (DueCollected > AvailableDueAmt) {
+                    alert('Please Enter Valid Amount');
+                    row.cells[9].getElementsByTagName("input")[0].value = "";
+                    document.getElementById('txtDueCollected').disabled = false;
+                }
+                else {
+                    document.getElementById('txtDueCollected').disabled = true;
+                    $("#txtDueCollected").val(DueCollected);
+                    Calculation();
+                    //var TotalDueCollected = DueCollected;
+                    //var DiscountAmt = $("#txttotaldiscount").val();
+
+                    //if (DiscountAmt != "" && DiscountAmt != null)
+                    //    DiscountAmt = parseFloat(DiscountAmt);
+                    //else
+                    //    DiscountAmt = 0;
+
+                    //var NetDue = TotalDueCollected - DiscountAmt;
+
+                    //if (DueCollected < AvailableDueAmt) {
+                    //    PendingDueAmt = AvailableDueAmt - DueCollected;
+                    //}
+
+                    //$("#txtDueCollected").val(DueCollected);
+                    //$("#txtnetdue").val(NetDue);
+                    //$("#txtpendingdue").val(PendingDueAmt);
+                }
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function DueCollectedChange() {
+        try {
+            var PendingDueAmt = 0;
+            var AvailableDueAmt = 0;
+            var Gridtable = document.getElementById("tblduedetails");
+            var GridRowCount = Gridtable.rows.length;
+            var DueCollected = $("#txtDueCollected").val();
+            if (DueCollected == "" || DueCollected == null || DueCollected == "0") {
+                if (GridRowCount > 0) {
+                    for (var i = 1; i < GridRowCount; i++) {
+                        Gridtable.rows[i].cells[9].getElementsByTagName("input")[0].disabled = false;
+                    }
+                }
+                alert('Please Enter Valid Amount');
+                $("#txtDueCollected").val("");
+            }
+            else {
+                if (GridRowCount > 0) {
+                    for (var i = 1; i < GridRowCount; i++) {
+                        Gridtable.rows[i].cells[9].getElementsByTagName("input")[0].disabled = true;
+                        AvailableDueAmt = parseFloat(Gridtable.rows[i].cells[8].innerHTML);
+                    }
+                }
+                if (DueCollected > AvailableDueAmt) {
+                    alert('Please Enter Valid Amount');
+                    $("#txtDueCollected").val("");
+                }
+                else {
+                    var DiscountAmt = $("#txttotaldiscount").val();
+                    if (DiscountAmt != "" && DiscountAmt != null)
+                        DiscountAmt = parseFloat(DiscountAmt);
+                    else
+                        DiscountAmt = 0;
+                    var NetDue = DueCollected - DiscountAmt;
+
+                    if (DueCollected <= AvailableDueAmt) {
+                        PendingDueAmt = AvailableDueAmt - DueCollected;
+                    }
+                    $("#txtnetdue").val(NetDue);
+                    $("#txtpendingdue").val(PendingDueAmt);
+                }
+            }
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+    function Calculation() {
+        try {
+            var PendingDueAmt = 0;
+            var AvailableDueAmt = 0;
+            var Gridtable = document.getElementById("tblduedetails");
+            var GridRowCount = Gridtable.rows.length;
+            var CalculationType = $("#ddldiscounttype").val();
+            var Amount = $("#txtDueCollected").val();
+            var PrecentageValue = $("#txtdiscountamt").val();
+            if (PrecentageValue == "" || PrecentageValue == null)
+                PrecentageValue = 0;
+            if (GridRowCount > 0) {
+                for (var i = 1; i < GridRowCount; i++) {
+                    AvailableDueAmt = parseFloat(Gridtable.rows[i].cells[8].innerHTML);
+                }
+            }
+            if (CalculationType === "PER") {
+                if (Amount.length > 0) {
+                    if (isNumeric(Amount) && isNumeric(PrecentageValue)) {
+                        if (parseFloat(PrecentageValue) <= 100) {
+                            var PrecResult = percentage(PrecentageValue, Amount);
+                            $("#txttotaldiscount").val(PrecResult);
+                            var NetAmount = (Amount - PrecResult);
+                            $("#txtnetdue").val(NetAmount);
+                            if (Amount <= AvailableDueAmt) {
+                                PendingDueAmt = AvailableDueAmt - Amount;
+                                $("#txtpendingdue").val(PendingDueAmt);
+                            }
+                        }
+                        else {
+                            alert('Discount % shall not be more than 100% Or the total value of the Service');
+                            $("#txtdiscountamt").val("");
+                            $("#txttotaldiscount").val("");
+                            var DiscountAmt = 0;
+                            var NetDue = Amount - DiscountAmt;
+
+                            if (Amount <= AvailableDueAmt) {
+                                PendingDueAmt = AvailableDueAmt - Amount;
+                            }
+                            $("#txtnetdue").val(NetDue);
+                            $("#txtpendingdue").val(PendingDueAmt);
+                        }
+                    }
+                }
+                else {
+                    alert('Please Enter a Valid Amount');
+                }
+            }
+            else {
+                if (Amount.length > 0) {
+                    if (isNumeric(Amount) && isNumeric(PrecentageValue)) {
+                        if (parseFloat(PrecentageValue) <= parseFloat(Amount)) {
+                            var PrecResult = (Amount - PrecentageValue);
+                            $("#txttotaldiscount").val(PrecentageValue);
+                            $("#txtnetdue").val(PrecResult.toFixed(2));
+                            if (Amount <= AvailableDueAmt) {
+                                PendingDueAmt = AvailableDueAmt - Amount;
+                                $("#txtpendingdue").val(PendingDueAmt);
+                            }
+                        }
+                        else {
+                            alert('Discount % shall not be more than 100% Or the total value of the Service');
+                            $("#txtdiscountamt").val("");
+                            $("#txttotaldiscount").val("");
+                            var DiscountAmt = 0;
+                            var NetDue = Amount - DiscountAmt;
+
+                            if (Amount <= AvailableDueAmt) {
+                                PendingDueAmt = AvailableDueAmt - Amount;
+                            }
+                            $("#txtnetdue").val(NetDue);
+                            $("#txtpendingdue").val(PendingDueAmt);
+                        }
+                    }
+                }
+                else {
+                    alert('Please Enter a Valid Amount');
+                }
+            }
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+    function TotalDiscountCalculation() {
+        try {
+            var PendingDueAmt = 0;
+            var AvailableDueAmt = 0;
+            var Gridtable = document.getElementById("tblduedetails");
+            var GridRowCount = Gridtable.rows.length;
+            var CalculationType = $("#ddldiscounttype").val();
+            var Amount = $("#txtDueCollected").val();
+            var PrecentageValue = $("#txtdiscountamt").val();
+            if (PrecentageValue == "" || PrecentageValue == null)
+                PrecentageValue = 0;
+            if (GridRowCount > 0) {
+                for (var i = 1; i < GridRowCount; i++) {
+                    AvailableDueAmt = parseFloat(Gridtable.rows[i].cells[8].innerHTML);
+                }
+            }
+            if (CalculationType === "PER") {
+                if (Amount.length > 0) {
+                    if (isNumeric(Amount) && isNumeric(PrecentageValue)) {
+                        if (parseFloat(PrecentageValue) <= 100) {
+                            var PrecResult = percentage(PrecentageValue, Amount);
+                            $("#txttotaldiscount").val(PrecResult);
+                            var NetAmount = (Amount - PrecResult);
+                            $("#txtnetdue").val(NetAmount);
+                            if (Amount <= AvailableDueAmt) {
+                                PendingDueAmt = AvailableDueAmt - Amount;
+                                $("#txtpendingdue").val(PendingDueAmt);
+                            }
+                        }
+                        else {
+                            alert('Discount % shall not be more than 100% Or the total value of the Service');
+                            $("#txtdiscountamt").val("");
+                            $("#txttotaldiscount").val("");
+                            var DiscountAmt = 0;
+                            var NetDue = Amount - DiscountAmt;
+
+                            if (Amount <= AvailableDueAmt) {
+                                PendingDueAmt = AvailableDueAmt - Amount;
+                            }
+                            $("#txtnetdue").val(NetDue);
+                            $("#txtpendingdue").val(PendingDueAmt);
+                        }
+                    }
+                }
+                else {
+                    alert('Please Enter a Valid Amount');
+                }
+            }
+            else {
+                if (Amount.length > 0) {
+                    if (isNumeric(Amount) && isNumeric(PrecentageValue)) {
+                        if (parseFloat(PrecentageValue) <= parseFloat(Amount)) {
+                            var PrecResult = (Amount - PrecentageValue);
+                            $("#txttotaldiscount").val(PrecentageValue);
+                            $("#txtnetdue").val(PrecResult.toFixed(2));
+                            if (Amount <= AvailableDueAmt) {
+                                PendingDueAmt = AvailableDueAmt - Amount;
+                                $("#txtpendingdue").val(PendingDueAmt);
+                            }
+                        }
+                        else {
+                            alert('Discount % shall not be more than 100% Or the total value of the Service');
+                            $("#txtdiscountamt").val("");
+                            $("#txttotaldiscount").val("");
+                            var DiscountAmt = 0;
+                            var NetDue = Amount - DiscountAmt;
+
+                            if (Amount <= AvailableDueAmt) {
+                                PendingDueAmt = AvailableDueAmt - Amount;
+                            }
+                            $("#txtnetdue").val(NetDue);
+                            $("#txtpendingdue").val(PendingDueAmt);
+                        }
+                    }
+                }
+                else {
+                    alert('Please Enter a Valid Amount');
+                }
+            }
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+    function ShowPaymentDiv() {
+        try {
+            var DueCollected = $("#txtDueCollected").val();
+            if (DueCollected == "" || DueCollected == null || DueCollected == "0") {
+                alert('Please Enter Valid Amount');
+                $("#txtDueCollected").val("");
+                document.getElementById('DueCollection').style.display = "none";
+            }
+            else {
+                document.getElementById('DueCollection').style.display = "block";
+            }
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+    function DueCollection() {
+        try {
+            var AvailableDueAmt = 0;
+            var ReceivedAmt = 0;
+            var NetDue = parseFloat($("#txtnetdue").val());
+            var DueDiscountAmt = $("#txttotaldiscount").val();
+            var DuePendingAmt = $("#txtpendingdue").val();
+            var CashAmt = $("#txtcash").val();
+            var CreditAmt = $("#txtcredit").val();
+            var DebitAmt = $("#txtdebit").val();
+            var BankAmt = $("#txtbank").val();
+            var ChequeAmt = $("#txtcheque").val();
+            var Creditnum = $("#txtcreditnum").val();
+            var Debitnum = $("#txtdebitnum").val();
+            var BankReference = $("#txtbankreference").val();
+            var Chequeno = $("#txtchequeno").val();
+
+            if (Creditnum == "" || Creditnum == null) {
+                Creditnum = 0;
+            }
+            else {
+                Creditnum = parseInt(Creditnum);
+            }
+            if (Debitnum == "" || Debitnum == null) {
+                Debitnum = 0;
+            }
+            else {
+                Debitnum = parseInt(Debitnum);
+            }
+            if (BankReference == "" || BankReference == null) {
+                BankReference = 0;
+            }
+            else {
+                BankReference = parseInt(BankReference);
+            }
+            if (Chequeno == "" || Chequeno == null) {
+                Chequeno = 0;
+            }
+            else {
+                Chequeno = parseInt(Chequeno);
+            }
+            if (DueDiscountAmt == "" || DueDiscountAmt == null || DueDiscountAmt == "0") {
+                DueDiscountAmt = 0;
+            }
+            else {
+                DueDiscountAmt = parseFloat(DueDiscountAmt);
+            }
+            if (DuePendingAmt == "" || DuePendingAmt == null || DuePendingAmt == "0") {
+                DuePendingAmt = 0;
+            }
+            else {
+                DuePendingAmt = parseFloat(DuePendingAmt);
+            }
+            if (CashAmt == "" || CashAmt == null || CashAmt == "0") {
+                CashAmt = 0;
+            }
+            else {
+                CashAmt = parseFloat(CashAmt);
+            }
+            if (CreditAmt == "" || CreditAmt == null || CreditAmt == "0") {
+                CreditAmt = 0;
+            }
+            else {
+                CreditAmt = parseFloat(CreditAmt);
+            }
+            if (DebitAmt == "" || DebitAmt == null || DebitAmt == "0") {
+                DebitAmt = 0;
+            }
+            else {
+                DebitAmt = parseFloat(DebitAmt);
+            }
+            if (BankAmt == "" || BankAmt == null || BankAmt == "0") {
+                BankAmt = 0;
+            }
+            else {
+                BankAmt = parseFloat(BankAmt);
+            }
+            if (ChequeAmt == "" || ChequeAmt == null || ChequeAmt == "0") {
+                ChequeAmt = 0;
+            }
+            else {
+                ChequeAmt = parseFloat(ChequeAmt);
+            }
+            ReceivedAmt = CashAmt + CreditAmt + DebitAmt + BankAmt + ChequeAmt;
+            if (ReceivedAmt < NetDue || ReceivedAmt > NetDue) {
+                alert('Please Enter Valid Amount to collect.It seems to be higher or lower than Net Due');
+            }
+            else {
+                var Gridtable = document.getElementById("tblduedetails");
+                var GridRowCount = Gridtable.rows.length;
+                if (GridRowCount > 0) {
+                    for (var i = 1; i < GridRowCount; i++) {
+                        AvailableDueAmt = parseFloat(Gridtable.rows[i].cells[8].innerHTML);
+                    }
+                }
+                var sendJsonData = {
+                    Due_PatientId: sessionStorage.getItem("PatientID"),
+                    Due_OrderID: parseInt(sessionStorage.getItem("OrderID")),
+                    Due_CollectedAmt: ReceivedAmt,
+                    Due_DiscountAmt: DueDiscountAmt,
+                    Due_NetAmt: NetDue,
+                    Due_PendingAmt: DuePendingAmt,
+                    Due_Bycash: CashAmt,
+                    Due_ByCCard: CreditAmt,
+                    Due_ByDCard: DebitAmt,
+                    Due_ByBank: BankAmt,
+                    Due_ByCheque: ChequeAmt,
+                    Due_CreditCardNo: Creditnum,
+                    Due_DebitCardNo: Debitnum,
+                    Due_BankTransactionID: BankReference,
+                    Due_ChequeNo: Chequeno,
+                    AvailableDueAmt: AvailableDueAmt
+                };
+                $.ajax({
+                    url: "/Order/CreateNewDue",
+                    type: 'post',
+                    contentType: "application/json",
+                    data: JSON.stringify(sendJsonData),
+                    dataType: "json",
+                    beforeSend: function () { $("#loading").css("display", "block"); },
+                    success: function (data) {
+                        var DueID = parseInt(data.DueID);
+                        if (DueID > 0) {
+                            window.location.href = "/Due/Due";
+                        }
+                        else {
+                            alert('Due Insertion Failed');
+                        }
+                    },
+                    complete: function () { $("#loading").css("display", "none"); }
+                });
+            }
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+    function percentage(percent, total) {
+        try {
+            return ((percent / 100) * total).toFixed(2)
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+    function isNumeric(n) {
+        return !isNaN(parseFloat(n)) && isFinite(n);
+    }
+    function isNumberKey(evt) {
+        var charCode = (evt.which) ? evt.which : event.keyCode
+        if (charCode > 32 && (charCode < 48 || charCode > 57) || (charCode == 32))
+            return false;
+        return true;
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div id="loading">
+            <div id="loadingcontent">
+                <div id="loadingspinner">
+                    <img src="~/images/loading.gif" style="width:100px;height:100px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="content-wrapper">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-primary">
+                    <div class="card-header" style="margin-top:15px;height: 53px;">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <h3 class="card-title">Patient Due</h3>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="header">
+                                    <span>UHID : </span>
+                                    <label id="lblPatid"></label>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="header">
+                                    <span>NAME : </span>
+                                    <label id="lblname"></label>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="header">
+                                    <span>OP DUE : </span>
+                                    <label id="lblopdue"></label>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="header">
+                                    <span>IP DUE : </span>
+                                    <label id="lblipdue"></label>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="header">
+                                    <span>TOTAL : </span>
+                                    <label id="lbltotaldue"></label>
+                                </div>
+                            </div>
+                        </div>
+                        <img src="~/images/ShutdownWhite.png" onclick="GotoLogin();" style="float:right;cursor:pointer;margin-top:-28px" />
+                    </div>
+                </div>
+            </div>
+            <table id="tblduedetails" style="margin-left:1%;margin-right:5px;width:100%" class="table table-bordered table-hover table-striped">
+                <thead>
+                    <tr class="head" style="background-color:#7e8ae33b;">
+                        <th style="width: 2%">S.No</th>
+                        <th style="width: 2%">TYPE</th>
+                        <th style="width: 11%">INV NO</th>
+                        <th style="width: 10%">INV DATE</th>
+                        <th style="width: 12%">INV VALUE</th>
+                        <th style="width: 11%">DISCOUNT</th>
+                        <th style="width: 11%">NET TOTAL</th>
+                        <th style="width: 10%">PAID</th>
+                        <th style="width: 9%">DUE</th>
+                        <th style="width: 10%">Balance To Pay</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="row" style="margin-top:100px">
+            <div class="col-xs-6 col-sm-6 col-md-6">
+                <div class="panel panel-default DivBox" id="DueCollection" style="display:none;">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div>
+                                <label class="lab">Cash:</label>
+                                <input type="text" id="txtcash" onkeypress="return isNumberKey(this);" placeholder="Enter Value" class="detail" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div>
+                                <label class="lab">Credit:</label>
+                                <input type="text" id="txtcredit" onkeypress="return isNumberKey(this);" placeholder="Enter Value" class="detail" style="margin-left:28px" />
+                                <input type="text" id="txtcreditnum" maxlength="4" placeholder="Last Four Digits" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div>
+                                <label class="lab">Debit:</label>
+                                <input type="text" id="txtdebit" onkeypress="return isNumberKey(this);" placeholder="Enter Value" class="detail" />
+                                <input type="text" id="txtdebitnum" maxlength="4" placeholder="Last Four Digits" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div>
+                                <label class="lab">Bank:</label>
+                                <input type="text" id="txtbank" onkeypress="return isNumberKey(this);" placeholder="Enter Value" class="detail" />
+                                <input type="text" id="txtbankreference" placeholder="Reference No" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div>
+                                <label class="lab">Cheque:</label>
+                                <input type="text" id="txtcheque" onkeypress="return isNumberKey(this);" placeholder="Enter Value" style="margin-left:21px" />
+                                <input type="text" id="txtchequeno" placeholder="Cheque No" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="display:none;">
+                        <div class="col-md-12">
+                            <div>
+                                <label class="lab">Total:</label>
+                                <input type="text" id="txttotalduecollected" disabled placeholder="Enter Value" class="detail" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-bottom:-11px;margin-left:135px">
+                        <div class="col-md-12">
+                            <div>
+                                <button class="btn btn-primary" onclick="DueCollection();">Submit</button>
+                                <button class="btn btn-primary">Cancel</button>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xs-6 col-sm-6 col-md-6">
+                <div class="panel panel-default DivPay">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div>
+                                <label class="lab">Due Collected:</label>
+                                <input type="text" id="txtDueCollected" onchange="DueCollectedChange();"
+                                       onkeypress="return isNumberKey(this);" class="Tex-Input" style="margin-left: 177px;" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div>
+                                <label class="lab">Discount:</label>
+                                <select id="ddldiscounttype" onchange="TotalDiscountCalculation();" class="Tex-Input" style="margin-left: 38px;width:77px;padding:2px">
+                                    <option>
+                                        PER
+                                    </option>
+                                    <option>
+                                        LS
+                                    </option>
+                                </select>
+                                <input type="text" id="txtdiscountamt" onkeypress="return isNumberKey(this);"
+                                       onchange="TotalDiscountCalculation();" class="Tex-Input" style="width: 82px;margin-left:0px;" />
+                                <input type="text" id="txttotaldiscount" disabled class="Tex-Input" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="display:none;">
+                        <div class="col-md-12">
+                            <div>
+                                <label class="lab">Due Collected:</label>
+                                <input type="text" disabled class="Tex-Input" style="margin-left: 176px;" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div>
+                                <label class="lab">Net Due:</label>
+                                <input type="text" id="txtnetdue" disabled class="Tex-Input" style="margin-left: 211px;" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div>
+                                <label class="lab">Pending:</label>
+                                <input type="text" id="txtpendingdue" disabled class="Tex-Input" style="margin-left: 211px;" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="margin-top:20px;margin-left:220px">
+                    <div class="col-md-12">
+                        <div>
+                            <button class="btn btn-primary" style="display:none;">Save</button>
+                            <button class="btn btn-primary" onclick="ShowPaymentDiv();" style="width:135px">Save & Verify</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

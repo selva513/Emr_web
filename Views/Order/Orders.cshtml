@@ -1,0 +1,1542 @@
+﻿<style type="text/css">
+    .detail {
+        margin-left: 35px
+    }
+
+    .sub {
+        margin-left: -250px;
+    }
+
+    .settle {
+        width: 100%;
+        margin-top: 20px;
+        margin-left: 74px;
+        margin-bottom: 20px;
+    }
+
+    .lab {
+        width: 85px;
+    }
+
+
+
+
+    .head {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+        font-family: serif;
+        color: black;
+        font-size: 15px;
+        /*background-color: #7e8ae33b;*/
+    }
+
+
+
+    .head1 {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+        font-family: serif;
+        color: black;
+        font-size: 14px;
+    }
+
+    table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    th {
+        border: 1px solid #dddddd;
+        text-align: center;
+        padding: 2.5px;
+        font-size: 15px;
+        color: black;
+    }
+
+    td {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 4px;
+        /*display: contents;*/
+        font-family: serif;
+    }
+
+
+    .even:nth-child(even) {
+        background-color: #8080800d;
+    }
+
+    .container-fluid {
+        background-color: white;
+    }
+
+    .Search {
+        margin-top: 23px;
+        margin-left: 20px;
+    }
+
+
+
+    .container-fluid {
+        background-color: white;
+    }
+
+
+    .btn {
+        color: #fff;
+        background-color: #007bff;
+        border-color: #007bff;
+        box-shadow: none;
+        font-size: 14px;
+        font-style: normal;
+        font-weight: 600;
+        width: 122px;
+    }
+
+    .btns {
+        width: 94px;
+        margin-left: -1px;
+        margin-top: 13px;
+        border: none;
+        padding: 8px;
+        font-weight: 600;
+        box-shadow: none;
+        font-size: 14px;
+        font-style: normal;
+        border-radius: 4px;
+    }
+
+
+    .search {
+        margin-top: 23px;
+        margin-left: 20px;
+        width: 100%;
+    }
+
+    .Tex {
+        width: 106px;
+    }
+
+    .pays {
+        margin-left: 120%;
+        margin-top: 20%;
+        border: 1px solid gray;
+        /* border-left: 20px; */
+        width: 100px;
+        margin-right: 0px;
+        padding-left: 375px;
+        padding-top: 20px;
+        box-sizing: border-box;
+    }
+
+    .lab {
+        font-size: 14px;
+        font-family: serif;
+        color: black;
+    }
+
+    .text {
+        width: 120px;
+    }
+
+    .noborders td {
+        border-top: 0px solid #dee2e6 !important;
+        border: 0px solid #dddddd !important;
+    }
+
+    .topics tr {
+        line-height: 1.5;
+    }
+
+    #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loading1 {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loadingcontent {
+        display: table;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loadingspinner {
+        display: table-cell;
+        vertical-align: middle;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+        padding-top: 80px;
+    }
+</style>
+@{
+    ViewData["Title"] = "Orders";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<script>
+    function getValues(url) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+    function postValues(url, jdata) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(jdata),
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+</script>
+<script>
+    $(document).ready(function () {
+        $("#lblPatientID").text(sessionStorage.getItem("PatientID"));
+        $("#lblPatinetName").text(sessionStorage.getItem("FirstName"));
+        $("#lblGender").text(sessionStorage.getItem("Gender"));
+        $("#lblMobileNo").text(sessionStorage.getItem("MobileNumber"));
+        $("#HidVisitID").val(sessionStorage.getItem("VisitID"));
+        $("#HidDoctorID").val(sessionStorage.getItem("DoctorID"));
+        $("#divPayments").hide();
+        GetCurrentDueRefund();
+        var HISOrderID = sessionStorage.getItem("OrderID");
+        //alert(HISOrderID);
+        if (HISOrderID != 0) {
+            var tData = getValues("/Order/GetTestDetails?OrderID=" + HISOrderID + "");
+            for (var i = 0; i < tData.length; i++) {
+                var TestID = tData[i].TestId;
+                GetOrderDetails(TestID);
+            }
+        }
+    });
+    function GetOrderDetails(args) {
+        var TestId = args;
+        if (TestId > 0) {
+            var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+            $.ajax({
+                url: rootUrl + "/Order/GetOrderTestByTestID/?TestId=" + args + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: OnsuccessEmrOrderTestChange,
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+    }
+    function OnsuccessEmrOrderTestChange(response) {
+        if (response.length > 0) {
+            var html = "";
+            //var table = document.getElementById("tblOrder");
+            //var tbodyRowCount = table.tBodies[0].rows.length;
+            for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                var TestId = response[PCHeader].TestId;
+                var $tr = $('#tblOrder tr[data-id="' + TestId + '"]');
+                if ($tr.length === 0) {
+                    //document.getElementById('DeleteButton').style.display = 'none';
+                    //var Sno = tbodyRowCount + 1;
+                    var TestName = response[PCHeader].TestName;
+                    var TestRateCommon = response[PCHeader].TestRateCommon;
+                    var ServiceName = response[PCHeader].ServiceName;
+                    var TypeImageUrl = response[PCHeader].TypeImageUrl;
+                    var QTY_Enable = response[PCHeader].QTY_Enable;
+                    var RATE_Enable = response[PCHeader].RATE_Enable;
+
+                    html += "<tr data-id=\"" + TestId + "\"><td>" + TestName + "</td>";
+                    html += "<td style='display:none;'>" + TestId + "</td>";
+                    html += "<td></td>";
+                    html += "<td></td>";
+                    html += "<td style='text-align:center;'><input type=\"checkbox\" style=\"width:16px;height:16px;\" ></td>";
+                    if (QTY_Enable == true)
+                        html += "<td><input value='1'  style='height:28px;width:50px;margin-top: 5px;text-align: right' type=\"Text\"  onchange='QtyChange(this);' onkeypress='return isNumberKey(event)'></td>";
+                    else
+                        html += "<td><input value='1' disabled style='text-align:rightheight:28px;width:50px;background-color: #d0cccc;margin-top: 5px;border:none' type=\"Text\" onkeypress='return isNumberKey(event)'></td>";
+
+                    if (RATE_Enable == true)
+                        html += "<td><input value='" + TestRateCommon + "'  style='height:28px;width:50px;text-align: right;margin-top:5px;' type=\"Text\" onchange='RateChange(this);' onkeypress='return isNumberKey(event)'></td>";
+                    else
+                        html += "<td><input disabled value='" + TestRateCommon + "'  style='height:24px;width:50px;text-align: right;margin-top:5px;background-color: #d0cccc;border:none;' type=\"Text\" readonly></td>";
+
+                    html += "<td style='text-align: right;padding-top:0px' class='priceCell'>" + TestRateCommon + "</td>";
+
+                    html += "<td style='width:15%;'><Select style='height:24px;margin-left: 11px;height: 28px;margin-top: 5px;width: 55px;' onchange='DiscountCalculate(this);'><option Value='PER'>PER</option><option Value='LS'>LS</option></Select>&nbsp;&nbsp;&nbsp";
+                    html += "<input style='height:29px;width:55px;text-align: right;' type=\"Text\" onkeypress='return isNumberKey(event)' onchange='DiscountCalculate(this);'></td>";
+
+                    html += "<td class='DiscountCelll' style='text-align: right;padding:0px'>0</td>";
+
+                    html += "<td style='text-align: right;padding:0px'>" + TestRateCommon + "</td>";
+
+                    html += "<td style='text-align: center;'>";
+                    html += "<img src='../Images/DELETE-32.png'  onclick='return DeleteOrdersRow(this)' style='display:none;cursor:pointer;width: 30px !important;height:30px !important;'>";
+                    html += "</td></tr>";
+                    $tr = $('#tblOrder tr[data-id="' + TestId + '"]');
+                    $("#tblOrder tbody").append(html);
+                    html = "";
+                }
+            }
+            var priceCells = document.getElementsByClassName("priceCell"); //returns a list with all the elements that have class 'priceCell'
+            var Subtotal = 0;
+            //loop over the cells array and add to total price
+            for (var i = 0; i < priceCells.length; i++) {
+                var thisPrice = parseFloat(priceCells[i].innerHTML); //get inner text of this cell in number format
+                Subtotal = Subtotal + thisPrice;
+            };
+            Subtotal = Subtotal.toFixed(2);
+            $("#txtSubTotal").val(Subtotal);
+
+            var DicountCell = document.getElementsByClassName("DiscountCelll");
+            var discountTotal = 0;
+            for (var i = 0; i < DicountCell.length; i++) {
+                var thisPrice = parseFloat(DicountCell[i].innerHTML); //get inner text of this cell in number format
+                discountTotal = discountTotal + thisPrice;
+            };
+            discountTotal = discountTotal.toFixed(2);
+            $("#txtDiscountAmt").val(discountTotal);
+            var NetTotal = Subtotal - discountTotal;
+            $("#txtNetTotal").val(NetTotal.toFixed(2));
+        }
+        document.getElementById('txtServiceName').ej2_instances[0].text = "";
+        document.getElementById('txtServiceName').ej2_instances[0].value = "";
+        document.getElementById('txtServiceName').focus();
+        return false;
+    }
+    function onServiceSelect(e) {
+        this.onBlur(e);
+    }
+    function OnServiceChange(args) {
+        var ServiceName = document.getElementById('txtServiceName').ej2_instances[0];
+        var TestId = ServiceName.value;
+        ServiceName.autofill = args.checked;
+        if (TestId > 0) {
+            var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+            var arg = TestId;
+            $.ajax({
+                url: rootUrl + "/Order/GetOrderTestByTestID/?TestId=" + arg + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: OnsuccessOrderTestChange,
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+    }
+    function OnsuccessOrderTestChange(response) {
+        if (response.length > 0) {
+            var html = "";
+            //var table = document.getElementById("tblOrder");
+            //var tbodyRowCount = table.tBodies[0].rows.length;
+            for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                var TestId = response[PCHeader].TestId;
+                var $tr = $('#tblOrder tr[data-id="' + TestId + '"]');
+                if ($tr.length === 0) {
+                    //document.getElementById('DeleteButton').style.display = 'block';
+                    //var Sno = tbodyRowCount + 1;
+                    var TotalDiscountAmt = $("#txtRateValue").val();
+                    var TestName = response[PCHeader].TestName;
+                    var TestRateCommon = response[PCHeader].TestRateCommon;
+                    var ServiceName = response[PCHeader].ServiceName;
+                    var TypeImageUrl = response[PCHeader].TypeImageUrl;
+                    var QTY_Enable = response[PCHeader].QTY_Enable;
+                    var RATE_Enable = response[PCHeader].RATE_Enable;
+
+                    html += "<tr data-id=\"" + TestId + "\"><td>" + TestName + "</td>";
+                    html += "<td style='display:none;'>" + TestId + "</td>";
+                    html += "<td></td>";
+                    html += "<td></td>";
+                    html += "<td style='text-align:center;'><input type=\"checkbox\" style=\"width:16px;height:16px;\" ></td>";
+                    if(QTY_Enable==true)
+                        html += "<td><input value='1' style='height:28px;width:50px;margin-top: 5px;text-align:right' type=\"Text\" onchange='QtyChange(this);' onkeypress='return isNumberKey(event)'></td>";
+                    else
+                        html += "<td><input disabled value='1'  style='height:28px;width:50px;background-color: #d0cccc;margin-top: 5px;text-align:right' type=\"Text\"  onkeypress='return isNumberKey(event)'></td>";
+
+                    if (RATE_Enable==true)
+                        html += "<td><input  value='" + TestRateCommon + "'  style='height:28px;width:50px;text-align: right;margin-top:5px;' type=\"Text\" onchange='RateChange(this);' onkeypress='return isNumberKey(event)'></td>";
+                    else
+                        html += "<td><input disabled value='" + TestRateCommon + "'  style='height:24px;width:50px;text-align: right;margin-top:5px;background-color: #d0cccc;border-color: #d0cccc;border:none;' type=\"Text\" readonly></td>";
+
+                    html += "<td  style='text-align:right;padding-top:0px' class='priceCell'>" + TestRateCommon + "</td>";
+                    if (TotalDiscountAmt == "0" || TotalDiscountAmt == "") {
+                        html += "<td style='width:15%;'><Select style='height:24px;margin-left: 11px;height: 28px;margin-top: 5px;width: 55px;'  onchange='DiscountCalculate(this);'><option Value='PER'>PER</option><option Value='LS'>LS</option></Select>&nbsp;&nbsp;&nbsp";
+                        html += "<input style='height:24px;margin-left: 0px;height: 29px;margin-top: 5px;width: 55px;' type=\"Text\" onkeypress='return isNumberKey(event)' onchange='DiscountCalculate(this);'></td>";
+                    }
+                    else {
+                        html += "<td style='width:15%;'><Select style='height:24px;margin-left: 11px;height: 28px;margin-top: 5px;width: 55px;'  onchange='DiscountCalculate(this);'><option Value='PER'>PER</option><option Value='LS'>LS</option></Select>&nbsp;&nbsp;&nbsp";
+                        html += "<input   style='height:24px;margin-left: 0px;height: 29px;margin-top: 5px;width: 55px;' type=\"Text\" onkeypress='return isNumberKey(event)' onchange='DiscountCalculate(this);'></td>";
+                    }
+
+                    html += "<td class='DiscountCelll' style='text-align: right;'>0</td>";
+
+                    html += "<td style='text-align: right;'>" + TestRateCommon + "</td>";
+
+                    html += "<td style='text-align: center;'>";
+                    html += "<img src='../Images/DELETE-32.png'  onclick='return DeleteOrdersRow(this)' style='cursor:pointer;width: 30px !important;height:30px !important;'>";
+                    html += "</td></tr>";
+                    $tr = $('#tblOrder tr[data-id="' + TestId + '"]');
+                    $("#tblOrder tbody").append(html);
+                    html = "";
+                }
+            }
+            var priceCells = document.getElementsByClassName("priceCell"); //returns a list with all the elements that have class 'priceCell'
+            var Subtotal = 0;
+            //loop over the cells array and add to total price
+            for (var i = 0; i < priceCells.length; i++) {
+                var thisPrice = parseFloat(priceCells[i].innerHTML); //get inner text of this cell in number format
+                Subtotal = Subtotal + thisPrice;
+            };
+            Subtotal = Subtotal.toFixed(2);
+            $("#txtSubTotal").val(Subtotal);
+
+            if (TotalDiscountAmt != "0" && TotalDiscountAmt != "") {
+                var CalculationType = $("#ddlDiscountType").val();
+                var Amount = $("#txtSubTotal").val();
+                var PrecentageValue = $("#txtRateValue").val();
+                if (CalculationType === "PER") {
+                    var PrecResult = percentage(PrecentageValue, Amount);
+                    $("#txtDiscountAmt").val(PrecResult);
+                    var NetAmount = Amount - PrecResult;
+                    $("#txtNetTotal").val(NetAmount);
+                }
+                else {
+                    var PrecResult = Amount - PrecentageValue;
+                    $("#txtDiscountAmt").val(PrecentageValue);
+                    $("#txtNetTotal").val(PrecResult.toFixed(2));
+                }
+            }
+            else {
+                var DicountCell = document.getElementsByClassName("DiscountCelll");
+                var discountTotal = 0;
+                var thisPrice = 0;
+                for (var i = 0; i < DicountCell.length; i++) {
+                    thisPrice = parseFloat(DicountCell[i].innerHTML); //get inner text of this cell in number format
+                    discountTotal = discountTotal + thisPrice;
+                };
+                discountTotal = discountTotal.toFixed(2);
+                $("#txtDiscountAmt").val(discountTotal);
+                var NetTotal = Subtotal - discountTotal;
+                $("#txtNetTotal").val(NetTotal.toFixed(2));
+            }
+        }
+        document.getElementById('txtServiceName').ej2_instances[0].text = "";
+        document.getElementById('txtServiceName').ej2_instances[0].value = "";
+        document.getElementById('txtServiceName').focus();
+        return false;
+    }
+    function isNumberKey(evt) {
+        var charCode = (evt.which) ? evt.which : event.keyCode
+        if (charCode > 32 && (charCode < 48 || charCode > 57) || (charCode == 32))
+
+            return false;
+
+        return true;
+    }
+    function percentage(percent, total) {
+        return ((percent / 100) * total).toFixed(2)
+    }
+    function isNumeric(n) {
+        return !isNaN(parseFloat(n)) && isFinite(n);
+    }
+    function DiscountCalculate(SelectedRow) {
+        var row = SelectedRow.parentNode.parentNode;
+        var CalculationType = row.cells[8].getElementsByTagName("select")[0].value;
+        var Amount = row.cells[7].innerHTML.replace(/ +/g, "");
+        var PrecentageValue = row.cells[8].getElementsByTagName("input")[0].value.replace(/ +/g, "");
+        Calculation(CalculationType, Amount, PrecentageValue, row);
+        document.getElementById('txtServiceName').ej2_instances[0].text = "";
+        document.getElementById('txtServiceName').ej2_instances[0].value = "";
+        document.getElementById('txtServiceName').focus();
+
+        var Gridtable = document.getElementById("tblOrder");
+        var GridRowCount = Gridtable.rows.length;
+
+        if (GridRowCount > 0) {
+            for (var i = 2; i < GridRowCount; i++) {
+                var DiscountAmt = Gridtable.rows[i].cells[8].getElementsByTagName("input")[0].value.replace(/ +/g, "");
+                if (DiscountAmt == 0 || DiscountAmt == null || DiscountAmt == '' || DiscountAmt == "0") {
+                    document.getElementById("txtDiscountAmt").disabled = false;
+                    document.getElementById("txtRateValue").disabled = false;
+                    document.getElementById("ddlDiscountType").disabled = false;
+                }
+                else {
+                    document.getElementById("txtDiscountAmt").disabled = true;
+                    document.getElementById("txtRateValue").disabled = true;
+                    document.getElementById("ddlDiscountType").disabled = true;
+                    return;
+                }
+            }
+        }
+    }
+    function Calculation(DiscountType, Amount, PrecentageValue, row) {
+        var CurrentDue = $("#txtCurrentDue").val();
+        if (CurrentDue == "" || CurrentDue == '' || CurrentDue == null)
+            CurrentDue = 0;
+        else
+            CurrentDue = parseFloat(CurrentDue);
+        if (DiscountType === "PER") {
+            if (Amount.length > 0 && PrecentageValue.length > 0) {
+                if (isNumeric(Amount) && isNumeric(PrecentageValue)) {
+                    if (parseFloat(PrecentageValue) <= 100) {
+                        var PrecResult = percentage(PrecentageValue, Amount);
+                        row.cells[9].innerHTML = PrecResult;
+                        var NetAmount = (Amount - PrecResult);
+                        row.cells[10].innerHTML = NetAmount;
+                    }
+                    else {
+                        alert('Discount % shall not be more than 100% Or the total value of the Service');
+                    }
+                }
+            }
+            else {
+                row.cells[9].innerHTML = 0;
+                row.cells[10].innerHTML = Amount;
+            }
+        }
+        else {
+            if (Amount.length > 0 && PrecentageValue.length > 0) {
+                if (isNumeric(Amount) && isNumeric(PrecentageValue)) {
+                    if (parseFloat(PrecentageValue) <= parseFloat(Amount)) {
+                        var PrecResult = Amount - PrecentageValue;
+                        row.cells[9].innerHTML = PrecentageValue;
+                        var NetAmount = (Amount - PrecentageValue);
+                        row.cells[10].innerHTML = NetAmount;
+                    }
+                    else {
+                        alert('Discount % shall not be more than 100% Or the total value of the Service');
+                    }
+                }
+            }
+            else {
+                row.cells[9].innerHTML = 0;
+                row.cells[10].innerHTML = Amount;
+            }
+        }
+        var priceCells = document.getElementsByClassName("priceCell"); //returns a list with all the elements that have class 'priceCell'
+        var Subtotal = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < priceCells.length; i++) {
+            var thisPrice = parseFloat(priceCells[i].innerHTML); //get inner text of this cell in number format
+            Subtotal = Subtotal + thisPrice;
+        };
+        Subtotal = Subtotal.toFixed(2);
+        $("#txtSubTotal").val(Subtotal);
+
+        var TotalDiscountAmt = $("#txtRateValue").val();
+        if (TotalDiscountAmt != "0" && TotalDiscountAmt != "") {
+            var CalculationType = $("#ddlDiscountType").val();
+            var Amount = $("#txtSubTotal").val();
+            var PrecentageValue = $("#txtRateValue").val();
+            if (CalculationType === "PER") {
+                var PrecResult = percentage(PrecentageValue, Amount);
+                $("#txtDiscountAmt").val(PrecResult);
+                var NetAmount = (Amount - PrecResult) + CurrentDue;
+                $("#txtNetTotal").val(NetAmount);
+            }
+            else {
+                var PrecResult = (Amount - PrecentageValue) + CurrentDue;
+                $("#txtDiscountAmt").val(PrecentageValue);
+                $("#txtNetTotal").val(PrecResult.toFixed(2));
+            }
+        }
+        else {
+            var DicountCell = document.getElementsByClassName("DiscountCelll");
+            var discountTotal = 0;
+            for (var i = 0; i < DicountCell.length; i++) {
+                var thisPrice = parseFloat(DicountCell[i].innerHTML); //get inner text of this cell in number format
+                discountTotal = discountTotal + thisPrice;
+            };
+            discountTotal = discountTotal.toFixed(2);
+            $("#txtDiscountAmt").val(discountTotal);
+            var NetTotal = (Subtotal - discountTotal) + CurrentDue;
+            $("#txtNetTotal").val(NetTotal.toFixed(2));
+        }
+
+    }
+    function QtyChange(SelectedRow) {
+        var row = SelectedRow.parentNode.parentNode;
+        var Qty = row.cells[5].getElementsByTagName("input")[0].value.replace(/ +/g, "");
+        var Rate = row.cells[6].getElementsByTagName("input")[0].value.replace(/ +/g, "");
+        if (isNumeric(Qty) && isNumeric(Rate)) {
+            var ToatalAmt = Qty * Rate;
+            row.cells[7].innerHTML = ToatalAmt.toFixed(2);
+        }
+        var CalculationType = row.cells[8].getElementsByTagName("select")[0].value;
+        var Amount = row.cells[7].innerHTML.replace(/ +/g, "");
+        var PrecentageValue = row.cells[8].getElementsByTagName("input")[0].value.replace(/ +/g, "");
+        Calculation(CalculationType, Amount, PrecentageValue, row);
+        TotalCalculation();
+    }
+    function RateChange(SelectedRow) {
+        var row = SelectedRow.parentNode.parentNode;
+        var Qty = row.cells[5].getElementsByTagName("input")[0].value.replace(/ +/g, "");
+        var Rate = row.cells[6].getElementsByTagName("input")[0].value.replace(/ +/g, "");
+        if (isNumeric(Qty) && isNumeric(Rate)) {
+            var ToatalAmt = Qty * Rate;
+            row.cells[7].innerHTML = ToatalAmt.toFixed(2);
+        }
+        var CalculationType = row.cells[8].getElementsByTagName("select")[0].value;
+        var Amount = row.cells[7].innerHTML.replace(/ +/g, "");
+        var PrecentageValue = row.cells[8].getElementsByTagName("input")[0].value.replace(/ +/g, "");
+        Calculation(CalculationType, Amount, PrecentageValue, row);
+        TotalCalculation();
+    }
+    function DeleteOrdersRow(SelectedRow) {
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = myrow.rowIndex;
+        document.getElementById("tblOrder").deleteRow(myrow.rowIndex);
+        var rowCount = document.getElementById("tblOrder").tBodies.length;
+        if (rowCount > 0) {
+            var priceCells = document.getElementsByClassName("priceCell"); //returns a list with all the elements that have class 'priceCell'
+            var Subtotal = 0;
+            //loop over the cells array and add to total price
+            for (var i = 0; i < priceCells.length; i++) {
+                var thisPrice = parseFloat(priceCells[i].innerHTML); //get inner text of this cell in number format
+                Subtotal = Subtotal + thisPrice;
+            };
+            Subtotal = Subtotal.toFixed(2);
+            $("#txtSubTotal").val(Subtotal);
+
+            var DicountCell = document.getElementsByClassName("DiscountCelll");
+            var discountTotal = 0;
+            for (var i = 0; i < DicountCell.length; i++) {
+                var thisPrice = parseFloat(DicountCell[i].innerHTML); //get inner text of this cell in number format
+                discountTotal = discountTotal + thisPrice;
+            };
+            discountTotal = discountTotal.toFixed(2);
+            $("#txtDiscountAmt").val(discountTotal);
+            var NetTotal = Subtotal - discountTotal;
+            $("#txtNetTotal").val(NetTotal.toFixed(2));
+        }
+        else {
+            $("#txtSubTotal").val('0.00');
+            $("#txtDiscountAmt").val('0.00');
+            $("#txtNetTotal").val('0.00');
+        }
+        TotalDiscountCalculation();
+        return false;
+    }
+    function TotalCalculationChange(ControlValue) {
+        var RECIEVEDAMT = 0;
+
+        var Currentpendingamount = 0;
+        var RECIEVEDAMT = 0;
+        var OP_Current_Refund = 0;
+        var OP_Old_Refund = parseFloat($("#lblRefundAmount").text());
+        var OP_Old_Due = parseFloat($("#lblCurrentAmount").text());
+
+        var PENDINGTOPAY = 0;
+        var Currentpendingamount = 0;
+
+
+        var OP_Current_Refund = 0;
+
+        var CashReceivedAmt = 0;
+        var DebitCardAmt = 0;
+        var CreditCardAmt = 0;
+        var ThroughBankAmt = 0;
+        var ChequeAmt = 0;
+
+        if ($("#txtCashAmt").val().length > 0)
+            CashReceivedAmt = $("#txtCashAmt").val();
+        if ($("#txtDebitCardAmt").val().length > 0)
+            DebitCardAmt = $("#txtDebitCardAmt").val();
+        if ($("#txtCreditCardAmt").val().length > 0)
+            CreditCardAmt = $("#txtCreditCardAmt").val();
+        if ($("#txtBankAmt").val().length > 0)
+            ThroughBankAmt = $("#txtBankAmt").val();
+        if ($("#txtChequeAmt").val().length > 0)
+            ChequeAmt = $("#txtChequeAmt").val();
+
+        var Ord_nettotal = $("#txtNetTotal").val();
+        var RECIEVEDAMT = parseFloat(CashReceivedAmt) + parseFloat(DebitCardAmt) + parseFloat(ThroughBankAmt) + parseFloat(ChequeAmt) + parseFloat(CreditCardAmt);
+        if (RECIEVEDAMT > Ord_nettotal) {
+            //OP_Current_Refund = RECIEVEDAMT - Ord_nettotal;
+            ////OP_Current_Refund = OP_Current_Refund.toFixed(2);
+            //OP_Current_Refund = parseFloat(OP_Current_Refund);
+            //if (OP_Old_Refund != 0) {
+            //    OP_Old_Refund = OP_Old_Refund + OP_Current_Refund;
+            //}
+            //else
+            //    OP_Old_Refund = OP_Current_Refund;
+            //OP_Old_Refund = OP_Old_Refund.toFixed(2);
+            //$("#txtCurrentRefund").val(OP_Old_Refund);
+            //$("#txtCurrentDue").val(0.00);
+            //$("#lblCurrentAmount").text(0);
+            //OP_Current_Refund = ''+OP_Current_Refund;
+            //$("#lblRefundAmount").text(OP_Old_Refund);
+            var id = $(ControlValue).attr("id");
+            document.getElementById(id).value = 0.00;
+            alert('Recieved Amount  shall not be more than Net Total Payable');
+        }
+        else {
+            Currentpendingamount = Ord_nettotal - RECIEVEDAMT;
+            //Currentpendingamount = Currentpendingamount.toFixed(2);
+            Currentpendingamount = parseFloat(Currentpendingamount).toFixed(2);
+            //if (OP_Old_Due != 0)
+            //    OP_Old_Due = OP_Old_Due + Currentpendingamount;
+            //else
+            //    OP_Old_Due = Currentpendingamount;
+            //OP_Old_Due = OP_Old_Due.toFixed(2);
+            $("#txtCurrentDue").val(Currentpendingamount);
+            //  $("#txtCurrentRefund").val(0.00);
+            $("#lblRefundAmount").text(0);
+            OP_Old_Due = '' + OP_Old_Due;
+            // $("#lblCurrentAmount").text(OP_Old_Due);
+        }
+    }
+    function TotalCalculation() {
+        var RECIEVEDAMT = 0;
+
+        var Currentpendingamount = 0;
+        var RECIEVEDAMT = 0;
+        var OP_Current_Refund = 0;
+        var OP_Old_Refund = parseFloat($("#lblRefundAmount").text());
+        var OP_Old_Due = parseFloat($("#lblCurrentAmount").text());
+
+        var PENDINGTOPAY = 0;
+        var Currentpendingamount = 0;
+
+
+        var OP_Current_Refund = 0;
+
+        var CashReceivedAmt = 0;
+        var DebitCardAmt = 0;
+        var CreditCardAmt = 0;
+        var ThroughBankAmt = 0;
+        var ChequeAmt = 0;
+
+        if ($("#txtCashAmt").val().length > 0)
+            CashReceivedAmt = $("#txtCashAmt").val();
+        if ($("#txtDebitCardAmt").val().length > 0)
+            DebitCardAmt = $("#txtDebitCardAmt").val();
+        if ($("#txtCreditCardAmt").val().length > 0)
+            CreditCardAmt = $("#txtCreditCardAmt").val();
+        if ($("#txtBankAmt").val().length > 0)
+            ThroughBankAmt = $("#txtBankAmt").val();
+        if ($("#txtChequeAmt").val().length > 0)
+            ChequeAmt = $("#txtChequeAmt").val();
+
+        var Ord_nettotal = $("#txtNetTotal").val();
+        var RECIEVEDAMT = parseFloat(CashReceivedAmt) + parseFloat(DebitCardAmt) + parseFloat(ThroughBankAmt) + parseFloat(ChequeAmt) + parseFloat(CreditCardAmt);
+        if (RECIEVEDAMT > Ord_nettotal) {
+            //OP_Current_Refund = RECIEVEDAMT - Ord_nettotal;
+            ////OP_Current_Refund = OP_Current_Refund.toFixed(2);
+            //OP_Current_Refund = parseFloat(OP_Current_Refund);
+            //if (OP_Old_Refund != 0) {
+            //    OP_Old_Refund = OP_Old_Refund + OP_Current_Refund;
+            //}
+            //else
+            //    OP_Old_Refund = OP_Current_Refund;
+            //OP_Old_Refund = OP_Old_Refund.toFixed(2);
+            //$("#txtCurrentRefund").val(OP_Old_Refund);
+            //$("#txtCurrentDue").val(0.00);
+            //$("#lblCurrentAmount").text(0);
+            //OP_Current_Refund = ''+OP_Current_Refund;
+            //$("#lblRefundAmount").text(OP_Old_Refund);
+            alert('Recieved Amount  shall not be more than Net Total Payable');
+        }
+        else {
+            Currentpendingamount = Ord_nettotal - RECIEVEDAMT;
+            //Currentpendingamount = Currentpendingamount.toFixed(2);
+            Currentpendingamount = parseFloat(Currentpendingamount).toFixed(2);
+            //if (OP_Old_Due != 0)
+            //    OP_Old_Due = OP_Old_Due + Currentpendingamount;
+            //else
+            //    OP_Old_Due = Currentpendingamount;
+            //OP_Old_Due = OP_Old_Due.toFixed(2);
+            $("#txtCurrentDue").val(Currentpendingamount);
+          //  $("#txtCurrentRefund").val(0.00);
+            $("#lblRefundAmount").text(0);
+            OP_Old_Due = '' + OP_Old_Due;
+           // $("#lblCurrentAmount").text(OP_Old_Due);
+        }
+    }
+    function TotalDiscountCalculation() {
+        var CurrentDue = $("#txtCurrentDue").val();
+        if (CurrentDue == "" || CurrentDue == '' || CurrentDue == null)
+            CurrentDue = 0;
+        else
+            CurrentDue = parseFloat(CurrentDue);
+        var CalculationType = $("#ddlDiscountType").val();
+        var Amount = $("#txtSubTotal").val();
+        var PrecentageValue = $("#txtRateValue").val();
+        if (CalculationType === "PER") {
+            if (Amount.length > 0 && PrecentageValue.length > 0) {
+                if (isNumeric(Amount) && isNumeric(PrecentageValue)) {
+                    if (parseFloat(PrecentageValue) <= 100) {
+                        var PrecResult = percentage(PrecentageValue, Amount);
+                        $("#txtDiscountAmt").val(PrecResult);
+                        var NetAmount = (Amount - PrecResult) + CurrentDue;
+                        $("#txtNetTotal").val(NetAmount);
+                    }
+                    else {
+                        alert('Discount % shall not be more than 100% Or the total value of the Service');
+                    }
+                }
+            }
+            else {
+                var SubTot = $("#txtSubTotal").val();
+                var DueTot = $("#txtCurrentDue").val();
+                if (SubTot.length > 0 && DueTot.length > 0) {
+                    var NetTotal = parseFloat(SubTot) + parseFloat(DueTot);
+                    $("#txtDiscountAmt").val(0);
+                    $("#txtNetTotal").val(NetTotal);
+                }
+                else {
+                    if (SubTot == "" || SubTot == null || SubTot == '')
+                        SubTot = 0;
+                    if (DueTot == "" || DueTot == null || DueTot == '')
+                        DueTot = 0;
+                    var NetTotal = parseFloat(SubTot) + parseFloat(DueTot);
+                    $("#txtDiscountAmt").val(0);
+                    $("#txtNetTotal").val(NetTotal);
+                }
+            }
+        }
+        else {
+            if (Amount.length > 0 && PrecentageValue.length > 0) {
+                if (isNumeric(Amount) && isNumeric(PrecentageValue)) {
+                    if (parseFloat(PrecentageValue) <= parseFloat(Amount)) {
+                        var PrecResult = (Amount - PrecentageValue) + CurrentDue;
+                        $("#txtDiscountAmt").val(PrecentageValue);
+                        $("#txtNetTotal").val(PrecResult.toFixed(2));
+                    }
+                    else {
+                        alert('Discount % shall not be more than 100% Or the total value of the Service');
+                    }
+                }
+            }
+            else {
+                var SubTot = $("#txtSubTotal").val();
+                var DueTot = $("#txtCurrentDue").val();
+                if (SubTot.length > 0 && DueTot.length > 0) {
+                    var NetTotal = parseFloat(SubTot) + parseFloat(DueTot);
+                    $("#txtDiscountAmt").val(0);
+                    $("#txtNetTotal").val(NetTotal);
+                }
+                else {
+                    if (SubTot == "" || SubTot == null || SubTot == '')
+                        SubTot = 0;
+                    if (DueTot == "" || DueTot == null || DueTot == '')
+                        DueTot = 0;
+                    var NetTotal = parseFloat(SubTot) + parseFloat(DueTot);
+                    $("#txtDiscountAmt").val(0);
+                    $("#txtNetTotal").val(NetTotal);
+                }
+            }
+        }
+
+        var Gridtable = document.getElementById("tblOrder");
+        var GridRowCount = Gridtable.rows.length;
+
+        if (GridRowCount > 0) {
+            for (var i = 2; i < GridRowCount; i++) {
+                if (PrecentageValue != "" && PrecentageValue!="0") {
+                    Gridtable.rows[i].cells[8].getElementsByTagName("select")[0].disabled = true;
+                    Gridtable.rows[i].cells[8].getElementsByTagName("input")[0].disabled = true;
+                }
+                else {
+                    Gridtable.rows[i].cells[8].getElementsByTagName("select")[0].disabled = false;
+                    Gridtable.rows[i].cells[8].getElementsByTagName("input")[0].disabled = false;
+                }
+            }
+        }
+    }
+    function SavePatientOrder(IsActive) {
+        var DueCollected = $("#txtCurrentDue").val();
+        var NetCollected = $("#txtNetTotal").val();
+        if (DueCollected == "" || DueCollected == null || DueCollected == '')
+            DueCollected = 0;
+        else
+            DueCollected = parseFloat(DueCollected);
+        if (NetCollected == "" || NetCollected == null || NetCollected == '')
+            NetCollected = 0;
+        else
+            NetCollected = parseFloat(NetCollected);
+
+        var CashCheckAmt = $("#txtCashAmt").val();
+        if (CashCheckAmt == "" || CashCheckAmt == null || CashCheckAmt == '')
+            CashCheckAmt = 0;
+        else
+            CashCheckAmt = parseFloat(CashCheckAmt);
+
+        var DebitCardCheckAmt = $("#txtDebitCardAmt").val();
+        if (DebitCardCheckAmt == "" || DebitCardCheckAmt == null || DebitCardCheckAmt == '')
+            DebitCardCheckAmt = 0;
+        else
+            DebitCardCheckAmt = parseFloat(DebitCardCheckAmt);
+
+        var CrediCardCheckAmt = $("#txtCreditCardAmt").val();
+        if (CrediCardCheckAmt == "" || CrediCardCheckAmt == null || CrediCardCheckAmt == '')
+            CrediCardCheckAmt = 0;
+        else
+            CrediCardCheckAmt = parseFloat(CrediCardCheckAmt);
+
+        var BankCheckAmt = $("#txtBankAmt").val();
+        if (BankCheckAmt == "" || BankCheckAmt == null || BankCheckAmt == '')
+            BankCheckAmt = 0;
+        else
+            BankCheckAmt = parseFloat(BankCheckAmt);
+
+        var ChequeCheckAmt = $("#txtChequeAmt").val();
+        if (ChequeCheckAmt == "" || ChequeCheckAmt == null || ChequeCheckAmt == '')
+            ChequeCheckAmt = 0;
+        else
+            ChequeCheckAmt = parseFloat(ChequeCheckAmt);
+        var SessionOrderID = sessionStorage.getItem("OrderID");
+        if (SessionOrderID !== "")
+            SessionOrderID = parseFloat(SessionOrderID);
+        else
+            SessionOrderID = 0;
+        if (CashCheckAmt == "" && DebitCardCheckAmt == "" && CrediCardCheckAmt == "" && BankCheckAmt == "" && ChequeCheckAmt == "") {
+            alert('You have not entered the value.Please Enter 0 amount to make this payment as Due.');
+        }
+        else {
+            var RECIEVEDAMT = 0;
+            RECIEVEDAMT = parseFloat(CashCheckAmt) + parseFloat(DebitCardCheckAmt) + parseFloat(BankCheckAmt) + parseFloat(ChequeCheckAmt) + parseFloat(CrediCardCheckAmt);
+            if (RECIEVEDAMT > NetCollected) {
+                alert('Please Enter Valid Amount.');
+            }
+            else {
+                var OrderPatID = $("#lblPatientID").text();
+                var VisitID = $("#HidVisitID").val();
+                var OrderType = 0;
+                var OrderDocCode = parseInt($("#HidDoctorID").val());
+                var Ord_Grandtotal = parseFloat($("#txtSubTotal").val());
+                var Ord_Granddiscount = parseFloat($("#txtDiscountAmt").val());
+
+                var Ord_GranddistypeID = 0;
+                var CalculationType = $("#ddlDiscountType").val();
+                if (CalculationType === "PER")
+                    Ord_GranddistypeID = 0;
+                else
+                    Ord_GranddistypeID = 1;
+
+                var Ord_nettotal = parseFloat($("#txtNetTotal").val());
+
+
+                var PENDINGTOPAY = 0;
+                var Currentpendingamount = 0;
+
+                var OP_RefundAmt = 0
+                var OP_Current_Refund = 0;
+
+                var CashReceivedAmt = 0;
+                var DebitCardAmt = 0;
+                var CreditCardAmt = 0;
+                var ThroughBankAmt = 0;
+                var ChequeAmt = 0;
+
+                if (IsActive) {
+                    if ($("#txtCashAmt").val().length > 0)
+                        CashReceivedAmt = parseFloat($("#txtCashAmt").val());
+                    if ($("#txtDebitCardAmt").val().length > 0)
+                        DebitCardAmt = parseFloat($("#txtDebitCardAmt").val());
+                    if ($("#txtCreditCardAmt").val().length > 0)
+                        CreditCardAmt = parseFloat($("#txtCreditCardAmt").val());
+                    if ($("#txtBankAmt").val().length > 0)
+                        ThroughBankAmt = parseFloat($("#txtBankAmt").val());
+                    if ($("#txtChequeAmt").val().length > 0)
+                        ChequeAmt = parseFloat($("#txtChequeAmt").val());
+
+                    RECIEVEDAMT = parseFloat(CashReceivedAmt) + parseFloat(DebitCardAmt) + parseFloat(ThroughBankAmt) + parseFloat(ChequeAmt) + parseFloat(CreditCardAmt);
+                    if (RECIEVEDAMT > Ord_nettotal) {
+                        OP_Current_Refund = parseFloat(RECIEVEDAMT) - parseFloat(Ord_nettotal);
+                        OP_Current_Refund = parseFloat(OP_Current_Refund).toFixed(2);
+                        OP_RefundAmt = parseFloat(OP_Current_Refund);
+                    }
+                    else {
+                        Currentpendingamount = parseFloat(Ord_nettotal) - parseFloat(RECIEVEDAMT);
+                        Currentpendingamount = parseFloat(Currentpendingamount);
+                        PENDINGTOPAY = parseFloat(Currentpendingamount);
+                    }
+                }
+                var IsSentforAuthorise = false;
+                var AuthoriseUserCode = 0;
+
+
+
+                var CreditCardNumber = 0;
+                if ($("#txtCreditCardNum").val().length > 0)
+                    CreditCardNumber = parseFloat($("#txtCreditCardNum").val());
+                var DebitCardNumber = 0;
+                if ($("#txtDebitCardNumber").val().length > 0)
+                    DebitCardNumber = parseFloat($("#txtDebitCardNumber").val());
+
+                var BankTransactionID = 0;
+                if ($("#txtBankRefNum").val().length > 0)
+                    BankTransactionID = parseFloat($("#txtBankRefNum").val());
+
+                var ChequeNo = 0;
+                if ($("#txtChequeNumber").val().length > 0)
+                    ChequeNo = parseFloat($("#txtChequeNumber").val());
+
+                var CreditCardTransactionID = 0;
+                var DebitCardTransactionID = 0;
+                var BankTransactionID = 0;
+
+                // Habit table for loop
+                var OrderDeatils = new Array();
+
+                var tblOrder = document.getElementById("tblOrder");
+                var rowtblOrder = tblOrder.rows.length;
+
+                for (k = 2; k < rowtblOrder; k++) {
+                    var rowOrder = tblOrder.rows[k];
+                    var objDetails = new Object();
+                    if (isNumeric(rowOrder.cells[1].innerHTML)) {
+                        objDetails.TestID = parseFloat(rowOrder.cells[1].innerHTML);
+                        objDetails.SNo = 0;
+                        objDetails.OrderlistID = 0;
+                        objDetails.OrderId = 0;
+                        objDetails.DoctorID = 0;
+                        objDetails.DepartmentID = 0;
+                        objDetails.IsOrderListActive = true;
+                        objDetails.CreatedDt = "";
+                        objDetails.CreatedBy = 0;
+                        objDetails.ModifiedDt = "";
+                        objDetails.ModifiedBy = 0;
+                        objDetails.ISStat = false;
+                        objDetails.HospitalID = 0;
+                        objDetails.PackageID = 0;
+                        objDetails.IsOrderListActive = true;
+                        var checkbox = rowOrder.cells[4].getElementsByTagName("input");
+                        if ($(checkbox).is(':checked'))
+                            objDetails.ISStat = true;
+
+                        objDetails.Ordqty = parseFloat(rowOrder.cells[5].getElementsByTagName("input")[0].value);
+                        objDetails.Ordprice = parseFloat(rowOrder.cells[6].getElementsByTagName("input")[0].value);
+                        objDetails.Orddiscount = parseFloat(rowOrder.cells[9].innerHTML);
+                        objDetails.Ordtotal = parseFloat(rowOrder.cells[7].innerHTML);
+                        OrderDeatils.push(objDetails);
+                    }
+                }
+                if (OrderDeatils.length > 0) {
+                    var sendJsonData = {
+                        OrderPatID: OrderPatID,
+                        VisitID: VisitID,
+                        OrderType: OrderType,
+                        OrderDocCode: OrderDocCode,
+                        IsOrderActive: IsActive,
+                        Ord_Grandtotal: Ord_Grandtotal,
+                        Ord_Granddiscount: Ord_Granddiscount,
+                        Ord_GranddistypeID: Ord_GranddistypeID,
+                        Ord_nettotal: Ord_nettotal,
+                        Finyear: "",
+                        RECIEVEDAMT: RECIEVEDAMT,
+                        PENDINGTOPAY: PENDINGTOPAY,
+                        HospitalID: 0,
+                        Currentpendingamount: Currentpendingamount,
+                        IsSentforAuthorise: IsSentforAuthorise,
+                        AuthoriseUserCode: AuthoriseUserCode,
+                        OP_RefundAmt: OP_RefundAmt,
+                        OP_Current_Refund: OP_Current_Refund,
+                        OrderDetails: OrderDeatils,
+                        CashReceivedAmt: CashReceivedAmt,
+                        CreditCardAmt: CreditCardAmt,
+                        DebitCardAmt: DebitCardAmt,
+                        ThroughBankAmt: ThroughBankAmt,
+                        ChequeAmt: ChequeAmt,
+                        CreditCardNumber: CreditCardNumber,
+                        DebitCardNumber: DebitCardNumber,
+                        CreditCardTransactionID: CreditCardTransactionID,
+                        DebitCardTransactionID: DebitCardTransactionID,
+                        BankName: "",
+                        BankTransactionID: BankTransactionID,
+                        ChequeNo: ChequeNo,
+                        ChequeDate: "",
+                        OrderID: SessionOrderID,
+                        DueCollected: DueCollected
+                    };
+                    $.ajax({
+                        url: "/Order/CreateNewPatOrder",
+                        type: 'post',
+                        contentType: "application/json",
+                        data: JSON.stringify(sendJsonData),
+                        dataType: "json",
+                        beforeSend: function () { $("#loading").css("display", "block"); },
+                        success: function (data) {
+                            var OrderID = parseInt(data.orderID);
+                            if (OrderID > 0) {
+                                GetOrder(OrderID)
+                            }
+                            ClearAll();
+                            GetCurrentDueRefund();
+                        },
+                        complete: function () { $("#loading").css("display", "none"); }
+                    });
+                }
+                else {
+                    alert('Please Enter Orders');
+                }
+                return false;
+            }
+
+        }
+
+    }
+    function ShowPayment() {
+        var Gridtable = document.getElementById("tblOrder");
+        var GridRowCount = Gridtable.rows.length;
+        if (GridRowCount > 2) {
+            for (var i = 2; i < GridRowCount; i++) {
+                $("#divPayments").show();
+                $("#txtCashAmt").focus();
+            }
+        }
+        else
+            alert('Please Create One service to save');
+    }
+    function ClearAll() {
+        $("#txtSubTotal").val('0.00');
+        $("#txtRateValue").val('');
+        $("#txtDiscountAmt").val('0.00');
+        $("#txtCurrentDue").val('0.00');
+        $("#txtCurrentRefund").val('0.00');
+        $("#txtNetTotal").val('0.00');
+        $("#txtCashAmt").val('0.00');
+        $("#txtDebitCardAmt").val('0.00');
+        $("#txtDebitCardNumber").val('');
+        $("#txtCreditCardAmt").val('0.00');
+        $("#txtCreditCardNum").val('');
+        $("#txtBankAmt").val('0.00');
+        $("#txtBankRefNum").val('');
+        $("#txtChequeAmt").val('0.00');
+        $("#txtChequeNumber").val('');
+        $("#tblOrder tbody").empty();
+        $("#divPayments").hide();
+    }
+    function GetCurrentDueRefund() {
+        var arg = $("#lblPatientID").text();
+        $.ajax({
+            url: rootUrl + "/Order/GetOrderDueRefundAmountByPatID/?PatientId=" + arg + "",
+            type: 'GET',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                if (response.length > 0) {
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var CurrentDueAmt = response[PCHeader].CurrentDue;
+                        var CurrentRefund = response[PCHeader].CurrentRefund;
+                        $("#lblCurrentAmount").text(CurrentDueAmt);
+                        $("#lblRefundAmount").text(CurrentRefund);
+                        //if (CurrentDueAmt <= 0)
+                        //    document.getElementById('DueRow').style.display = "none";
+
+                        //if (CurrentRefund <= 0)
+                        //    document.getElementById('RefundRow').style.display = "none";
+                    }
+                }
+                else {
+                    $("#lblCurrentAmount").text(0.00);
+                    $("#lblRefundAmount").text(0.00);
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function GetOrder(OrderID) {
+        try {
+            var tData = getValues("/Order/GetOrderReprint?OrderID=" + OrderID + "");
+            if (tData != null && tData != '') {
+                sessionStorage.setItem("PrintDetails", tData);
+                openRequestedOrderPrintPopup();
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function openRequestedOrderPrintPopup() {
+        var url = '@Url.Action("Print", "Home")';
+        window.open(url, '_blank');
+        sessionStorage.setItem("PrintDetails", "");
+    }
+    function OnChangePackage(args) {
+        var ServiceName = document.getElementById('txtPackageHeader').ej2_instances[0];
+        var TestId = ServiceName.value;
+        ServiceName.autofill = args.checked;
+        if (TestId > 0) {
+            var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+            var arg = TestId;
+            $.ajax({
+                url: rootUrl + "/Order/GetOrderTestByPackageID/?PakckageID=" + arg + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: OnPackageSuccess,
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+    }
+    function onPackageSelect(e) {
+        this.onBlur(e);
+    }
+    function OnPackageSuccess(response) {
+        if (response.length > 0) {
+            var html = "";
+            //var table = document.getElementById("tblOrder");
+            //var tbodyRowCount = table.tBodies[0].rows.length;
+            for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                var TestId = response[PCHeader].TestId;
+                var $tr = $('#tblOrder tr[data-id="' + TestId + '"]');
+                if ($tr.length === 0) {
+                    //var Sno = tbodyRowCount + 1;
+                    var TotalDiscountAmt = $("#txtRateValue").val();
+                    var TestName = response[PCHeader].TestName;
+                    var TestRateCommon = response[PCHeader].TestRateCommon;
+                    var ServiceName = response[PCHeader].ServiceName;
+                    var TypeImageUrl = response[PCHeader].TypeImageUrl;
+                    var QTY_Enable = response[PCHeader].QTY_Enable;
+                    var RATE_Enable = response[PCHeader].RATE_Enable;
+
+                    html += "<tr data-id=\"" + TestId + "\"><td style='color:blue;'>" + TestName + "</td>";
+                    html += "<td style='display:none;'>" + TestId + "</td>";
+                    html += "<td></td>";
+                    html += "<td></td>";
+                    html += "<td><input type=\"checkbox\" style=\"width:16px;height:16px;\" ></td>";
+                    if (QTY_Enable == true)
+                        html += "<td><input value='1'  style='height:24px;width:50px;' type=\"Text\" onchange='QtyChange(this);' onkeypress='return isNumberKey(event)'></td>";
+                    else
+                        html += "<td><input value='1'  style='height:24px;width:50px;background-color: #d0cccc;' type=\"Text\"  onkeypress='return isNumberKey(event)'></td>";
+
+                    if (RATE_Enable == true)
+                        html += "<td><input value='" + TestRateCommon + "'  style='height:24px;width:50px;text-align: right;' type=\"Text\" onchange='RateChange(this);' onkeypress='return isNumberKey(event)'></td>";
+                    else
+                        html += "<td><input value='" + TestRateCommon + "'  style='height:24px;width:50px;text-align: right;background-color: #d0cccc;border-color: #d0cccc;' type=\"Text\" readonly></td>";
+
+                    html += "<td style='text-align: right;' class='priceCell'>" + TestRateCommon + "</td>";
+
+                    if (TotalDiscountAmt == "0" || TotalDiscountAmt == "") {
+                        html += "<td style='width:15%;'><Select style='height:24px;' onchange='DiscountCalculate(this);'><option Value='PER'>PER</option><option Value='LS'>LS</option></Select>&nbsp;&nbsp;&nbsp";
+                        html += "<input style='height:24px;width:50px;text-align: right;' type=\"Text\" onkeypress='return isNumberKey(event)' onchange='DiscountCalculate(this);'></td>";
+                    }
+                    else {
+                        html += "<td style='width:15%;'><Select style='height:24px;' disabled onchange='DiscountCalculate(this);'><option Value='PER'>PER</option><option Value='LS'>LS</option></Select>&nbsp;&nbsp;&nbsp";
+                        html += "<input  disabled style='height:24px;width:50px;text-align: right;' type=\"Text\" onkeypress='return isNumberKey(event)' onchange='DiscountCalculate(this);'></td>";
+                    }
+
+                    html += "<td class='DiscountCelll' style='text-align: right;'>0</td>";
+
+                    html += "<td style='text-align: right;'>" + TestRateCommon + "</td>";
+
+                    html += "<td style='text-align: center;'>";
+                    html += "<img src='../Images/DELETE-32.png'  onclick='return DeleteOrdersRow(this)' style='cursor:pointer;width: 30px !important;height:30px !important;'>";
+                    html += "</td></tr>";
+                    $tr = $('#tblOrder tr[data-id="' + TestId + '"]');
+                    $("#tblOrder tbody").append(html);
+                    html = "";
+                }
+            }
+            var priceCells = document.getElementsByClassName("priceCell"); //returns a list with all the elements that have class 'priceCell'
+            var Subtotal = 0;
+            //loop over the cells array and add to total price
+            for (var i = 0; i < priceCells.length; i++) {
+                var thisPrice = parseFloat(priceCells[i].innerHTML); //get inner text of this cell in number format
+                Subtotal = Subtotal + thisPrice;
+            };
+            Subtotal = Subtotal.toFixed(2);
+            $("#txtSubTotal").val(Subtotal);
+
+            var DicountCell = document.getElementsByClassName("DiscountCelll");
+            var discountTotal = 0;
+            for (var i = 0; i < DicountCell.length; i++) {
+                var thisPrice = parseFloat(DicountCell[i].innerHTML); //get inner text of this cell in number format
+                discountTotal = discountTotal + thisPrice;
+            };
+            discountTotal = discountTotal.toFixed(2);
+            $("#txtDiscountAmt").val(discountTotal);
+            var NetTotal = Subtotal - discountTotal;
+            $("#txtNetTotal").val(NetTotal.toFixed(2));
+        }
+        document.getElementById('txtPackageHeader').ej2_instances[0].text = "";
+        document.getElementById('txtPackageHeader').ej2_instances[0].value = "";
+        document.getElementById('txtPackageHeader').focus();
+        return false;
+    }
+    function DueChange() {
+        try {
+            var DiscountTotal = 0;
+            var SubTotal = parseFloat($("#txtSubTotal").val());
+            DiscountTotal = $("#txtDiscountAmt").val();
+            if (DiscountTotal == "" || DiscountTotal == null || DiscountTotal == '')
+                DiscountTotal = 0;
+            DiscountTotal = parseFloat(DiscountTotal);
+            var DueEnteredValue = parseFloat($("#txtCurrentDue").val());
+            if (isNaN(DueEnteredValue))
+                DueEnteredValue = 0;
+            var DueAvailable = parseFloat( $("#lblCurrentAmount").text());
+            if (DueEnteredValue > DueAvailable) {
+                alert('Enter Valid Due Amt');
+                $("#txtCurrentDue").val('0.00');
+            }
+            else {
+                var NetTotal = (SubTotal - DiscountTotal) + DueEnteredValue;
+                $("#txtNetTotal").val(NetTotal);
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function RefundChange() {
+        try {
+            var RefundEnteredValue = $("#txtCurrentRefund").val();
+            var RefundAvailable = $("#lblRefundAmount").text();
+            if (RefundEnteredValue > RefundAvailable) {
+                alert('Enter Valid Refund Amt');
+                $("#txtCurrentRefund").val('0.00');
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div id="loading">
+            <div id="loadingcontent">
+                @*<p id="loadingspinner">
+                        Please Wait...
+                    </p>*@
+                <div id="loadingspinner">
+                    <img src="~/images/loading.gif" style="width:100px;height:100px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="content-wrapper">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="panel panel-default DivBox">
+                        <div class="panel-heading" style="background-color: #4d90fe;color: white;margin-top: 5px;">
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <h3 class="card-title" style="padding-top: 7px;padding-left: 5px;">Patient Order</h3>
+                                </div>
+                                <div class="col-md-2">
+                                    <span style="padding-top: 7px;">UHID : </span><label id="lblPatientID" style="padding-top: 7px;"></label>
+                                </div>
+                                <div class="col-md-2">
+                                    <span style="padding-top: 7px;">NAME : </span><label id="lblPatinetName" style="padding-top: 7px;"></label>
+                                </div>
+                                <div class="col-md-2">
+                                    <span style="padding-top: 7px;">GENDER : </span><label id="lblGender" style="padding-top: 7px;"></label>
+                                </div>
+                                <div class="col-md-2">
+                                    <span style="padding-top: 7px;">MOBILE : </span><label id="lblMobileNo" style="padding-top: 7px;"></label>
+                                </div>
+                                <input id="HidVisitID" type="hidden" />
+                                <input id="HidDoctorID" type="hidden" />
+                            </div>
+                        </div>
+                        <br />
+                        <div class="panel-body">
+                            <div class="row">
+                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <div class="form-group">
+                                        <ejs-autocomplete id="txtServiceName" filterType="Contains" highlight="true" cssClass="inputEmr"
+                                                          placeholder="Search Service Name" suggestionCount="10" select="onServiceSelect" change="OnServiceChange">
+                                            <e-data-manager url="/api/OrderApi/GetOrderTestBySearch/" adaptor="WebApiAdaptor"></e-data-manager>
+                                            <e-autocomplete-fields value="TestId" text="TestName"></e-autocomplete-fields>
+                                        </ejs-autocomplete>
+                                    </div>
+                                </div>
+                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <ejs-autocomplete id="txtPackageHeader" filterType="Contains" highlight="true" cssClass="inputEmr"
+                                                      placeholder="Search Package Name" suggestionCount="10" select="onPackageSelect" change="OnChangePackage">
+
+                                        <e-data-manager url="/api/OrderApi/GetPackageBySearch/" adaptor="WebApiAdaptor"></e-data-manager>
+                                        <e-autocomplete-fields value="PackageID" text="PACKAGENAME"></e-autocomplete-fields>
+                                    </ejs-autocomplete>
+                                </div>
+                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                    <span style="padding-top: 7px;color:red">Due Amount : </span><label id="lblCurrentAmount" style="padding-top: 7px;color:red;"></label>
+                                </div>
+                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                    <span style="padding-top: 7px;color:darkgreen">Refund Amount : </span>
+                                    <label id="lblRefundAmount" style="padding-top: 7px;color:darkgreen;"></label>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xs-9 col-sm-9 col-md-9">
+                                    <table id="tblOrder" style="width: 100%; font-family:serif; margin-top: 10px; font-size:0.8em;" border="1">
+                                        <thead style="background-color:#7e8ae33b;">
+                                            <tr class="head even" align="center">
+                                                <th style="padding:2.5px; width: 15%;" rowspan="2">SERVICE NAME</th>
+                                                <th style="padding:2.5px; width: 10%;" rowspan="2">SAMPLE</th>
+                                                <th style="padding:2.5px;width: 10%;" rowspan="2">CONTAINER</th>
+                                                <th style="padding:2.5px;width: 5%;" rowspan="2">STAT</th>
+                                                <th style="padding:2.5px;width: 5%;" rowspan="2">QTY</th>
+                                                <th style="padding:2.5px;width: 5%;" rowspan="2">RATE</th>
+                                                <th style="padding:2.5px;width: 5%;" rowspan="2">AMOUNT</th>
+                                                <th style="padding:2.5px;width: 20%;" colspan="2">DISCOUNT</th>
+                                                <th style="padding:2.5px;width: 5%;" rowspan="2">NET AMOUNT</th>
+                                                <th id="DeleteButton" style="padding:2.5px;width: 5%;" rowspan="2">DEL</th>
+                                            </tr>
+                                            <tr>
+                                                <th>RATE</th>
+                                                <th>AMOUNT</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="tbltbodyOrder"></tbody>
+                                    </table>
+                                </div>
+                                <div class="col-xs-3 col-sm-3 col-md-3">
+                                    <div class="row">
+                                        <div>
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+
+                                                <table class="noborders topics">
+                                                    <tr class="form-group">
+                                                        <td><label>Total:</label></td>
+                                                        <td><input id="txtSubTotal" onkeypress='return isNumberKey(event)' disabled class="input form-control-sm" style="border-color: #80808030;margin-bottom: 3px;width: 70px;text-align: right;margin-left: 60px;" type="text" /></td>
+                                                    </tr>
+                                                    <tr class="form-group">
+                                                        <td><label>Discount:</label></td>
+                                                        <td>
+                                                            <Select style='height:24px;width:56px;margin-left:-60px;margin-top:9px;padding:0px' class="input form-control-sm d-block" id="ddlDiscountType" onchange="TotalDiscountCalculation();">
+                                                                <option Value='PER'>PER</option>
+                                                                <option Value='LS'>LS</option>
+                                                            </Select>
+
+                                                        </td>
+                                                        <td> <input class="input form-control-sm d-block" id="txtRateValue" style='height:25px;width:56px;text-align: right;margin-left:-140px;margin-top:-12px;position:absolute' type="text" onkeypress='return isNumberKey(event)' onchange="TotalDiscountCalculation();"></td>
+                                                        <td><input id="txtDiscountAmt" disabled onkeypress='return isNumberKey(event)' class="input form-control-sm" style="border-color: #80808030;margin-bottom: 0px;width: 70px;text-align: right;margin-left: -86px;position:absolute;margin-top: -16px;" type="text" /></td>
+
+
+                                                    </tr>
+                                                    <tr id="DueRow">
+                                                        <td><label style="width:130px">Pending To Pay:</label></td>
+                                                        <td>
+                                                            <input id="txtCurrentDue" value="" class="input form-control-sm"
+                                                                   onkeypress='return isNumberKeyisNumberKey(event)' disabled onchange="DueChange();"
+                                                                   style="border-color: #80808030;margin-bottom: 0px;width: 70px;text-align: right;margin-top: 0px;margin-left:60px" type="text" />
+                                                        </td>
+                                                    </tr>
+                                                    <tr class="form-group">
+                                                        <td><label style="width:130px">Net Total Payable:</label></td>
+                                                        <td><input id="txtNetTotal" onkeypress='return isNumberKey(event)' disabled class="input form-control-sm" style="border-color: #80808030;margin-bottom: 0px;width: 70px;text-align: right;margin-top: 0px;margin-left:60px" type="text" /></td>
+                                                    </tr>
+
+                                                    @*<tr id="RefundRow">
+
+                                                        <td>Refund Collected:</td>
+                                                             <td>
+                                                            <input id="txtCurrentRefund" value="0.00" class="input form-control-sm"
+                                                                         onkeypress='return isNumberKey(event)' onchange="RefundChange();"
+                                                              style="border-color: #80808030;margin-bottom: 0px;width: 70px;text-align: right;margin-left: 106px;margin-top: 3px;" type="text" />
+                                                               </td>
+                                                                </tr>*@
+
+                                                </table>
+                                                <div style="margin-top:14px; position:absolute">
+                                                    <button class="btn btn-primary" style="width:80px;display:none;" onclick="SavePatientOrder(false);">SAVE</button>
+                                                    <button class="btn btn-primary"
+                                                            onclick="ShowPayment();">
+                                                        SAVE & VERIFY
+                                                    </button>
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <br />
+                                    <div class="row" id="divPayments" style="margin-top:60px;">
+                                        <div>
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <table class="noborders topics">
+                                                    <tr>
+                                                        <td><label class="lab">Cash:</label></td>
+                                                        <td><input id="txtCashAmt" class="input form-control-sm" onchange="TotalCalculationChange(this);" onkeypress='return isNumberKey(event)' style="border-color: #80808030;margin-bottom: 0px;width: 70px;text-align: right;margin-left:0px" type="text" /></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><label class="lab">Debit Card:</label></td>
+                                                        <td><input id="txtDebitCardAmt" class="input form-control-sm" onchange="TotalCalculationChange(this);" onkeypress='return isNumberKey(event)' style="border-color: #80808030;margin-bottom: 0px;width: 70px;text-align: right;margin-left:0px" type="text" /></td>
+                                                        <td><input id="txtDebitCardNumber" maxlength="4" class="input form-control-sm" onkeypress='return isNumberKey(event)' style="border-color: #80808030;margin-bottom: 0px;width: 120px;margin-left: -7px;" placeholder="Last Four Digits" type="text" /></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><label class="lab">Credit Card:</label></td>
+                                                        <td><input id="txtCreditCardAmt" class="input form-control-sm" onchange="TotalCalculationChange(this);" onkeypress='return isNumberKey(event)' style="border-color: #80808030;margin-bottom: 0px;width: 70px;text-align: right;margin-left:0px" type="text" /></td>
+                                                        <td><input id="txtCreditCardNum" maxlength="4" class="input form-control-sm" onkeypress='return isNumberKey(event)' style="border-color: #80808030;margin-bottom: 0px;width: 120px;margin-left: -7px;" placeholder="Last Four Digits" type="text" /></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><label class="lab">Bank:</label></td>
+                                                        <td><input id="txtBankAmt" class="input form-control-sm" onchange="TotalCalculationChange(this);" onkeypress='return isNumberKey(event)' style="border-color: #80808030;margin-bottom: 0px;width: 70px;text-align: right;margin-left:0px" type="text" /></td>
+                                                        <td><input id="txtBankRefNum" class="input form-control-sm" onkeypress='return isNumberKey(event)' style="border-color: #80808030;margin-bottom: 0px;width: 120px;margin-left: -7px;" placeholder="Reference No" type="text" /></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><label class="lab">Cheque:</label></td>
+                                                        <td><input id="txtChequeAmt" class="input form-control-sm" onchange="TotalCalculationChange(this);" onkeypress='return isNumberKey(event)' style="border-color: #80808030;margin-bottom: 0px;width: 70px;text-align: right;margin-left:0px" type="text" /></td>
+                                                        <td><input id="txtChequeNumber" class="input form-control-sm" onkeypress='return isNumberKey(event)' style="border-color: #80808030;margin-bottom: 0px;width: 120px;margin-left: -7px;" placeholder="Cheque No" type="text" /></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td></td>
+                                                        <td colspan="2">
+                                                            <button onclick="SavePatientOrder(true);" class="btns btn-primary">SUBMIT</button>
+                                                            <button class="btns btn-primary" onclick="ClearAll();">CANCEL</button>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <br />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

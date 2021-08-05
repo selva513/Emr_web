@@ -1,0 +1,775 @@
+﻿
+<style>
+    label {
+        font-size: 15px;
+        font-weight: 400;
+        font-style: serif;
+    }
+
+    .table-wrap {
+        height: 225px;
+        overflow-y: auto;
+    }
+
+    .table1 {
+        height: 300px;
+        overflow-y: auto;
+    }
+
+    .table2 {
+        height: 240px;
+        overflow-y: auto;
+    }
+
+    th {
+        position: sticky;
+        top: 0;
+        background: white;
+    }
+</style>
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        DateFunction();
+        GetStoreName();
+    });
+    function CollectionReportPageLoad() {
+        DateFunction();
+    }
+    function DateFunction() {
+
+
+        var currentdate = new Date();
+        var day = currentdate.getDate();
+        var month = currentdate.getMonth() + 1;
+        if (day < 10) {
+            day = "0" + day;
+        }
+        if (month < 10) {
+            month = "0" + month;
+        }
+        var datetime = day + "/"
+            + (month) + "/"
+            + currentdate.getFullYear();
+        $('#txtFromDate').val(datetime);
+        $('#txtTodate').val(datetime);
+
+    }
+    function onReportDetails() {
+        var fromDate = $('#txtFromDate').val();
+        var fromTime = $('#txtFromTime').val();
+        var toDate = $('#txtTodate').val();
+        var toTime = $('#txtToTime').val();
+        var Pharmacy = $('#drpPharmacy').val();
+        $.ajax({
+            url: rootUrl + "/api/CollectionReportApi/GetCollectionReportDetails",
+            type: "Get",
+            contentType: "application/json; charset=utf-8",
+            data: {
+                FromDate: fromDate, fromTime: fromTime, ToDate: toDate, toTime: toTime, Type: Pharmacy
+            },
+            dataType: 'json',
+            success: function (response) {
+                var html = response;
+                sessionStorage.setItem("PrintDetails", html);
+                openRequestedPopup();
+            },
+            failure: function (response) {
+                alert(response);
+            },
+            error: function (response) {
+                alert(response);
+            }
+        });
+    }
+    function SearchCollection() {
+        var fromDate = $('#txtFromDate').val();
+        var toDate = $('#txtTodate').val();
+        var Pharmacy = $('#drpPharmacy').val();
+        $.ajax({
+            url: rootUrl + "/api/CollectionReportApi/GetCollectionReportbyDate",
+            type: "Get",
+            contentType: "application/json; charset=utf-8",
+            data: {
+                FromDate: fromDate, ToDate: toDate, StorName: Pharmacy
+            },
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            dataType: 'json',
+            success: function (response) {
+                var html = "";
+                var Sno = 0;
+                $("#tblCollectionReport tbody").empty();
+                $("#tblReturnCollectionReport tbody").empty();
+                $("#tblSummaryReport tbody").empty();
+                if (response.Header.length > 0) {
+                    for (PCHeader = 0; PCHeader < response.Header.length; PCHeader++) {
+                        Sno = PCHeader + 1;
+                        var PH_CSH_BILLNO = response.Header[PCHeader].PH_CSH_BILLNO;
+                        var PH_CSH_BILLDT = response.Header[PCHeader].PH_CSH_BILLDT;
+                        var PH_CSH_PATNAME = response.Header[PCHeader].PH_CSH_PATNAME;
+                        var PH_CSH_PATID = response.Header[PCHeader].PH_CSH_PATID;
+                        var PH_CSH_TOTAMOUNT = response.Header[PCHeader].PH_CSH_TOTAMOUNT;
+                        var PH_CSH_TAXAMOUNT = response.Header[PCHeader].PH_CSH_TAXAMOUNT;
+                        var PH_CSH_ROUNDOFF = response.Header[PCHeader].PH_CSH_ROUNDOFF;
+                        var PH_CSH_NETTAMOUNT = response.Header[PCHeader].PH_CSH_NETTAMOUNT;
+                        var PH_CSH_CASHRECIVEDAMT = response.Header[PCHeader].PH_CSH_CASHRECIVEDAMT;
+                        var StoreName = response.Header[PCHeader].StoreName;
+                        var PH_CSH_PAYMENTMODE = response.Header[PCHeader].PH_CSH_PAYMENTMODE;
+                        var PH_CSH_CASHAMT = response.Header[PCHeader].CashAmt;
+                        var PH_CSH_CREDITCARDAMT = response.Header[PCHeader].CreditCardAmt;
+                        var PH_CSH_DEBITCARDAMT = response.Header[PCHeader].DebitCardAmt;
+                        var PH_CSH_BANKAMT = response.Header[PCHeader].ThroughBankAmt;
+                        var PH_CSH_PATTYPE = response.Header[PCHeader].PH_CSH_PATTYPE;
+                        var PH_CSH_PENDINGTOPAY = response.Header[PCHeader].PH_CSH_PENDINGTOPAY;
+
+                        html += "<tr ><td>" + Sno + "</td>";
+                        html += "<td>" + PH_CSH_BILLNO + "</td>";
+                        //html += "<td>" + PH_CSH_BILLDT + "</td>";
+                        html += "<td>" + PH_CSH_PATID + "</td>";
+                        html += "<td>" + PH_CSH_PATNAME + "</td>";
+                        html += "<td >" + PH_CSH_PATTYPE + "</td>";
+                        html += "<td class='CAmount'>" + PH_CSH_TOTAMOUNT + "</td>";
+                        html += "<td class='CTaxAmt'>" + PH_CSH_TAXAMOUNT + "</td>";
+                        html += "<td class='CRound'>" + PH_CSH_ROUNDOFF + "</td>";
+                        html += "<td class='CNetAmt'>" + PH_CSH_NETTAMOUNT + "</td>";
+                        html += "<td class='CRecAmt'>" + PH_CSH_CASHRECIVEDAMT + "</td>";
+                        html += "<td class='CDueAmt'>" + PH_CSH_PENDINGTOPAY + "</td>";
+                        html += "<td class='CRCashAmt'>" + PH_CSH_CASHAMT + "</td>";
+                        html += "<td class='CRCreditAmt'>" + PH_CSH_CREDITCARDAMT + "</td>";
+                        html += "<td class='CRDebitAmt'>" + PH_CSH_DEBITCARDAMT + "</td>";
+                        html += "<td class='CRBankAmt'>" + PH_CSH_BANKAMT + "</td>";
+                        html += "<td>" + StoreName + "</td>";
+                        html += "</tr>";
+                    }
+                    $("#tblCollectionReport tbody").append(html);
+                    html = "";
+                    CollectionTotalCalculation();
+                    html += "<td colspan='5'>Total</td>";
+                    html += "<td>" + $("#hidAmount").val() + "</td>";
+                    html += "<td>" + $("#hidTax").val() + "</td>";
+                    html += "<td>" + $("#hidRound").val() + "</td>";
+                    html += "<td>" + $("#hidNetAmt").val() + "</td>";
+                    html += "<td>" + $("#hidAmountRecAmount").val() + "</td>";
+                    html += "<td>" + $("#hidPendingAmt").val() + "</td>";
+                    html += "<td>" + $("#hideRecCashAmount").val() + "</td>";
+                    html += "<td>" + $("#hideRecCreditAmount").val() + "</td>";
+                    html += "<td>" + $("#hideRecDebitAmount").val() + "</td>";
+                    html += "<td>" + $("#hideRecBankAmount").val() + "</td>";
+                    html += "<td colspan='2'></td>";
+                    $("#tblCollectionReport tbody").append(html);
+                    if (response.Return.length > 0) {
+                        html = "";
+                        Sno = 0;
+                        for (PCReturn = 0; PCReturn < response.Return.length; PCReturn++) {
+                            Sno = PCReturn + 1;
+                            var PH_RET_BILLNO = response.Return[PCReturn].PH_RET_BILLNO;
+                            var PH_RET_BILLDT = response.Return[PCReturn].PH_RET_BILLDT;
+                            var PH_RET_PATID = response.Return[PCReturn].PH_RET_PATID;
+                            var PH_RET_PATNAME = response.Return[PCReturn].PH_RET_PATNAME;
+                            var PH_RET_TOTAMOUNT = response.Return[PCReturn].PH_RET_TOTAMOUNT;
+                            var PH_RET_TAXAMOUNT = response.Return[PCReturn].PH_RET_TAXAMOUNT;
+                            var PH_RET_ROUNDOFF = response.Return[PCReturn].PH_RET_ROUNDOFF;
+                            var PH_RET_NETTAMOUNT = response.Return[PCReturn].PH_RET_NETTAMOUNT;
+                            var PH_RET_CASHRECIVEDAMT = response.Return[PCReturn].PH_RET_CASHRECIVEDAMT;
+                            var StoreName = response.Return[PCReturn].StoreName;
+                            var PH_RET_PAYMENTMODE = response.Return[PCReturn].PH_RET_PAYMENTMODE;
+
+                            html += "<tr ><td>" + Sno + "</td>";
+                            html += "<td>" + PH_RET_BILLNO + "</td>";
+                            //html += "<td>" + PH_RET_BILLDT + "</td>";
+                            html += "<td>" + PH_RET_PATID + "</td>";
+                            html += "<td>" + PH_RET_PATNAME + "</td>";
+                            html += "<td class='RAmount'>" + PH_RET_TOTAMOUNT + "</td>";
+                            html += "<td class='RTaxAmt'>" + PH_RET_TAXAMOUNT + "</td>";
+                            html += "<td class='RRound'>" + PH_RET_ROUNDOFF + "</td>";
+                            html += "<td class='RNetAmt'>" + PH_RET_NETTAMOUNT + "</td>";
+                            html += "<td class='RRecAmt'>" + PH_RET_CASHRECIVEDAMT + "</td>";
+                            html += "<td>" + StoreName + "</td>";
+                            html += "<td>" + PH_RET_PAYMENTMODE + "</td>";
+                            html += "</tr>";
+                        }
+                        $("#tblReturnCollectionReport tbody").append(html);
+                        html = "";
+                        ReturnCollectionTotalCalculation();
+
+                        html += "<td colspan='5'>Total</td>";
+                        html += "<td>" + $("#hidRAmount").val() + "</td>";
+                        html += "<td>" + $("#hidRTax").val() + "</td>";
+                        html += "<td>" + $("#hidRRound").val() + "</td>";
+                        html += "<td>" + $("#hidRNetAmt").val() + "</td>";
+                        html += "<td>" + $("#hidRAmountRecAmount").val() + "</td>";
+                        html += "<td colspan='2'></td>";
+                        $("#tblReturnCollectionReport tbody").append(html);
+                    }
+                    else {
+                        html = "";
+                        ReturnCollectionTotalCalculation();
+
+                        html += "<td colspan='5'>Total</td>";
+                        html += "<td>" + $("#hidRAmount").val() + "</td>";
+                        html += "<td>" + $("#hidRTax").val() + "</td>";
+                        html += "<td>" + $("#hidRRound").val() + "</td>";
+                        html += "<td>" + $("#hidRNetAmt").val() + "</td>";
+                        html += "<td>" + $("#hidRAmountRecAmount").val() + "</td>";
+                        html += "<td colspan='2'></td>";
+                        $("#tblReturnCollectionReport tbody").append(html);
+                    }
+                    $("#tblSummaryReport tbody").empty();
+                    html = "";
+                    html += "<tr>";
+                    html += "<td>Sales</td>";
+                    html += "<td>" + $("#hidAmount").val() + "</td>";
+                    html += "<td>" + $("#hidTax").val() + "</td>";
+                    html += "<td>" + $("#hidRound").val() + "</td>";
+                    html += "<td>" + $("#hidNetAmt").val() + "</td>";
+                    html += "<td>" + $("#hidAmountRecAmount").val() + "</td>";
+                    html += "</tr>";
+                    $("#tblSummaryReport tbody").append(html);
+
+                    html = "";
+                    html += "<tr>";
+                    html += "<td>Return</td>";
+                    html += "<td>" + $("#hidRAmount").val() + "</td>";
+                    html += "<td>" + $("#hidRTax").val() + "</td>";
+                    html += "<td>" + $("#hidRRound").val() + "</td>";
+                    html += "<td>" + $("#hidRNetAmt").val() + "</td>";
+                    html += "<td>" + $("#hidRAmountRecAmount").val() + "</td>";
+                    html += "</tr>";
+                    $("#tblSummaryReport tbody").append(html);
+
+                    var TotalAmount = parseFloat($("#hidAmount").val()) - parseFloat($("#hidRAmount").val());
+                    var TaxAmount = parseFloat($("#hidTax").val()) - parseFloat($("#hidRTax").val());
+                    var MinausValue = parseFloat($("#hidRRound").val());
+                    var RoundAmount = 0;
+                    if (MinausValue < 0) {
+                        RoundAmount = parseFloat($("#hidRound").val()) + parseFloat($("#hidRRound").val());
+                    }
+                    else {
+                        RoundAmount = parseFloat($("#hidRound").val()) - parseFloat($("#hidRRound").val());
+                    }
+                    var NetAmount = parseFloat($("#hidNetAmt").val()) - parseFloat($("#hidRNetAmt").val());
+                    var RecAmount = parseFloat($("#hidAmountRecAmount").val()) - parseFloat($("#hidRAmountRecAmount").val());
+
+                    html = "";
+                    html += "<tr>";
+                    html += "<td>Total</td>";
+                    html += "<td>" + TotalAmount.toFixed(2) + "</td>";
+                    html += "<td>" + TaxAmount.toFixed(2) + "</td>";
+                    html += "<td>" + RoundAmount.toFixed(2) + "</td>";
+                    html += "<td>" + NetAmount.toFixed(2) + "</td>";
+                    html += "<td>" + RecAmount.toFixed(2) + "</td>";
+                    html += "</tr>";
+                    $("#tblSummaryReport tbody").append(html);
+                }
+            },
+            complete: function () { $("#loading").css("display", "none") },
+            failure: function (response) {
+                alert(response);
+            },
+            error: function (response) {
+                alert(response);
+            }
+        });
+    }
+    function CollectionTotalCalculation() {
+        var AmountCells = document.getElementsByClassName("CAmount"); //returns a list with all the elements that have class 'priceCell'
+        var Amount = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < AmountCells.length; i++) {
+            if (AmountCells[i].innerHTML != "") {
+                var thisPrice = parseFloat(AmountCells[i].innerHTML); //get inner text of this cell in number format
+                Amount = Amount + thisPrice;
+            }
+        };
+        Amount = Amount.toFixed(2);
+        $("#hidAmount").val(Amount);
+
+        var TaxCells = document.getElementsByClassName("CTaxAmt"); //returns a list with all the elements that have class 'priceCell'
+        var Tax = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < TaxCells.length; i++) {
+            if (TaxCells[i].innerHTML != "") {
+                var thisPrice = parseFloat(TaxCells[i].innerHTML); //get inner text of this cell in number format
+                Tax = Tax + thisPrice;
+            }
+        };
+        Tax = Tax.toFixed(2);
+        $("#hidTax").val(Tax);
+
+        var RoundAmountCells = document.getElementsByClassName("CRound"); //returns a list with all the elements that have class 'priceCell'
+        var RoundAmount = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < RoundAmountCells.length; i++) {
+            if (RoundAmountCells[i].innerHTML != "") {
+                var thisPrice = parseFloat(RoundAmountCells[i].innerHTML); //get inner text of this cell in number format
+                RoundAmount = RoundAmount + thisPrice;
+            }
+        };
+        RoundAmount = RoundAmount.toFixed(2);
+        $("#hidRound").val(RoundAmount);
+
+        var NetAmountCells = document.getElementsByClassName("CNetAmt"); //returns a list with all the elements that have class 'priceCell'
+        var NetAmount = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < NetAmountCells.length; i++) {
+            if (NetAmountCells[i].innerHTML != "") {
+                var thisPrice = parseFloat(NetAmountCells[i].innerHTML); //get inner text of this cell in number format
+                NetAmount = NetAmount + thisPrice;
+            }
+        };
+        NetAmount = NetAmount.toFixed(2);
+        $("#hidNetAmt").val(NetAmount);
+
+        var RecAmountCells = document.getElementsByClassName("CRecAmt"); //returns a list with all the elements that have class 'priceCell'
+        var RecAmount = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < RecAmountCells.length; i++) {
+            if (RecAmountCells[i].innerHTML != "") {
+                var thisPrice = parseFloat(RecAmountCells[i].innerHTML); //get inner text of this cell in number format
+                RecAmount = RecAmount + thisPrice;
+            }
+        };
+        RecAmount = RecAmount.toFixed(2);
+        $("#hidAmountRecAmount").val(RecAmount);
+
+        var RecCashAmtCells = document.getElementsByClassName("CRCashAmt"); //returns a list with all the elements that have class 'priceCell'
+        var RecCashAmount = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < RecCashAmtCells.length; i++) {
+            if (RecCashAmtCells[i].innerHTML != "") {
+                var thisPrice = parseFloat(RecCashAmtCells[i].innerHTML); //get inner text of this cell in number format
+                RecCashAmount = RecCashAmount + thisPrice;
+            }
+        };
+        RecCashAmount = RecCashAmount.toFixed(2);
+        $("#hideRecCashAmount").val(RecCashAmount);
+
+        var RecCreditAmtCells = document.getElementsByClassName("CRCreditAmt"); //returns a list with all the elements that have class 'priceCell'
+        var RecCreditAmount = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < RecCreditAmtCells.length; i++) {
+            if (RecCreditAmtCells[i].innerHTML != "") {
+                var thisPrice = parseFloat(RecCreditAmtCells[i].innerHTML); //get inner text of this cell in number format
+                RecCreditAmount = RecCreditAmount + thisPrice;
+            }
+        };
+        RecCreditAmount = RecCreditAmount.toFixed(2);
+        $("#hideRecCreditAmount").val(RecCreditAmount);
+
+        var RecDebitAmtCells = document.getElementsByClassName("CRDebitAmt"); //returns a list with all the elements that have class 'priceCell'
+        var RecDebitAmount = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < RecDebitAmtCells.length; i++) {
+            if (RecDebitAmtCells[i].innerHTML != "") {
+                var thisPrice = parseFloat(RecDebitAmtCells[i].innerHTML); //get inner text of this cell in number format
+                RecDebitAmount = RecDebitAmount + thisPrice;
+            }
+        };
+        RecDebitAmount = RecDebitAmount.toFixed(2);
+        $("#hideRecDebitAmount").val(RecDebitAmount);
+
+        var RecBankAmtCells = document.getElementsByClassName("CRBankAmt"); //returns a list with all the elements that have class 'priceCell'
+        var RecBankAmt = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < RecBankAmtCells.length; i++) {
+            if (RecBankAmtCells[i].innerHTML != "") {
+                var thisPrice = parseFloat(RecBankAmtCells[i].innerHTML); //get inner text of this cell in number format
+                RecBankAmt = RecBankAmt + thisPrice;
+            }
+        };
+        RecBankAmt = RecBankAmt.toFixed(2);
+        $("#hideRecBankAmount").val(RecBankAmt);
+
+        var DueAmtCells = document.getElementsByClassName("CDueAmt"); //returns a list with all the elements that have class 'priceCell'
+        var DueAmt = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < DueAmtCells.length; i++) {
+            if (DueAmtCells[i].innerHTML != "") {
+                var thisPrice = parseFloat(DueAmtCells[i].innerHTML); //get inner text of this cell in number format
+                DueAmt = DueAmt + thisPrice;
+            }
+        };
+        DueAmt = DueAmt.toFixed(2);
+        $("#hidPendingAmt").val(DueAmt);
+    }
+    function ReturnCollectionTotalCalculation() {
+        var AmountCells = document.getElementsByClassName("RAmount"); //returns a list with all the elements that have class 'priceCell'
+        var Amount = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < AmountCells.length; i++) {
+            if (AmountCells[i].innerHTML != "") {
+                var thisPrice = parseFloat(AmountCells[i].innerHTML); //get inner text of this cell in number format
+                Amount = Amount + thisPrice;
+            }
+        };
+        Amount = Amount.toFixed(2);
+        $("#hidRAmount").val(Amount);
+
+        var TaxCells = document.getElementsByClassName("RTaxAmt"); //returns a list with all the elements that have class 'priceCell'
+        var Tax = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < TaxCells.length; i++) {
+            if (TaxCells[i].innerHTML != "") {
+                var thisPrice = parseFloat(TaxCells[i].innerHTML); //get inner text of this cell in number format
+                Tax = Tax + thisPrice;
+            }
+        };
+        Tax = Tax.toFixed(2);
+        $("#hidRTax").val(Tax);
+
+        var RoundAmountCells = document.getElementsByClassName("RRound"); //returns a list with all the elements that have class 'priceCell'
+        var RoundAmount = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < RoundAmountCells.length; i++) {
+            if (RoundAmountCells[i].innerHTML != "") {
+                var thisPrice = parseFloat(RoundAmountCells[i].innerHTML); //get inner text of this cell in number format
+                RoundAmount = RoundAmount + thisPrice;
+            }
+        };
+        RoundAmount = RoundAmount.toFixed(2);
+        $("#hidRRound").val(RoundAmount);
+
+        var NetAmountCells = document.getElementsByClassName("RNetAmt"); //returns a list with all the elements that have class 'priceCell'
+        var NetAmount = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < NetAmountCells.length; i++) {
+            if (NetAmountCells[i].innerHTML != "") {
+                var thisPrice = parseFloat(NetAmountCells[i].innerHTML); //get inner text of this cell in number format
+                NetAmount = NetAmount + thisPrice;
+            }
+        };
+        NetAmount = NetAmount.toFixed(2);
+        $("#hidRNetAmt").val(NetAmount);
+
+        var RecAmountCells = document.getElementsByClassName("RRecAmt"); //returns a list with all the elements that have class 'priceCell'
+        var RecAmount = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < RecAmountCells.length; i++) {
+            if (RecAmountCells[i].innerHTML != "") {
+                var thisPrice = parseFloat(RecAmountCells[i].innerHTML); //get inner text of this cell in number format
+                RecAmount = RecAmount + thisPrice;
+            }
+        };
+        RecAmount = RecAmount.toFixed(2);
+        $("#hidRAmountRecAmount").val(RecAmount);
+    }
+    function openRequestedPopup() {
+        var url = rootUrl + "/Home/Print";
+        window.open(url, '_blank');
+        sessionStorage.setItem("PrintDetails", "");
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+    $(function () {
+        $("#txtFromDate").datepicker({
+            dateFormat: 'dd/mm/yy',
+            changeMonth: true,
+            changeYear: true,
+            yearRange: '1990:' + new Date().getFullYear().toString(),
+            onClose: function (selectedDate) {
+                $("#txtTodate").datepicker("option", "minDate", selectedDate);
+            }
+        });
+        $("#txtTodate").datepicker({
+            dateFormat: 'dd/mm/yy',
+            changeMonth: true,
+            changeYear: true,
+            yearRange: '1990:' + new Date().getFullYear().toString(),
+            onClose: function (selectedDate) {
+                $("#txtFromDate").datepicker("option", "maxDate", selectedDate);
+            }
+        });
+    });
+    function GetStoreName() {
+        $.ajax({
+            url: "/Pharma/Invoice/GetStoreName",
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.length > 0) {
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var HIS_PH_STOREMASTER = response[PCHeader].HIS_PH_STOREMASTER;
+                        var HIS_PH_STORENAME = response[PCHeader].HIS_PH_STORENAME;
+                        $('#drpPharmacy')
+                            .append($("<option></option>").val(HIS_PH_STORENAME).html(HIS_PH_STORENAME));
+                    }
+                }
+            }
+        });
+    }
+    function CollectionPrint() {
+        var html = "";
+        var fromDate = $("#txtTodate").val();
+        var toDate = $("#txtTodate").val();
+        html += "<hr>";
+        html += "<div style='text-align: Center;font-size:20px;font-weight:bold;'>Collection Report</div><br/>";
+        html += "<div style='text-align: Center;'>From: " + fromDate + " To: " + toDate + "</div><br/>";
+        html += "<hr>";
+        html += "<table style='font-size:17px;border-collapse: collapse;'>";
+        //html += "<thead>";
+        //html += "<tr>";
+        //html += "<td style='padding-right: 10px;'>Supplier Name</td> ";
+        //html += "<td style='padding-right: 10px;'> Invoice Number </td> ";
+        //html += "<td style='padding-right: 10px;'> Invoice Date </td> ";
+        //html += "<td style='padding-right: 10px;'> Vat Type </td> ";
+        //html += "<td style='padding-right: 10px;'> Amount </td> ";
+        //html += "<td style='padding-right: 30px;'> TAX </td> ";
+        //html += "<td style='padding-right: 30px;'> Net Amount </td> ";
+        //html += "</tr> ";
+        //html += "</thead> ";
+        html += "<tbody> ";
+
+        var table = document.getElementById('tblCollectionReport');
+        /*var Cells = Row.getElementsByTagName("td");*/
+        for (var i = 0, row; row = table.rows[i]; i++) {
+            html += "<tr>"
+            for (var j = 0; j < row.cells.length; j++) {
+                html += "<td >" + row.cells[j].textContent + "</td>";
+            }
+            html += "</tr>";
+
+        }
+        html += "<br/>";
+        CollectionTotalCalculation();
+        html += "<tr>"
+        html += "<td colspan='5'>Total</td>";
+        html += "<td>" + $("#hidAmount").val() + "</td>";
+        html += "<td>" + $("#hidTax").val() + "</td>";
+        html += "<td>" + $("#hidRound").val() + "</td>";
+        html += "<td>" + $("#hidNetAmt").val() + "</td>";
+        html += "<td>" + $("#hidAmountRecAmount").val() + "</td>";
+        html += "<td colspan='2'></td>";
+        html += "</tr>";
+
+        /*var Cells = Row.getElementsByTagName("td");*/
+        var table1 = document.getElementById('tblReturnCollectionReport');
+        html += "<br/>";
+        for (var i = 0, row; row = table1.rows[i]; i++) {
+            console.dir(row.cells);
+            html += "<tr>"
+            for (var j = 0; j < row.cells.length; j++) {
+                html += "<td>" + row.cells[j].textContent + "</td>";
+            }
+            html += "<tr>";
+
+        }
+        ReturnCollectionTotalCalculation();
+
+        html += "<td colspan='5'>Total</td>";
+        html += "<td>" + $("#hidRAmount").val() + "</td>";
+        html += "<td>" + $("#hidRTax").val() + "</td>";
+        html += "<td>" + $("#hidRRound").val() + "</td>";
+        html += "<td>" + $("#hidRNetAmt").val() + "</td>";
+        html += "<td>" + $("#hidRAmountRecAmount").val() + "</td>";
+        html += "<td colspan='2'></td>";
+        html += "<hr>";
+        var table2 = document.getElementById('tblSummaryReport');
+        for (var i = 0, row; row = table2.rows[i]; i++) {
+            console.dir(row.cells)
+            html += "</br>"
+            html += "<tr>"
+            for (var j = 0; j < row.cells.length; j++) {
+                html += "<td>" + row.cells[j].textContent + "</td>";
+            }
+            html += "<tr>";
+
+
+
+
+
+        }
+        html += "</tbody> ";
+        html += " </table  > ";
+        var table = document.getElementById('review-products');
+
+        sessionStorage.setItem("PrintDetails", html);
+        openRequestedPopup()
+    }
+    function openRequestedPopup() {
+        var url = rootUrl + "/Home/Print";
+        window.open(url, '_blank');
+        sessionStorage.setItem("PrintDetails", "");
+    }
+    function printDiv(divName) {
+        var printContents = document.getElementById(divName).innerHTML;
+        var originalContents = document.body.innerHTML;
+
+        document.body.innerHTML = printContents;
+
+        window.print();
+
+        document.body.innerHTML = originalContents;
+    }
+    function ReportPrint() {
+        printDiv('PirintTable');
+    }
+</script>
+
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div class="panel panel-default DivBox" style="background-color: white;">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-xs-2 col-sm-2 col-md-2" style="margin-right: -55px; margin-top: 7px;">
+                        <div class="form-group">
+                            <label>
+                                Collection From
+                            </label>
+                            <div class="datepicker ">
+                                <input id="txtFromDate" type="text" class="form-control" />
+
+                            </div>
+                        </div>
+                    </div>
+                    @*<div class="col-xs-2 col-sm-2 col-md-2">
+                            <input type="time" id="txtFromTime" style="width: 115px;" class="form-control" hidden />
+                        </div>*@
+                    <div class="col-xs-2 col-sm-2 col-md-2" style="margin-left: 161px; margin-top: 7px;">
+                        <div class="form-group">
+                            <label>
+                                Collection To
+                            </label>
+                            <div class="datepicker ">
+                                <input type="text" id="txtTodate" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xs-1 col-sm-1 col-md-1">
+                        <input type="time" id="txtToTime" style="width: 115px;" class="form-control" hidden />
+                    </div>
+                    <div class="col-xs-2 col-sm-2 col-md-2">
+                        <div class="form-group">
+                            <label>
+                                Pharmacy
+                            </label>
+                            <select class="form-control" style="margin-top: 3px;" id="drpPharmacy">
+                                <option value="All">All</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-xs-1 col-sm-1 col-md-1">
+                        <label style="margin-left: 5px;"></label>
+                        <div class="form-group">
+                            @*<button class="btn btn-primary" onclick="onReportDetails();">Print</button>*@
+                            <button class="btn btn-primary" style="margin-top: 8px;margin-left: 27px;" onclick="SearchCollection();">Search</button>
+                            <input type="hidden" id="hidAmount" />
+                            <input type="hidden" id="hidTax" />
+                            <input type="hidden" id="hidRound" />
+                            <input type="hidden" id="hidNetAmt" />
+                            <input type="hidden" id="hidAmountRecAmount" />
+                            <input type="hidden" id="hidPendingAmt" />
+
+                            <input type="hidden" id="hidRAmount" />
+                            <input type="hidden" id="hidRTax" />
+                            <input type="hidden" id="hidRRound" />
+                            <input type="hidden" id="hidRNetAmt" />
+                            <input type="hidden" id="hidRAmountRecAmount" />
+
+                            <input type="hidden" id="hideRecCashAmount" />
+                            <input type="hidden" id="hideRecCreditAmount" />
+                            <input type="hidden" id="hideRecDebitAmount" />
+                            <input type="hidden" id="hideRecBankAmount" />
+                        </div>
+                    </div>
+                    <div class="col-xs-1 col-sm-1 col-md-1">
+                        <div class="form-group">
+                            <button class="btn btn-primary" style="margin-top: 32px;" onclick="ReportPrint();">Print</button>
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <div class="row" id="PirintTable">
+                    <div class="col-xs-12 col-sm-12 col-md-12">
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <h6>Sales Collection</h6><br />
+                                <div class="table-wrap">
+                                    <table class="table table-bordered table-striped" id="tblCollectionReport">
+                                        <thead>
+                                            <tr>
+                                                <th>S.No</th>
+                                                <th>Bill No</th>
+                                                @*<th>Bill Date</th>*@
+                                                <th>Patient ID</th>
+                                                <th>Name</th>
+                                                <th>Type</th>
+                                                <th>Amt</th>
+                                                <th>Tax</th>
+                                                <th>Round</th>
+                                                <th>Total</th>
+                                                <th>Collected</th>
+                                                <th>Due</th>
+                                                <th>Cash</th>
+                                                <th>Debit</th>
+                                                <th>Credit</th>
+                                                <th>Bank</th>
+                                                <th>Wharehouse</th>
+                                                @*<th>Mode</th>*@
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <br />
+                        <div class="row table1">
+                            
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <h6>Return Collection</h6><br />
+                                <table class="table table-bordered table-striped" id="tblReturnCollectionReport">
+                                    <thead>
+                                        <tr>
+                                            <th>S.No</th>
+                                            <th>Bill No</th>
+                                            @*<th>Bill Date</th>*@
+                                            <th>Patient ID</th>
+                                            <th>Name</th>
+                                            <th>Amount</th>
+                                            <th>Tax</th>
+                                            <th>Rounded Of</th>
+                                            <th>Total Amount</th>
+                                            <th>Collected</th>
+                                            <th>Wharehouse</th>
+                                            <th>Mode</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+
+                            </div>
+                        </div>
+                        <br />
+                        <div class="row table2">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <h6>Summary Collection</h6><br />
+                                <table class="table table-bordered table-striped" id="tblSummaryReport">
+                                    <thead>
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>Amount</th>
+                                            <th>Tax</th>
+                                            <th>Rounded Of</th>
+                                            <th>Total Amount</th>
+                                            <th>Collected</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

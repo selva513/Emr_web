@@ -1,0 +1,1261 @@
+﻿
+
+
+
+<script type="text/javascript">
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        Groupbind();
+        GetFreeStoreName();
+    });
+    function Groupbind() {
+        try {
+            $.ajax({
+                url: rootUrl + "/api/FreeDispenseApi/GetGroups",
+                type: 'Get',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (data) {
+                    $("#ddlgroupName").empty();
+                    $("#ddlgroupName").append($("<option></option>").val(0).html('-Select-'));
+                    $.each(data, function (key, value) {
+                        $("#ddlgroupName").append($("<option></option>").val(value.ID).html(value.GroupName));
+                    });
+                },
+                failure: function (response) {
+                    alert(response);
+                },
+                error: function (response) {
+                    alert(response);
+                }
+            });
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+    function GetFreeStoreName() {
+        try {
+            $.ajax({
+                url: rootUrl + "/api/FreeDispenseApi/GetFreeStoreName",
+                type: "GET",
+                dataType: "json",
+                success: function (response) {
+                    if (response.length > 0) {
+                        for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                            var HIS_PH_STOREMASTER = response[PCHeader].HIS_PH_STOREMASTER;
+                            var HIS_PH_STORENAME = response[PCHeader].HIS_PH_STORENAME;
+                            $('#ddlFreeStoreName')
+                                .append($("<option></option>").val(HIS_PH_STOREMASTER).html(HIS_PH_STORENAME));
+                        }
+                    }
+                }
+            });
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+    function SearchFreeDrug() {
+        var StoreName = $("#ddlFreeStoreName option:selected").text();
+        $("#txtFreeDrugSearch").autocomplete({
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/FreeDispenseApi/GetFreeDrugSearchByFreeText",
+                    type: "GET",
+                    data: {
+                        SearchTearm: request.term,
+                        StoreName: StoreName
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_CUR_DRUGBRANDNAME,
+                                value: el.PH_CUR_DRUGCODE
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                $("#txtFreeDrugSearch").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                // $("#txtFreeDrugSearch").prop('disabled', true);
+                $("#txtFreeDrugSearch").val(ui.item.label);
+                var DrugCode = parseInt(ui.item.value);
+                GetFreeCurretntStockByDrugCode(DrugCode, StoreName);
+                return false;
+            },
+            minLength: 0
+        });
+    }
+    function GetFreeCurretntStockByDrugCode(DrugCode, StoreName) {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        $.ajax({
+            url: "/Pharma/Dispense/GetCurrentStockByDrugCode",
+            type: "GET",
+            data: {
+                DrugCode: DrugCode,
+                StoreName: StoreName
+            },
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                if (response.length > 0) {
+                    var html = "";
+                    var table = document.getElementById("tblFreeDrugSales");
+                    var tbodyRowCount = table.tBodies[0].rows.length;
+                    if (response.length <= 1) {
+                        for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                            var PH_CUR_DRUGCODE = response[PCHeader].PH_CUR_DRUGCODE;
+                            var $tr = $('#tblFreeDrugSales tr[data-id="' + PH_CUR_DRUGCODE + '"]');
+                            if ($tr.length === 0) {
+                                var PH_CUR_DRUGBRANDNAME = response[PCHeader].PH_CUR_DRUGBRANDNAME;
+                                var PH_CUR_STOCK_EXPIRYDT = response[PCHeader].PH_CUR_STOCK_EXPIRYDT;
+                                var PH_CUR_STOCK_BILLINGPRICE = response[PCHeader].PH_CUR_STOCK_BILLINGPRICE;
+                                var PH_CUR_STOCK_BATCHNO = response[PCHeader].PH_CUR_STOCK_BATCHNO;
+                                var PH_CUR_STOCK = response[PCHeader].PH_CUR_STOCK;
+
+                                var PH_ITEM_DRUG_VAT = response[PCHeader].PH_ITEM_DRUG_VAT;
+                                var PH_CUR_STOCKUOM = response[PCHeader].PH_CUR_STOCKUOM;
+                                var PH_ITEM_HSNCODE = response[PCHeader].PH_ITEM_HSNCODE;
+                                var PH_CUR_STOCK_PURCHCOST = response[PCHeader].PH_CUR_STOCK_PURCHCOST;
+                                var ExpiryDt = response[PCHeader].ExpiryDt;
+                                var Sno = tbodyRowCount + 1;
+                                html += "<tr data-id=\"" + PH_CUR_DRUGCODE + "\"><td>" + Sno + "</td>";
+                                html += "<td style='display:none;'>" + PH_CUR_DRUGCODE + "</td>";
+                                html += "<td>" + PH_CUR_DRUGBRANDNAME + "</td>";
+                                html += "<td>" + PH_CUR_STOCK_BATCHNO + "</td>";
+                                html += "<td>" + PH_CUR_STOCK_EXPIRYDT + "</td>";
+                                html += "<td>" + PH_CUR_STOCK_BILLINGPRICE + "</td>";
+                                html += "<td><input value=''style='height:28px;width:50px;text-align: right;margin-top:5px;' type=\"Text\" onchange='FreeQtyValu(this)' onkeypress='return isNumberKey(event)'/> " + PH_CUR_STOCK + "</td>";
+                                html += "<td  class='FreeAmountCell'></td>";
+                                html += "<td class='FreeTaxCell'></td>";
+                                html += "<td class='FreeTotalAmountCell'></td>";
+                                html += "<td style='display:none;'>" + PH_ITEM_DRUG_VAT + "</td>";
+                                html += "<td style='text-align: center;'>";
+                                html += "<img src='" + rootUrl + "/Images/DELETE-32.png'  onclick='return DeleteFreeDispenseRow(this)' style='cursor:pointer;width: 30px !important;height:30px !important;'>";
+                                html += "</td><td style='display:none;'>" + PH_CUR_STOCK + "</td>";
+                                html += "<td style='display:none;'>" + PH_CUR_STOCK_PURCHCOST + "</td>";
+                                html += "<td style='display:none;'>" + ExpiryDt + "</td>";
+                                html += "<td style='display:none;'>" + PH_CUR_STOCKUOM + "</td>";
+                                html += "<td style='display:none;'>" + PH_ITEM_HSNCODE + "</td></tr>";
+
+                                $("#tblFreeDrugSales tbody").append(html);
+                                $("#tblFreeDrugSales").find("input[type='text']").last().focus();
+                                $("#txtFreeDrugSearch").val('');
+                                html = "";
+                            }
+                            else {
+                                alert('Drug Already Exists');
+                                $("#txtFreeDrugSearch").val('');
+                                $("#txtFreeDrugSearch").focus();
+                            }
+                        }
+                    }
+                    else {
+                        $("#tblFreeSelectBatch tbody").empty();
+                        for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                            var PH_CUR_DRUGCODE = response[PCHeader].PH_CUR_DRUGCODE;
+                            var PH_CUR_DRUGBRANDNAME = response[PCHeader].PH_CUR_DRUGBRANDNAME;
+                            var PH_CUR_STOCK_EXPIRYDT = response[PCHeader].PH_CUR_STOCK_EXPIRYDT;
+                            var PH_CUR_STOCK_BILLINGPRICE = response[PCHeader].PH_CUR_STOCK_BILLINGPRICE;
+                            var PH_CUR_STOCK_BATCHNO = response[PCHeader].PH_CUR_STOCK_BATCHNO;
+                            var PH_CUR_STOCK = response[PCHeader].PH_CUR_STOCK;
+
+                            var PH_ITEM_DRUG_VAT = response[PCHeader].PH_ITEM_DRUG_VAT;
+                            // var PH_CUR_STOCKUOM = response[PCHeader].PH_CUR_STOCKUOM;
+                            //var PH_ITEM_HSNCODE = response[PCHeader].PH_ITEM_HSNCODE;
+                            // var PH_CUR_STOCK_PURCHCOST = response[PCHeader].PH_CUR_STOCK_PURCHCOST;
+                            html += "<tr  onclick='FreeSelectedBatchChange(this)' data-id=\"" + PH_CUR_DRUGCODE + "\">";
+                            html += "<td style='display:none;'>" + PH_CUR_DRUGCODE + "</td>";
+                            html += "<td>" + PH_CUR_DRUGBRANDNAME + "</td>";
+                            html += "<td>" + PH_CUR_STOCK_BATCHNO + "</td>";
+                            html += "<td>" + PH_CUR_STOCK_EXPIRYDT + "</td>";
+                            html += "<td>" + PH_CUR_STOCK + "</td>";
+                            html += "<td>" + PH_CUR_STOCK_BILLINGPRICE + "</td></tr>";
+                            $("#tblFreeSelectBatch tbody").append(html);
+                            html = "";
+                        }
+                        $("#ModalFreeAdd").dialog(
+                            {
+                                title: "Select Batch",
+                                width: 806,
+                                height: 300,
+                                modal: true,
+                                buttons: {
+                                    "Cancel": function () {
+                                        $("#ModalFreeAdd").dialog("close");
+                                    }
+                                }
+                            });
+                    }
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+    function FreeQtyValu(SelectedRow) {
+        // var DrugName = $("#txtSearchFreeDrugType").val();
+        var row = SelectedRow.parentNode.parentNode;
+        var rowIndex = SelectedRow.rowIndex;
+        var Qty = parseInt(row.cells[6].getElementsByTagName("input")[0].value);
+        var CurrentQty = parseInt(row.cells[12].innerHTML);
+        if (Qty <= CurrentQty) {
+            var sno = row.cells[0].innerHTML;
+            var Itemname = row.cells[1].innerHTML;
+            var Batchno = row.cells[3].innerHTML;
+            var ExpiryDate = row.cells[4].innerHTML;
+            var Cost = parseFloat(row.cells[5].innerHTML).toFixed(2);
+            var Tax = parseFloat(row.cells[10].innerHTML).toFixed(2);
+            var amt = parseFloat(Cost * Qty).toFixed(2);
+            var vatamt = parseFloat((amt * Tax) / 100).toFixed(2);
+            var total = parseFloat(amt) + parseFloat(vatamt);
+            total = total.toFixed(2);
+            row.cells[7].innerHTML = amt;
+            row.cells[8].innerHTML = vatamt;
+            row.cells[9].innerHTML = total;
+            FreeTotalCalculation();
+            //TotalDiscountCalculation();
+            $("#txtFreeDrugSearch").focus();
+        }
+        else {
+            alert("Stock Limit Exceeded");
+            row.cells[6].getElementsByTagName("input")[0].focus();
+        }
+    }
+    function isNumberKey(evt) {
+        var charCode = (evt.which) ? evt.which : event.keyCode
+        if (charCode > 32 && (charCode < 48 || charCode > 57) || (charCode == 32))
+
+            return false;
+
+        return true;
+    }
+    function DeleteFreeDispenseRow(selectedrow) {
+        var myrow = selectedrow.parentNode.parentNode;
+        var rowIndex = myrow.rowIndex;
+        document.getElementById("tblFreeDrugSales").deleteRow(myrow.rowIndex);
+        var table = document.getElementById("tblFreeDrugSales");
+        var rowCount = table.rows.length;
+        var i = myrow.rowIndex;
+        regroup(i, rowCount, "tblFreeDrugSales");
+        $("#txtRateValue").val('');
+        $("#txtFreeDiscountAmt").val('');
+        $("#txtCurrentDue").val('');
+        $("#txtFreeCashAmt").val('');
+        $("#txtBankAmt").val();
+        $("#txtBankRefNum").val('');
+        $("#txtChequeAmt").val('');
+        $("#txtChequeNumber").val('');
+        FreeTotalCalculation();
+        //TotalDiscountCalculation();
+    }
+    function FreeTotalCalculation() {
+        var AmountCells = document.getElementsByClassName("FreeAmountCell"); //returns a list with all the elements that have class 'priceCell'
+        var Amount = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < AmountCells.length; i++) {
+            if (AmountCells[i].innerHTML !== "") {
+                var thisPrice = parseFloat(AmountCells[i].innerHTML); //get inner text of this cell in number format
+                Amount = Amount + thisPrice;
+            }
+        };
+        Amount = Amount.toFixed(2);
+        $("#txtFreeTotalamt").val(Amount);
+
+        var TaxCells = document.getElementsByClassName("FreeTaxCell"); //returns a list with all the elements that have class 'priceCell'
+        var Tax = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < TaxCells.length; i++) {
+            if (TaxCells[i].innerHTML !== "") {
+                var thisPrice = parseFloat(TaxCells[i].innerHTML); //get inner text of this cell in number format
+                Tax = Tax + thisPrice;
+            }
+        };
+        Tax = Tax.toFixed(2);
+        $("#txtFreeTotalVatmat").val(Tax);
+
+        var TotalAmountCells = document.getElementsByClassName("FreeTotalAmountCell"); //returns a list with all the elements that have class 'priceCell'
+        var TotalAmount = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < TotalAmountCells.length; i++) {
+            if (TotalAmountCells[i].innerHTML !== "") {
+                var thisPrice = parseFloat(TotalAmountCells[i].innerHTML); //get inner text of this cell in number format
+                TotalAmount = TotalAmount + thisPrice;
+            }
+        };
+        TotalAmount = TotalAmount.toFixed(2);
+        $("#txtFreeGrandTotal").val(TotalAmount);
+        $("#txtFreeDiscountAmt").val(Amount);
+        $("#txtFreeNetTotal").val(Tax);
+    }
+
+    function regroup(i, rc, ti) {
+        for (j = (i + 1); j < rc; j++) {
+            if (j > 0) {
+                document.getElementById(ti).rows[j].cells[0].innerHTML = j;
+            }
+        }
+    }
+    function FreeSelectedBatchChange(selectedrow) {
+        var myrow = selectedrow.rowIndex;
+        var DrugCode = selectedrow.cells[0].innerHTML;
+        var Batch = selectedrow.cells[2].innerHTML;
+        var StoreName = $("#ddlFreeStoreName option:selected").text();
+        GetFreeCurrentStockByDrugCodeAndBatch(DrugCode, StoreName, Batch);
+        $("#ModalFreeAdd").dialog("close");
+    }
+    function GetFreeCurrentStockByDrugCodeAndBatch(DrugCode, StoreName, Btach) {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        $.ajax({
+            url: "/Pharma/Dispense/GetCurrentStockByDrugCodeAndBatch",
+            type: "GET",
+            data: {
+                DrugCode: DrugCode,
+                StoreName: StoreName,
+                Batch: Btach
+            },
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                if (response.length > 0) {
+                    var html = "";
+                    var table = document.getElementById("tblFreeDrugSales");
+                    var tbodyRowCount = table.tBodies[0].rows.length;
+                    if (response.length <= 1) {
+                        for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                            var PH_CUR_DRUGCODE = response[PCHeader].PH_CUR_DRUGCODE;
+                            var $tr = $('#tblFreeDrugSales tr[data-id="' + PH_CUR_DRUGCODE + '"]');
+                            if ($tr.length === 0) {
+                                var PH_CUR_DRUGBRANDNAME = response[PCHeader].PH_CUR_DRUGBRANDNAME;
+                                var PH_CUR_STOCK_EXPIRYDT = response[PCHeader].PH_CUR_STOCK_EXPIRYDT;
+                                var PH_CUR_STOCK_BILLINGPRICE = response[PCHeader].PH_CUR_STOCK_BILLINGPRICE;
+                                var PH_CUR_STOCK_BATCHNO = response[PCHeader].PH_CUR_STOCK_BATCHNO;
+                                var PH_CUR_STOCK = response[PCHeader].PH_CUR_STOCK;
+                                var PH_ITEM_DRUG_VAT = response[PCHeader].PH_ITEM_DRUG_VAT;
+                                var PH_CUR_STOCKUOM = response[PCHeader].PH_CUR_STOCKUOM;
+                                var PH_ITEM_HSNCODE = response[PCHeader].PH_ITEM_HSNCODE;
+                                var PH_CUR_STOCK_PURCHCOST = response[PCHeader].PH_CUR_STOCK_PURCHCOST;
+                                var ExpiryDt = response[PCHeader].ExpiryDt;
+                                var Sno = tbodyRowCount + 1;
+                                html += "<tr data-id=\"" + PH_CUR_DRUGCODE + "\"><td>" + Sno + "</td>";
+                                html += "<td style='display:none;'>" + PH_CUR_DRUGCODE + "</td>";
+                                html += "<td>" + PH_CUR_DRUGBRANDNAME + "</td>";
+                                html += "<td>" + PH_CUR_STOCK_BATCHNO + "</td>";
+                                html += "<td>" + PH_CUR_STOCK_EXPIRYDT + "</td>";
+                                html += "<td>" + PH_CUR_STOCK_BILLINGPRICE + "</td>";
+                                html += "<td><input value=''style='height:28px;width:50px;text-align: right;margin-top:5px;' type=\"Text\" onchange='FreeQtyValu(this)' onkeypress='return isNumberKey(event)'> " + PH_CUR_STOCK + "</td></td>";
+                                html += "<td  class='FreeAmountCell'></td>";
+                                html += "<td class='FreeTaxCell'></td>";
+                                html += "<td class='FreeTotalAmountCell'></td>";
+                                html += "<td style='display:none;'>" + PH_ITEM_DRUG_VAT + "</td>";
+                                html += "<td style='text-align: center;'>";
+                                html += "<img src='" + rootUrl + "/Images/DELETE-32.png'  onclick='return DeleteFreeDispenseRow(this)' style='cursor:pointer;width: 30px !important;height:30px !important;'>";
+                                html += "</td><td style='display:none;'>" + PH_CUR_STOCK + "</td>";
+                                html += "<td style='display:none;'>" + PH_CUR_STOCK_PURCHCOST + "</td>";
+                                html += "<td style='display:none;'>" + ExpiryDt + "</td>";
+                                html += "<td style='display:none;'>" + PH_CUR_STOCKUOM + "</td>";
+                                html += "<td style='display:none;'>" + PH_ITEM_HSNCODE + "</td></tr>";
+                                $("#tblFreeDrugSales tbody").append(html);
+                                $("#tblFreeDrugSales").find("input[type='text']").last().focus();
+                                $("#txtFreeDrugSearch").val('');
+                                html = "";
+                            }
+                            else {
+                                alert('Drug Already Exists');
+                            }
+                        }
+                    }
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+    function FreeTotalCalculationChange(ControlValue) {
+        var RECIEVEDAMT = 0;
+        var CashReceivedAmt = 0;
+        if ($("#txtFreeCashAmt").val().length > 0)
+            CashReceivedAmt = $("#txtFreeCashAmt").val();
+        var Ord_nettotal = $("#txtFreeNetTotal").val();
+        var RECIEVEDAMT = parseFloat(CashReceivedAmt);
+        if (RECIEVEDAMT > Ord_nettotal) {
+            var id = $(ControlValue).attr("id");
+            document.getElementById(id).value = 0.00;
+            alert('Recieved Amount  shall not be more than Net Total Payable');
+        }
+    }
+    function FreeBillSave() {
+        if (Freevalidate()) {
+
+            var DrugInfo = new Array();
+            var tblFreeDrugSales = document.getElementById("tblFreeDrugSales");
+            var rowtblFreeDrugSales = tblFreeDrugSales.rows.length;
+            for (M = 1; M < rowtblFreeDrugSales; M++) {
+                var rowDrug = tblFreeDrugSales.rows[M];
+                var ObjectDetails = new Object();
+                ObjectDetails.PH_CUR_DRUGBRANDNAME = rowDrug.cells[2].innerHTML;
+                ObjectDetails.PH_CUR_STOCK_EXPIRYDT = rowDrug.cells[4].innerHTML;
+                ObjectDetails.PH_CUR_STOCK_BILLINGPRICE = parseFloat(rowDrug.cells[5].innerHTML);
+                ObjectDetails.PH_CUR_STOCK_BATCHNO = rowDrug.cells[3].innerHTML;
+                ObjectDetails.Qty = parseInt(rowDrug.cells[6].getElementsByTagName("input")[0].value);
+                ObjectDetails.PH_CUR_STOCK = parseInt(rowDrug.cells[12].innerHTML);
+                ObjectDetails.PH_CUR_DRUGCODE = parseInt(rowDrug.cells[1].innerHTML);
+                ObjectDetails.PH_ITEM_DRUG_VAT = parseFloat(rowDrug.cells[10].innerHTML);
+                ObjectDetails.PH_CUR_STOCK_PURCHCOST = parseFloat(rowDrug.cells[13].innerHTML);
+                ObjectDetails.Amount = parseFloat(rowDrug.cells[7].innerHTML);
+                ObjectDetails.Tax = parseFloat(rowDrug.cells[8].innerHTML);
+                ObjectDetails.TotalAmount = parseFloat(rowDrug.cells[9].innerHTML);
+                ObjectDetails.ExpiryDt = rowDrug.cells[14].innerHTML;
+                DrugInfo.push(ObjectDetails);
+            }
+            console.log(DrugInfo);
+
+
+            var Amount = $("#txtFreeTotalamt").val();
+            if (Amount == "" || Amount == null || Amount == '')
+                Amount = 0;
+            else
+                Amount = parseFloat(Amount);
+
+            var Tax = $("#txtFreeTotalVatmat").val();
+            if (Tax == "" || Tax == null || Tax == '')
+                Tax = 0;
+            else
+                Tax = parseFloat(Tax);
+
+            var TotalAmount = $("#txtFreeGrandTotal").val();
+            if (TotalAmount == "" || TotalAmount == null || TotalAmount == '')
+                TotalAmount = 0;
+            else
+                TotalAmount = parseFloat(TotalAmount);
+
+            var DiscountType = "";
+
+            var DiscountRate = $("#txtFreeDiscountAmt").val();
+            if (DiscountRate == "" || DiscountRate == null || DiscountRate == '')
+                TotalAmount = 0;
+            else
+                DiscountRate = parseFloat(DiscountRate);
+
+            var DueCollected = 0;
+            if (DueCollected == "" || DueCollected == null || DueCollected == '')
+                DueCollected = 0;
+            else
+                DueCollected = parseFloat(DueCollected);
+
+            var NetCollected = $("#txtFreeNetTotal").val();
+            if (NetCollected == "" || NetCollected == null || NetCollected == '')
+                NetCollected = 0;
+            else
+                NetCollected = parseFloat(NetCollected);
+
+            var Roundoff = 0;
+            if (Roundoff == "" || Roundoff == null || Roundoff == '')
+                Roundoff = 0;
+            else
+                Roundoff = parseFloat(Roundoff);
+
+            var Consession = $("#txtFreeDiscountAmt").val();
+            if (Consession == "" || Consession == null || Consession == '')
+                Consession = 0;
+            else
+                Consession = parseFloat(Consession);
+
+            var CashReceivedAmt = 0;
+            var DebitCardAmt = 0;
+            var CreditCardAmt = 0;
+            var ThroughBankAmt = 0;
+            var ChequeAmt = 0;
+
+            if ($("#txtFreeCashAmt").val().length > 0)
+                CashReceivedAmt = parseFloat($("#txtFreeCashAmt").val());
+
+
+            var CreditCardNumber = "0";
+            var DebitCardNumber = "0";
+            var ChequeNo = "0";
+            var BankRefNo = "0";
+            var e = document.getElementById("ddlgroupName");
+            var groupname = e.options[e.selectedIndex].text;
+            var sendJsonData = {
+                PatinetID: groupname,
+                Lis_PatFirstName: groupname,
+                Lis_Sex: "",
+                Lis_AgeDays: "0",
+                Lis_AgeMonth: "0",
+                Lis_AgeYear: "0",
+                HIS_RELATION: groupname,
+                HIS_PHONE: "0",
+                LisAddress: '',
+                LIS_RefDRNAME: "",
+                DrugInfos: DrugInfo,
+                Amount: Amount,
+                Tax: Tax,
+                TotalAmount: TotalAmount,
+                Roundoff: Roundoff,
+                Consession: Consession,
+                DiscountType: DiscountType,
+                DiscountRate: 0,
+                PendingtoPay: 0,
+                NetTotlaAmount: NetCollected,
+                CashReceivedAmt: CashReceivedAmt,
+                CreditCardAmt: CreditCardAmt,
+                DebitCardAmt: DebitCardAmt,
+                ThroughBankAmt: ThroughBankAmt,
+                ChequeAmt: ChequeAmt,
+                CreditCardNumber: CreditCardNumber,
+                DebitCardNumber: DebitCardNumber,
+                ChequeNo: ChequeNo,
+                BankRefNo: BankRefNo,
+                StoreName: $("#ddlFreeStoreName option:selected").text()
+            };
+            console.log(sendJsonData);
+            $.ajax({
+                url: "/Pharma/Dispense/BillSave",
+                type: 'post',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(sendJsonData),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    FreeClearAll();
+                    FreeBillPrint(data);
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+
+    }
+    function Freevalidate() {
+        var errors = "";
+        var e = document.getElementById("ddlgroupName");
+        var groupid = e.options[e.selectedIndex].value;
+        if (groupid == 0) {
+            errors += "* Please Select Group Name.\n";
+        }
+        var RECIEVEDAMT = 0;
+        var CashReceivedAmt = 0;
+
+        if ($("#txtFreeCashAmt").val().length > 0)
+            CashReceivedAmt = $("#txtFreeCashAmt").val();
+
+
+        var Ord_nettotal = $("#txtFreeNetTotal").val();
+        var RECIEVEDAMT = parseFloat(CashReceivedAmt);
+
+        if (RECIEVEDAMT > Ord_nettotal) {
+            errors += "* Please do not enter greater amount.\n";
+        }
+        var table = document.getElementById("tblFreeDrugSales");
+        var tbodyRowCount = table.tBodies[0].rows.length;
+        if (tbodyRowCount <= 0) {
+            errors += "* Please Select Drugs.\n";
+        }
+        if (errors.length > 0) {
+            alert('One or more errors occurred:\n\n' + errors);
+            return false;
+        }
+        else {
+            return true;
+        }
+    }
+    function FreeClearAll() {
+        $("#txtFreeDrugSearch").val('');
+        $("#txtFreeTotalamt").val('');
+        $("#txtFreeTotalVatmat").val('');
+        $("#txtFreeGrandTotal").val('');
+        $("#txtRateValue").val('');
+        $("#txtFreeDiscountAmt").val('');
+        $("#txtFreeNetTotal").val('');
+        $("#txtFreeCashAmt").val('');
+        $("#tblFreeDrugSales tbody").empty();
+        $("#ddlgroupName")[0].selectedIndex = 0;
+    }
+    function FreeBillPrint(response) {
+        if (response.PrintHeader.length > 0) {
+            var html = "";
+            for (PCHeader = 0; PCHeader < response.PrintHeader.length; PCHeader++) {
+                var PH_CSH_BILLNO = response.PrintHeader[PCHeader].PH_CSH_BILLNO;
+                var PH_CSH_BILLDT = response.PrintHeader[PCHeader].PH_CSH_BILLDT;
+                var PH_CSH_PATNAME = response.PrintHeader[PCHeader].PH_CSH_PATNAME;
+                var PH_CSH_Relation = response.PrintHeader[PCHeader].PH_CSH_Relation;
+                var PH_CSH_PATSEX = response.PrintHeader[PCHeader].PH_CSH_PATSEX;
+                var PH_CSH_TOTAMOUNT = response.PrintHeader[PCHeader].PH_CSH_TOTAMOUNT;
+                var PH_CSH_TAXAMOUNT = parseFloat(response.PrintHeader[PCHeader].PH_CSH_TAXAMOUNT);
+                var TotalTaxDived = parseFloat(PH_CSH_TAXAMOUNT).toFixed(2) / 2;
+                TotalTaxDived = TotalTaxDived.toFixed(2);
+                var PH_CSH_CASHRECIVEDAMT = response.PrintHeader[PCHeader].PH_CSH_CASHRECIVEDAMT;
+                var Warehouse = document.getElementById("ddlFreeStoreName").options[document.getElementById('ddlFreeStoreName').selectedIndex].text;
+                //Header
+                html += "<table style='font-family:sans-serif;font-size: 12px;font-weight: 500;'>";
+                html += "<tr><td style='width:196px !important;'>Bill number</td><td>:</td><td style='width:341px !important;'>" + PH_CSH_BILLNO + "</td>";
+                html += "<td style='width:196px !important;'>Date</td><td>:</td><td style='width:341px !important;'>" + PH_CSH_BILLDT + "</td></tr>";
+                html += "<tr><td>Patient name</td><td>:</td><td style='width:341px !important;'>" + PH_CSH_PATNAME + "</td>";
+                html += "<td>Relation:</td><td>:</td><td style='width:341px !important;'>" + PH_CSH_Relation + "</td></tr>";
+                html += "<tr><td>Sex/Age</td><td>:</td><td style='width:341px !important;'>" + PH_CSH_PATSEX + "</td>";
+                html += "<td>Bill type</td><td>:</td><td style='width:341px !important;'>OP/Cash</td></tr>";
+                html += "<tr><td>GST NO</td><td>:</td><td style='width:341px !important;'></td><td>ARN NO</td><td>:</td><td style='width:341px !important;'></td></tr>";
+                html += "<tr><td>Warehouse</td><td>:</td><td style='width:341px !important;'>" + Warehouse + "</td></tr></table>";
+                //Deatils
+                html += "<table border='1' style='font-family:sans-serif;font-size: 12px;font-weight: 500;border-collapse:collapse;width: 100%;'><tr>";
+                html += "<td style='width: 53px !important;'>S.no</td>";
+                html += "<td style='width: 109px !important;'>Hsn Code</td>";
+                html += "<td style='width: 275px !important;'>Particular</td>";
+                html += "<td style='width: 140px !important;'>Batch No</td>";
+                html += "<td style='width: 53px !important;'>ExpiryDt</td>";
+                html += " <td align='right' style='width: 53px !important;'>Qty</td>";
+                html += "<td align='right' style='width: 53px !important;'>Rate</td>";
+                html += "<td align='right' style='width: 63px !important;'>Amount</td>";
+                html += "<td colspan='3' align='center' style='width: 130px !important;'>Tax<table border='1' style='border-collapse:collapse;width: 100%;'>";
+                html += "<tbody><tr><td align='right'>SGST</td><td align='right'>CGST</td><td align='right'>%</td></tr></tbody></table></td>";
+                html += "<td align='right' style='width: 63px !important;'>Total</td></tr>";
+                var Sno = 0;
+                for (PCDetails = 0; PCDetails < response.PrintDeatils.length; PCDetails++) {
+                    Sno = Sno + 1;
+                    var PH_CUR_DRUGBRANDNAME = response.PrintDeatils[PCDetails].PH_CUR_DRUGBRANDNAME;
+                    var PH_CSHDTL_DRUGBATCHNO = response.PrintDeatils[PCDetails].PH_CSHDTL_DRUGBATCHNO;
+                    var PH_CSHDTL_DRUGEXPIRYDT = response.PrintDeatils[PCDetails].PH_CSHDTL_DRUGEXPIRYDT;
+                    var PH_CSHDTL_DRUG_QTY = response.PrintDeatils[PCDetails].PH_CSHDTL_DRUG_QTY;
+                    var PH_CSHDTL_DRUG_AMTEACH = response.PrintDeatils[PCDetails].PH_CSHDTL_DRUG_AMTEACH;
+                    var PH_CSHDTL_DRUG_ROWTOTALAMT = response.PrintDeatils[PCDetails].PH_CSHDTL_DRUG_ROWTOTALAMT;
+                    var PHCSHDTL_DRUG_TAXVALUE = response.PrintDeatils[PCDetails].PHCSHDTL_DRUG_TAXVALUE;
+                    var PH_CSHDTL_DRUG_NETTAMT = response.PrintDeatils[PCDetails].PH_CSHDTL_DRUG_NETTAMT;
+                    var Uom = response.PrintDeatils[PCDetails].Uom;
+                    var PH_CSHDTL_DRUG_TAXPERCENT = response.PrintDeatils[PCDetails].PH_CSHDTL_DRUG_TAXPERCENT;
+                    var PH_ITEM_HSNCODE = response.PrintDeatils[PCDetails].PH_ITEM_HSNCODE;
+                    var TaxDivied = parseFloat(PHCSHDTL_DRUG_TAXVALUE).toFixed(2) / 2;
+                    TaxDivied = TaxDivied.toFixed(2);
+                    html += "<tr><td style='width: 53px !important;'>" + Sno + "</td>";
+                    html += "<td style='width: 109px !important;'>" + PH_ITEM_HSNCODE + "</td>";
+                    html += "<td style='width: 275px !important;'>" + Uom + "." + PH_CUR_DRUGBRANDNAME + "</td>";
+                    html += "<td style='width: 140px !important;'>" + PH_CSHDTL_DRUGBATCHNO + "</td>";
+                    html += "<td style='width: 53px !important;'>" + PH_CSHDTL_DRUGEXPIRYDT + "</td>";
+                    html += "<td align='right' style='width: 53px !important;'>" + PH_CSHDTL_DRUG_QTY + "</td>";
+                    html += "<td align='right' style='width: 53px !important;'>" + PH_CSHDTL_DRUG_AMTEACH + "</td>";
+                    html += "<td align='right' style='width: 63px !important;'>" + PH_CSHDTL_DRUG_ROWTOTALAMT + "</td>";
+                    html += "<td colspan='3'><table border='1' style='border-collapse:collapse;width: 100%;'><tbody><tr><td align='right'>" + TaxDivied + "</td><td align='right'>" + TaxDivied + "</td><td align='right'>" + PH_CSHDTL_DRUG_TAXPERCENT + "%</td></tr></tbody></table></td>";
+                    html += "<td align='right' style='width: 63px !important;'>" + PH_CSHDTL_DRUG_NETTAMT + "</td></tr>";
+                }
+                html += "</table>";
+                //Amount Details
+                html += "<table style='font-family:sans-serif;font-weight: 500;font-size: 12px;'><tr>";
+                html += "<td style='width: 53px !important;'></td><td style='width: 109px !important;'></td><td style='width: 275px !important;'></td><td style='width: 100px !important;'></td>";
+                html += "<td style='width: 53px !important;'></td><td style='width: 53px !important;'></td><td style='width: 63px !important;'></td>";
+                html += "<td style='width: 53px !important;'></td><td>Total:</td><td align='right' style='width: 53px !important;'>" + PH_CSH_TOTAMOUNT + "</td></tr>";
+                html += "<tr><td colspan='8' style='width: 90px !important;'></td><td style='width: 90px !important;'>SGST:</td><td align='right' style='width: 90px !important;'>" + TotalTaxDived + "</td>";
+                html += "<tr><td colspan='8' style='width: 53px !important;'></td><td>CGST:</td><td align='right' style='width: 53px !important;'>" + TotalTaxDived + "</td></tr>";
+                html += "<tr style='font-size:16px !important;'><td colspan='8' style='width: 53px !important;'></td><td>Net Total:</td><td align='right' style='width: 53px !important;'>" + PH_CSH_CASHRECIVEDAMT + "</td></tr>";
+                html += "<tr></tr><tr></tr><tr><td colspan='6'></td><td colspan='3'>PHARMACIST SIGNATURE</td></tr></table>";
+            }
+            sessionStorage.setItem("PrintDetails", html);
+            openFreeRequestedPopup();
+        }
+    }
+    function openFreeRequestedPopup() {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        var url = rootUrl + '/Pharmacy/Dispense/print';
+        window.open(url, '_blank');
+        sessionStorage.setItem("PrintDetails", "");
+    }
+    function isNumberAndDecimal(el, evt) {
+        var charCode = (evt.which) ? evt.which : event.keyCode
+        var number = el.value.split('.');
+        if (charCode != 46 && charCode > 32 && (charCode < 48 || charCode > 57) || (charCode == 32))
+
+            return false;
+
+        if (number.length > 1 && charCode == 46) {
+            return false;
+        }
+
+        return true;
+    }
+    function FreeOpenReprint() {
+        GetLastFree100BillHeader();
+        $("#ModelFreeReprint").dialog(
+            {
+                title: "Re-Print",
+                width: 806,
+                height: 500,
+                modal: true,
+                buttons: {
+                    "Cancel": function () {
+                        $("#ModelFreeReprint").dialog("close");
+                    }
+                }
+            });
+    }
+    function GetLastFree100BillHeader() {
+        $.ajax({
+            url: rootUrl + "/api/FreeDispenseApi/GetLast100BillHeader",
+            type: "GET",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                if (response.length > 0) {
+                    var html = "";
+                    var Sno = 0;
+                    $("#tblFreeBillReprint tbody").empty();
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        Sno = PCHeader + 1;
+                        var PH_CSH_BILLNO = response[PCHeader].PH_CSH_BILLNO;
+                        var BillDt = response[PCHeader].BillDt;
+                        var PH_CSH_PATNAME = response[PCHeader].PH_CSH_PATNAME;
+                        var PH_CSH_PATSEX = response[PCHeader].PH_CSH_PATSEX;
+                        var PH_CSH_PROCESSKEY = response[PCHeader].PH_CSH_PROCESSKEY;
+                        var PH_CSH_PATID = response[PCHeader].PH_CSH_PATID;
+                        html += "<tr onclick='FreeSelectedReprint(this)'><td>" + Sno + "</td>";
+                        html += "<td>" + PH_CSH_BILLNO + "</td>";
+                        html += "<td>" + PH_CSH_PATID + "</td>";
+                        html += "<td>" + PH_CSH_PATNAME + "</td>";
+                        html += "<td>" + BillDt + "</td>";
+                        html += "<td>" + PH_CSH_PATSEX + "</td>";
+                        html += "<td style='display:none;'>" + PH_CSH_PROCESSKEY + "</td></tr>";
+                    }
+                    $("#tblFreeBillReprint tbody").append(html);
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+    function GetFreeCashBillHeaderByBillNo() {
+        if ($("#txtFreeBillNo").val().length > 0) {
+            var BillNo = parseFloat($("#txtFreeBillNo").val());
+            $.ajax({
+                url: rootUrl + "/api/FreeDispenseApi/GetFreeCashBillHeaderByBillNo",
+                type: "GET",
+                data: {
+                    BillNumber: BillNo
+                },
+                dataType: "json",
+                //beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    if (response.length > 0) {
+                        var html = "";
+                        var Sno = 0;
+                        $("#tblFreeBillReprint tbody").empty();
+                        for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                            Sno = PCHeader + 1;
+                            var PH_CSH_BILLNO = response[PCHeader].PH_CSH_BILLNO;
+                            var BillDt = response[PCHeader].BillDt;
+                            var PH_CSH_PATNAME = response[PCHeader].PH_CSH_PATNAME;
+                            var PH_CSH_PATSEX = response[PCHeader].PH_CSH_PATSEX;
+                            var PH_CSH_PROCESSKEY = response[PCHeader].PH_CSH_PROCESSKEY;
+                            var PH_CSH_PATID = response[PCHeader].PH_CSH_PATID;
+                            html += "<tr onclick='FreeSelectedReprint(this)'><td>" + Sno + "</td>";
+                            html += "<td>" + PH_CSH_BILLNO + "</td>";
+                            html += "<td>" + PH_CSH_PATID + "</td>";
+                            html += "<td>" + PH_CSH_PATNAME + "</td>";
+                            html += "<td>" + BillDt + "</td>";
+                            html += "<td>" + PH_CSH_PATSEX + "</td>";
+                            html += "<td style='display:none;'>" + PH_CSH_PROCESSKEY + "</td></tr>";
+                        }
+                        $("#tblFreeBillReprint tbody").append(html);
+                    }
+                },
+                //complete: function () { $("#loading").css("display", "none"); }
+            });
+            return false;
+        }
+    }
+    function GetFreeCashBillBySearch() {
+        if ($("#txtFreeBillSearch").val().length > 0) {
+            var Search = $("#txtFreeBillSearch").val();
+            $.ajax({
+                url: rootUrl + "/api/FreeDispenseApi/GetFreeCashBillBySearch",
+                type: "GET",
+                data: {
+                    Search: Search
+                },
+                dataType: "json",
+                //beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    if (response.length > 0) {
+                        var html = "";
+                        var Sno = 0;
+                        $("#tblFreeBillReprint tbody").empty();
+                        for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                            Sno = PCHeader + 1;
+                            var PH_CSH_BILLNO = response[PCHeader].PH_CSH_BILLNO;
+                            var BillDt = response[PCHeader].BillDt;
+                            var PH_CSH_PATNAME = response[PCHeader].PH_CSH_PATNAME;
+                            var PH_CSH_PATSEX = response[PCHeader].PH_CSH_PATSEX;
+                            var PH_CSH_PROCESSKEY = response[PCHeader].PH_CSH_PROCESSKEY;
+                            var PH_CSH_PATID = response[PCHeader].PH_CSH_PATID;
+                            html += "<tr onclick='FreeSelectedReprint(this)'><td>" + Sno + "</td>";
+                            html += "<td>" + PH_CSH_BILLNO + "</td>";
+                            html += "<td>" + PH_CSH_PATID + "</td>";
+                            html += "<td>" + PH_CSH_PATNAME + "</td>";
+                            html += "<td>" + BillDt + "</td>";
+                            html += "<td>" + PH_CSH_PATSEX + "</td>";
+                            html += "<td style='display:none;'>" + PH_CSH_PROCESSKEY + "</td></tr>";
+                        }
+                        $("#tblFreeBillReprint tbody").append(html);
+                    }
+                },
+                //complete: function () { $("#loading").css("display", "none"); }
+            });
+            return false;
+        }
+    }
+    function FreeSelectedReprint(selectedrow) {
+        var BillNo = parseFloat(selectedrow.cells[1].innerHTML);
+        $.ajax({
+            url: "/Pharma/Dispense/GetBillReprint",
+            type: "GET",
+            data: {
+                BillNo: BillNo
+            },
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                FreeBillPrint(response);
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+        $("#ModelFreeReprint").dialog("close");
+    }
+    function OpenFreeBillCancel() {
+        GetLastFree100BillCancelHeader();
+        $("#ModelFreeBillCancel").dialog(
+            {
+                title: "Bill Cancel",
+                width: 1103,
+                height: 500,
+                modal: true,
+                buttons: {
+                    "Cancel": function () {
+                        $("#ModelFreeBillCancel").dialog("close");
+                    }
+                }
+            });
+    }
+    function GetLastFree100BillCancelHeader() {
+        $.ajax({
+            url: rootUrl + "/api/FreeDispenseApi/GetLast100FreeBillHeader",
+            type: "GET",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                if (response.length > 0) {
+                    var html = "";
+                    var Sno = 0;
+                    $("#tblFreeBillCancel tbody").empty();
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        Sno = PCHeader + 1;
+                        var PH_CSH_BILLNO = response[PCHeader].PH_CSH_BILLNO;
+                        var BillDt = response[PCHeader].BillDt;
+                        var PH_CSH_PATNAME = response[PCHeader].PH_CSH_PATNAME;
+                        var PH_CSH_PATSEX = response[PCHeader].PH_CSH_PATSEX;
+                        var PH_CSH_PROCESSKEY = response[PCHeader].PH_CSH_PROCESSKEY;
+                        var PH_CSH_NETTAMOUNT = response[PCHeader].PH_CSH_NETTAMOUNT;
+                        var PH_CSH_ROUNDOFF = response[PCHeader].PH_CSH_ROUNDOFF;
+                        var PH_CSH_TAXAMOUNT = response[PCHeader].PH_CSH_TAXAMOUNT;
+                        var PH_CSH_CONCESSION = response[PCHeader].PH_CSH_CONCESSION;
+                        var PH_CSH_TOTAMOUNT = response[PCHeader].PH_CSH_TOTAMOUNT;
+                        var PH_CSH_CASHRECIVEDAMT = response[PCHeader].PH_CSH_CASHRECIVEDAMT;
+
+                        html += "<tr ><td>" + Sno + "</td>";
+                        html += "<td>" + PH_CSH_BILLNO + "</td>";
+                        html += "<td>" + PH_CSH_PATNAME + "</td>";
+                        html += "<td>" + BillDt + "</td>";
+                        html += "<td>" + PH_CSH_PATSEX + "</td>";
+                        html += "<td>" + PH_CSH_TOTAMOUNT + "</td>";
+                        html += "<td>" + PH_CSH_TAXAMOUNT + "</td>";
+                        html += "<td>" + PH_CSH_ROUNDOFF + "</td>";
+                        html += "<td>" + PH_CSH_CASHRECIVEDAMT + "</td>";
+                        html += "<td style='text-align: center;'>";
+                        html += "<button class='btn btn - primary' onclick='FreeSelectBillCancel(this)'>Bill Cancel</button></td>";
+                        html += "<td style='display:none;'>" + PH_CSH_PROCESSKEY + "</td></tr>";
+                    }
+                    $("#tblFreeBillCancel tbody").append(html);
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+    function FreeSelectBillCancel(SelectedRow) {
+        var row = SelectedRow.parentNode.parentNode;
+        var BillNo = parseFloat(row.cells[1].innerHTML);
+        $.ajax({
+            url: "/Pharma/Dispense/GetBillCancel",
+            type: "GET",
+            data: {
+                BillNo: BillNo
+            },
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                $("#ModelFreeBillCancel").dialog("close");
+                alert('Bill Cancelled Successfully');
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function GetFreeBillCancelByBillNo() {
+        if ($("#txtFreeBillNoCancel").val().length > 0) {
+            var BillNo = parseFloat($("#txtFreeBillNoCancel").val());
+            $.ajax({
+                url: "/Pharma/Dispense/GetCashBillHeaderByBillNo",
+                type: "GET",
+                data: {
+                    BillNumber: BillNo
+                },
+                dataType: "json",
+                //beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    if (response.length > 0) {
+                        var html = "";
+                        var Sno = 0;
+                        $("#tblFreeBillCancel tbody").empty();
+                        for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                            Sno = PCHeader + 1;
+                            var PH_CSH_BILLNO = response[PCHeader].PH_CSH_BILLNO;
+                            var BillDt = response[PCHeader].BillDt;
+                            var PH_CSH_PATNAME = response[PCHeader].PH_CSH_PATNAME;
+                            var PH_CSH_PATSEX = response[PCHeader].PH_CSH_PATSEX;
+                            var PH_CSH_PROCESSKEY = response[PCHeader].PH_CSH_PROCESSKEY;
+                            var PH_CSH_NETTAMOUNT = response[PCHeader].PH_CSH_NETTAMOUNT;
+                            var PH_CSH_ROUNDOFF = response[PCHeader].PH_CSH_ROUNDOFF;
+                            var PH_CSH_TAXAMOUNT = response[PCHeader].PH_CSH_TAXAMOUNT;
+                            var PH_CSH_CONCESSION = response[PCHeader].PH_CSH_CONCESSION;
+                            var PH_CSH_TOTAMOUNT = response[PCHeader].PH_CSH_TOTAMOUNT;
+                            var PH_CSH_CASHRECIVEDAMT = response[PCHeader].PH_CSH_CASHRECIVEDAMT;
+
+                            html += "<tr ><td>" + Sno + "</td>";
+                            html += "<td>" + PH_CSH_BILLNO + "</td>";
+                            html += "<td>" + PH_CSH_PATNAME + "</td>";
+                            html += "<td>" + BillDt + "</td>";
+                            html += "<td>" + PH_CSH_PATSEX + "</td>";
+                            html += "<td>" + PH_CSH_TOTAMOUNT + "</td>";
+                            html += "<td>" + PH_CSH_TAXAMOUNT + "</td>";
+                            html += "<td>" + PH_CSH_ROUNDOFF + "</td>";
+                            html += "<td>" + PH_CSH_CASHRECIVEDAMT + "</td>";
+                            html += "<td style='text-align: center;'>";
+                            html += "<button class='btn btn - primary' onclick='FreeSelectBillCancel(this)'>Bill Cancel</button></td>";
+                            html += "<td style='display:none;'>" + PH_CSH_PROCESSKEY + "</td></tr>";
+                        }
+                        $("#tblFreeBillCancel tbody").append(html);
+                    }
+                },
+                //complete: function () { $("#loading").css("display", "none"); }
+            });
+            return false;
+        }
+    }
+    function GetFreeCancelCashBillBySearch() {
+        if ($("#txtFreeCancelBillSearch").val().length > 0) {
+            var Search = $("#txtFreeCancelBillSearch").val();
+            $.ajax({
+                url: "/Pharma/Dispense/GetCashBillBySearch",
+                type: "GET",
+                data: {
+                    Search: Search
+                },
+                dataType: "json",
+                //beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    var html = "";
+                    var Sno = 0;
+                    $("#tblFreeBillCancel tbody").empty();
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        Sno = PCHeader + 1;
+                        var PH_CSH_BILLNO = response[PCHeader].PH_CSH_BILLNO;
+                        var BillDt = response[PCHeader].BillDt;
+                        var PH_CSH_PATNAME = response[PCHeader].PH_CSH_PATNAME;
+                        var PH_CSH_PATSEX = response[PCHeader].PH_CSH_PATSEX;
+                        var PH_CSH_PROCESSKEY = response[PCHeader].PH_CSH_PROCESSKEY;
+                        var PH_CSH_NETTAMOUNT = response[PCHeader].PH_CSH_NETTAMOUNT;
+                        var PH_CSH_ROUNDOFF = response[PCHeader].PH_CSH_ROUNDOFF;
+                        var PH_CSH_TAXAMOUNT = response[PCHeader].PH_CSH_TAXAMOUNT;
+                        var PH_CSH_CONCESSION = response[PCHeader].PH_CSH_CONCESSION;
+                        var PH_CSH_TOTAMOUNT = response[PCHeader].PH_CSH_TOTAMOUNT;
+                        var PH_CSH_CASHRECIVEDAMT = response[PCHeader].PH_CSH_CASHRECIVEDAMT;
+
+                        html += "<tr ><td>" + Sno + "</td>";
+                        html += "<td>" + PH_CSH_BILLNO + "</td>";
+                        html += "<td>" + PH_CSH_PATNAME + "</td>";
+                        html += "<td>" + BillDt + "</td>";
+                        html += "<td>" + PH_CSH_PATSEX + "</td>";
+                        html += "<td>" + PH_CSH_TOTAMOUNT + "</td>";
+                        html += "<td>" + PH_CSH_TAXAMOUNT + "</td>";
+                        html += "<td>" + PH_CSH_ROUNDOFF + "</td>";
+                        html += "<td>" + PH_CSH_CASHRECIVEDAMT + "</td>";
+                        html += "<td style='text-align: center;'>";
+                        html += "<button class='btn btn - primary' onclick='FreeSelectBillCancel(this)'>Bill Cancel</button></td>";
+                        html += "<td style='display:none;'>" + PH_CSH_PROCESSKEY + "</td></tr>";
+                    }
+                    $("#tblFreeBillCancel tbody").append(html);
+                },
+                //complete: function () { $("#loading").css("display", "none"); }
+            });
+            return false;
+        }
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="panel panel-default DivBox" style="background-color: white;">
+                    <br />
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-top:10px;">
+                                        Group
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                <div class="form-group">
+                                    <select class="form-control" style="cursor:pointer;margin-left:-35px;" id="ddlgroupName">
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <select class="form-control" id="ddlFreeStoreName">
+                                </select>
+                            </div>
+                            <div class="col-xs-5 col-sm-5 col-md-5" style="float:right;">
+                                <button class="btn btn-primary" onclick="FreeOpenReprint();">Re-Print</button>
+                                <button class="btn btn-primary" onclick="OpenFreeBillCancel();">Bill Cancel</button>
+                            </div>
+                        </div>
+                        <hr />
+                        <div class="row">
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <input type="text" id="txtFreeDrugSearch" placeholder="Brand Search" class="form-control" style="margin-left: 5px;" onkeyup="return SearchFreeDrug();" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-9 col-sm-9 col-md-9">
+                                <table class="table table-bordered table-striped dataTable table-reflow tableHB" border="1" id="tblFreeDrugSales" style="color: black;margin-left: 5px;">
+                                    <thead>
+                                        <tr>
+                                            <th>S.No</th>
+                                            <th>Item Name</th>
+                                            <th>Batch</th>
+                                            <th>Expiry</th>
+                                            <th>Rate</th>
+                                            <th>Qty/Stock</th>
+                                            <th>Amount</th>
+                                            <th>Tax</th>
+                                            <th>Total</th>
+                                            <th>Delete</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <div class="row">
+                                    <div>
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <table class="noborders topics">
+                                                <tr class="form-group">
+                                                    <td><label>Total:</label></td>
+                                                    <td>
+                                                        <input id="txtFreeTotalamt" onkeypress='return isNumberKey(event)' disabled
+                                                               style="border-color: #80808030;margin-bottom: 3px;width: 70px;text-align: right;" type="text" />
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td><label>Tax:</label></td>
+                                                    <td>
+                                                        <input id="txtFreeTotalVatmat" onkeypress='return isNumberKey(event)' disabled
+                                                               style="border-color: #80808030;margin-bottom: 3px;width: 70px;text-align: right;" type="text" />
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td><label>Total amount:</label></td>
+                                                    <td>
+                                                        <input id="txtFreeGrandTotal" onkeypress='return isNumberKey(event)' disabled
+                                                               style="border-color: #80808030;margin-bottom: 3px;width: 70px;text-align: right;" type="text" />
+                                                    </td>
+                                                </tr>
+                                                <tr class="form-group">
+                                                    <td><label>Discount:</label></td>
+
+                                                    <td><input id="txtFreeDiscountAmt" disabled onkeypress='return isNumberKey(event)' class="input form-control-sm" style="border-color: #80808030;margin-bottom: 0px;width: 70px;text-align: right;position:absolute;margin-top: -16px;" type="text" /></td>
+
+
+                                                </tr>
+                                                <tr>
+                                                    <td><label style="width:130px">Net Total Payable:</label></td>
+                                                    <td>
+                                                        <input id="txtFreeNetTotal" value="0.00" onkeypress='return isNumberKey(event)' disabled
+                                                               style="border-color: #80808030;margin-bottom: 0px;width: 70px;text-align: right;margin-top: 0px;" type="text" />
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                            <br />
+                                            <table class="noborders topics">
+                                                <tr>
+                                                    <td><label>Cash:</label></td>
+                                                    <td>
+                                                        <input id="txtFreeCashAmt" onchange="FreeTotalCalculationChange(this);" onkeypress='return isNumberAndDecimal(this,event)'
+                                                               style="border-color: #80808030;margin-bottom: 0px;width: 70px;text-align: right;margin-left:0px" type="text" />
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <br />
+                                    <div class="row" id="divPayments">
+                                        <div>
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <table class="noborders topics">
+                                                    <tr>
+                                                        <td></td>
+                                                        <td colspan="4">
+                                                            <button onclick="FreeBillSave();" class="btns btn-primary">SUBMIT</button>
+                                                            <button class="btns btn-primary" onclick="FreeClearAll();">CANCEL</button>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="ModelFreeReprint" style="display: none; width: 600px;font-family:'Microsoft Sans Serif'; font-size: small;">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <div class="panel-body">
+                                    <div class="row">
+                                        <div class="col-xs-3 col-sm-3 col-md-3">
+                                            <div class="form-group">
+                                                <input type="text" id="txtFreeBillNo" placeholder="Bill No" class="form-control" style="margin-left: 5px;" onkeyup="GetFreeCashBillHeaderByBillNo();" />
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <div class="form-group">
+                                                <input type="text" id="txtFreeBillSearch" placeholder="Search" class="form-control" style="margin-left: 5px;" onkeyup="GetFreeCashBillBySearch();" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <table class="table table-bordered table-striped dataTable table-reflow tableHB" id="tblFreeBillReprint" style="color: black;margin-left: 5px;">
+                                                <thead>
+                                                    <tr>
+                                                        <th>S.No</th>
+                                                        <th>Bill No</th>
+                                                        <th>Patient ID</th>
+                                                        <th>Patient Name</th>
+                                                        <th>Bill Dt</th>
+                                                        <th>Gender</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="ModelFreeBillCancel" style="display: none; width: 600px;font-family:'Microsoft Sans Serif'; font-size: small;">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <div class="panel-body">
+                                    <div class="row">
+                                        <div class="col-xs-3 col-sm-3 col-md-3">
+                                            <div class="form-group">
+                                                <input type="text" id="txtFreeBillNoCancel" placeholder="Bill No" class="form-control" style="margin-left: 5px;" onkeyup="GetFreeBillCancelByBillNo();" />
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <div class="form-group">
+                                                <input type="text" id="txtFreeCancelBillSearch" placeholder="Search" class="form-control" style="margin-left: 5px;" onkeyup="GetFreeCancelCashBillBySearch();" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <table class="table table-bordered table-striped dataTable table-reflow tableHB" id="tblFreeBillCancel" style="color: black;margin-left: 5px;">
+                                                <thead>
+                                                    <tr>
+                                                        <th>S.No</th>
+                                                        <th>Bill No</th>
+                                                        <th>Patient Name</th>
+                                                        <th>Bill Dt</th>
+                                                        <th>Gender</th>
+                                                        <th>Amt</th>
+                                                        <th>Tax</th>
+                                                        <th>Round Off</th>
+                                                        <th>Net Amt</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="ModalFreeAdd" style="display: none; width: 600px;font-family:'Microsoft Sans Serif'; font-size: small;">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <div class="panel-body">
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <table class="table table-bordered table-striped dataTable table-reflow tableHB" id="tblFreeSelectBatch" style="color: black;margin-left: 5px;">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Item Name</th>
+                                                        <th>Batch</th>
+                                                        <th>Expiry</th>
+                                                        <th>Stock</th>
+                                                        <th>Rate</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+

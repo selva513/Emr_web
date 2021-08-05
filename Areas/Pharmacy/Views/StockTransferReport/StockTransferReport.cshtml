@@ -1,0 +1,465 @@
+﻿
+
+<style type="text/css">
+    .detail {
+        margin-left: 35px
+    }
+
+    .sub {
+        margin-left: -250px;
+    }
+
+    .settle {
+        width: 100%;
+        margin-top: 20px;
+        margin-left: 74px;
+        margin-bottom: 20px;
+    }
+
+    .lab {
+        width: 85px;
+    }
+
+
+
+
+    .head {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+        font-family: serif;
+        color: black;
+        font-size: 15px;
+        /*background-color: #7e8ae33b;*/
+    }
+
+
+
+    .head1 {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+        font-family: serif;
+        color: black;
+        font-size: 14px;
+    }
+
+    table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    th {
+        border: 1px solid #dddddd;
+        text-align: center;
+        padding: 2.5px;
+        font-size: 15px;
+        color: black;
+    }
+
+    td {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 4px;
+        /*display: contents;*/
+        font-family: serif;
+    }
+
+
+    .even:nth-child(even) {
+        background-color: #8080800d;
+    }
+
+    .container-fluid {
+        background-color: white;
+    }
+
+    .Search {
+        margin-top: 23px;
+        margin-left: 20px;
+    }
+
+
+
+    .container-fluid {
+        background-color: white;
+    }
+
+
+    .btn {
+        color: #fff;
+        background-color: #007bff;
+        border-color: #007bff;
+        box-shadow: none;
+        font-size: 14px;
+        font-style: normal;
+        font-weight: 600;
+    }
+
+    .btns {
+        width: 94px;
+        margin-left: -1px;
+        margin-top: 13px;
+        border: none;
+        padding: 8px;
+        font-weight: 600;
+        box-shadow: none;
+        font-size: 14px;
+        font-style: normal;
+        border-radius: 4px;
+    }
+
+
+    .search {
+        margin-top: 23px;
+        margin-left: 20px;
+        width: 100%;
+    }
+
+    .Tex {
+        width: 106px;
+    }
+
+    .pays {
+        margin-left: 120%;
+        margin-top: 20%;
+        border: 1px solid gray;
+        /* border-left: 20px; */
+        width: 100px;
+        margin-right: 0px;
+        padding-left: 375px;
+        padding-top: 20px;
+        box-sizing: border-box;
+    }
+
+    .lab {
+        font-size: 14px;
+        font-family: serif;
+        color: black;
+    }
+
+    .text {
+        width: 120px;
+    }
+
+    .noborders td {
+        border-top: 0px solid #dee2e6 !important;
+        border: 0px solid #dddddd !important;
+    }
+
+    .topics tr {
+        line-height: 1.5;
+    }
+
+    #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loading1 {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loadingcontent {
+        display: table;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loadingspinner {
+        display: table-cell;
+        vertical-align: middle;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+        padding-top: 80px;
+    }
+
+    .PadingClass {
+        padding: 0px !important;
+    }
+</style>
+<script type="text/javascript">
+    $(document).ready(function () {
+        dateFunction();
+        BindStockTransferStoreNameDetails();
+        $('#drpSTFromStoreName').on('change', function (event) {
+            var drpSTFromStoreName = $(this).data('previous');
+            $('#drpSTToStoreName option').show();
+            var drpSTFromStoreName = $(this).val();
+            $(this).data('previous', drpSTFromStoreName);
+            $('#drpSTToStoreName').not(this).find('option[value="' + drpSTFromStoreName + '"]').hide();
+            $('#drpSTToStoreName').each(function (e) {
+                if (e + 1 != parseInt(drpSTFromStoreName)) {
+                    $('#drpSTToStoreName').val((e + 1).toString());
+                }
+            })
+        });
+    });
+    function dateFunction() {
+        var objDate = new Date();
+        var Presentyear = objDate.getFullYear();
+        $("#txtFromDate").datepicker({
+            // yearRange: '1900:' + Presentyear,
+            changeMonth: true,
+            changeYear: true,
+            // dateFormat: "mm/dd/yy"
+            dateFormat: "dd/mm/yy",
+            // maxDate: '-1d'
+        });
+        $("#txtToDate").datepicker({
+            // yearRange: '1900:' + Presentyear,
+            changeMonth: true,
+            changeYear: true,
+            // dateFormat: "mm/dd/yy"
+            dateFormat: "dd/mm/yy",
+            // maxDate: '-1d'
+        });
+    }
+    function BindStockTransferStoreNameDetails() {
+        $.ajax({
+            type: "GET",
+            url: rootUrl + "/api/SalesReturnApi/GetStoreDeatailsByHospitalId",
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (data) {
+                $("#drpSTFromStoreName").empty();
+                $.each(data, function (key, value) {
+                    $("#drpSTFromStoreName").append($("<option></option>").val(value.HIS_PH_STOREMASTER).html(value.HIS_PH_STORENAME));
+                });
+                $("#drpSTToStoreName").empty();
+                $.each(data, function (key, value) {
+                    $("#drpSTToStoreName").append($("<option></option>").val(value.HIS_PH_STOREMASTER).html(value.HIS_PH_STORENAME));
+                });
+
+                $('#drpSTToStoreName').find('option[value="1"]').hide();
+                $('#drpSTToStoreName').val('2');
+            },
+            failure: function (response) {
+                alert(response);
+            },
+            error: function (response) {
+            }
+        });
+    }
+    function GetStockTransferReport() {
+        var FStoreName = document.getElementById("drpSTFromStoreName").options[document.getElementById('drpSTFromStoreName').selectedIndex].text;
+        var TStoreName = document.getElementById("drpSTToStoreName").options[document.getElementById('drpSTToStoreName').selectedIndex].text;
+        var StDate = $("#txtFromDate").val();
+        var EnDate = $("#txtToDate").val();
+        $("#tblStockTransfer tbody").empty();
+        $.ajax({
+            url: "/api/StockTransfer/GetStockTransferReport",
+            type: "GET",
+            data: {
+                FromStore: FStoreName,
+                ToStore: TStoreName,
+                StDate: StDate,
+                EnDate: EnDate
+            },
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                if (response.length > 0) {
+                    var Sno = 0;
+                    var html = "";
+                    $("#tblStockTransfer tbody").empty();
+                    for (PCDetails = 0; PCDetails < response.length; PCDetails++) {
+                        Sno = Sno + 1;
+                        var PH_TRAN_BRANDNAME = response[PCDetails].PH_TRAN_BRANDNAME;
+                        var PH_TRAN_EXPIRYDATE = response[PCDetails].PH_TRAN_EXPIRYDATE;
+                        var PH_TRAN_BATCH = response[PCDetails].PH_TRAN_BATCH;
+                        var PH_TRAN_STOCKTOTRANSFER = response[PCDetails].PH_TRAN_STOCKTOTRANSFER;
+                        var PH_TRAN_STOCKTRANSFER = response[PCDetails].PH_TRAN_STOCKTRANSFER;
+                        var PH_TRAN_STOCKBALANCE = response[PCDetails].PH_TRAN_STOCKBALANCE;
+                        var PH_TRAN_PROCESSCOMPLETED = response[PCDetails].PH_TRAN_PROCESSCOMPLETED;
+
+                        html += "<tr><td style='width: 53px !important;'>" + Sno + "</td>";
+                        html += "<td style='width: 275px !important;'>" + PH_TRAN_BRANDNAME + "</td>";
+                        html += "<td style='width: 140px !important;'>" + PH_TRAN_BATCH + "</td>";
+                        html += "<td style='width: 53px !important;'>" + PH_TRAN_EXPIRYDATE + "</td>";
+                        html += "<td align='right' style='width: 53px !important;'>" + PH_TRAN_STOCKTOTRANSFER + "</td>";
+                        html += "<td align='right' style='width: 53px !important;'>" + PH_TRAN_STOCKTRANSFER + "</td>";
+                        html += "<td align='right' style='width: 63px !important;'>" + PH_TRAN_STOCKBALANCE + "</td>";
+                        html += "<td align='right' style='width: 63px !important;'>" + PH_TRAN_PROCESSCOMPLETED + "</td></tr>";
+                    }
+                    $("#tblStockTransfer tbody").append(html);
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+    function PrintStockTransferBySeqID() {
+        var FStoreName = document.getElementById("drpSTFromStoreName").options[document.getElementById('drpSTFromStoreName').selectedIndex].text;
+        var TStoreName = document.getElementById("drpSTToStoreName").options[document.getElementById('drpSTToStoreName').selectedIndex].text;
+        var StDate = $("#txtFromDate").val();
+        var EnDate = $("#txtToDate").val();
+        $.ajax({
+            url: "/api/StockTransfer/GetStockTransferReportPrint",
+            type: "GET",
+            data: {
+                FromStore: FStoreName,
+                ToStore: TStoreName,
+                StDate: StDate,
+                EnDate: EnDate
+            },
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                if (response.length > 0) {
+                    var Sno = 0;
+                    var html = "";
+                    //Header
+                    html += "<table style='font-family:sans-serif;font-size: 12px;font-weight: 500;'>";
+                    html += "<tr><td style='width:196px !important;'>From Warehouse</td><td>:</td><td style='width:341px !important;'>" + FStoreName + "</td>";
+                    html += "<td style='width:196px !important;'>To Warehouse</td><td>:</td><td style='width:341px !important;'>" + TStoreName + "</td></tr>";
+                    html += "<tr><td>From Date</td><td>:</td><td style='width:341px !important;'>" + StDate + "</td>";
+                    html += "<td>To Date:</td><td>:</td><td style='width:341px !important;'>" + EnDate + "</td></tr>";
+                    html += "</table>";
+                    //Deatils
+                    html += "<table border='1' style='font-family:sans-serif;font-size: 12px;font-weight: 500;border-collapse:collapse;width: 100%;'><tr>";
+                    html += "<td>S.no</td>";
+                    html += "<td>Particular</td>";
+                    html += "<td>Batch No</td>";
+                    html += "<td>ExpiryDt</td>";
+                    html += " <td>Stock</td>";
+                    html += "<td>Trasfer QTY</td>";
+                    html += "<td>Balance QTY</td>";
+                    html += "<td>Status</td></tr>";
+                    for (PCDetails = 0; PCDetails < response.length; PCDetails++) {
+                        Sno = Sno + 1;
+                        var PH_TRAN_BRANDNAME = response[PCDetails].PH_TRAN_BRANDNAME;
+                        var PH_TRAN_EXPIRYDATE = response[PCDetails].PH_TRAN_EXPIRYDATE;
+                        var PH_TRAN_BATCH = response[PCDetails].PH_TRAN_BATCH;
+                        var PH_TRAN_STOCKTOTRANSFER = response[PCDetails].PH_TRAN_STOCKTOTRANSFER;
+                        var PH_TRAN_STOCKTRANSFER = response[PCDetails].PH_TRAN_STOCKTRANSFER;
+                        var PH_TRAN_STOCKBALANCE = response[PCDetails].PH_TRAN_STOCKBALANCE;
+                        var PH_TRAN_PROCESSCOMPLETED = response[PCDetails].PH_TRAN_PROCESSCOMPLETED;
+
+                        html += "<tr><td style='width: 53px !important;'>" + Sno + "</td>";
+                        html += "<td style='width: 275px !important;'>" + PH_TRAN_BRANDNAME + "</td>";
+                        html += "<td style='width: 140px !important;'>" + PH_TRAN_BATCH + "</td>";
+                        html += "<td style='width: 53px !important;'>" + PH_TRAN_EXPIRYDATE + "</td>";
+                        html += "<td align='right' style='width: 53px !important;'>" + PH_TRAN_STOCKTOTRANSFER + "</td>";
+                        html += "<td align='right' style='width: 53px !important;'>" + PH_TRAN_STOCKTRANSFER + "</td>";
+                        html += "<td align='right' style='width: 63px !important;'>" + PH_TRAN_STOCKBALANCE + "</td>";
+                        html += "<td align='right' style='width: 63px !important;'>" + PH_TRAN_PROCESSCOMPLETED + "</td></tr>";
+                    }
+                    html += "</table>";
+                    sessionStorage.setItem("PrintDetails", html);
+                    openStockTransferRequestedPopup();
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+
+        return false;
+    }
+    function openStockTransferRequestedPopup() {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        var url = rootUrl + '/Pharmacy/Dispense/print';
+        window.open(url, '_blank');
+        sessionStorage.setItem("PrintDetails", "");
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="panel panel-default DivBox" style="background-color: white;">
+                    <br />
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div class="form-group">
+                                    <label>
+                                        From Date
+                                    </label>
+                                    <input type="text" id="txtFromDate" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div class="form-group">
+                                    <label>
+                                        To Date
+                                    </label>
+                                    <input type="text" id="txtToDate" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div class="form-group">
+                                    <label>
+                                        From Warehouse
+                                    </label>
+                                    <select style="font-size: 14px;font-weight:600;height: 35px;" class="form-control" id="drpSTFromStoreName">
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div class="form-group">
+                                    <label>
+                                        To Warehouse
+                                    </label>
+                                    <select style="font-size: 14px;font-weight:600;height: 35px;" class="form-control" id="drpSTToStoreName">
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <label style="margin-left: 5px;margin-top: 14px;"></label>
+                                <div class="form-group">
+                                    <button class="btn btn-primary" onclick="GetStockTransferReport();">Search</button>
+                                    <button onclick="PrintStockTransferBySeqID();" class="btn btn-primary">Print</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <table class="table table-bordered table-striped dataTable table-reflow tableHB" border="1" id="tblStockTransfer" style="color: black;margin-left: 5px;">
+                                    <thead>
+                                        <tr>
+                                            <th>S.No</th>
+                                            <th>Item Name</th>
+                                            <th>Batch</th>
+                                            <th>Expiry</th>
+                                            <th>Stock</th>
+                                            <th>Trasfer QTY</th>
+                                            <th>Balance QTY</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

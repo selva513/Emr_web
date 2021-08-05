@@ -1,0 +1,124 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using PharmacyBizLayer.Domain;
+using PharmacyBizLayer.Interface;
+using BizLayer.Utilities;
+using System.Text.RegularExpressions;
+using System.Data;
+using BizLayer.Interface;
+using System.Globalization;
+using PharmacyBizLayer.Repo;
+using System.Text;
+using System.Diagnostics;
+using BizLayer.Domain;
+using Emr_web.Common;
+
+namespace Emr_web.Areas.Pharmacy.Api
+{
+    [Route("api/IPReport")]
+    [Area("Pharmacy")]
+    [ApiController]
+    public class IPReportController : Controller
+    {
+        private readonly IDBConnection _IDBConnection;
+        private readonly IErrorlog _errorlog;
+        private readonly IIPStatmentRepo _iPStatmentRepo;
+        public IPReportController(IDBConnection iDBConnection, IErrorlog errorlog,IIPStatmentRepo iPStatmentRepo)
+        {
+            _IDBConnection = iDBConnection;
+            _errorlog = errorlog;
+            _iPStatmentRepo = iPStatmentRepo;
+        }
+        [HttpGet("GetIPStamentHeaderByAdmintID")]
+        public JsonResult GetIPStamentHeaderByAdmintID(string PatinetID, int AdmitID,bool BedCharges)
+        {
+            List<IPStamentHeder> lstResult = new List<IPStamentHeder>();
+            List<AdvanceHeader> lstAdv = new List<AdvanceHeader>();
+            List<BedHeaderInfo> lstBed = new List<BedHeaderInfo>();
+            List<BedHeaderInfo> lstBedInfo = new List<BedHeaderInfo>();
+            try
+            {
+                lstResult = _iPStatmentRepo.GetIPStamentHeaderByAdmintID(PatinetID, AdmitID);
+                lstAdv = _iPStatmentRepo.GetAdvanceByAdmitID(AdmitID);
+                if (BedCharges)
+                {
+                    lstBed = _iPStatmentRepo.GetBedDeatilsByPatAdmitID(AdmitID);
+                    if (lstBed.Count > 0)
+                    {
+                        decimal TotalBedCharge = 0;
+                        decimal TotalNurseCharge = 0;
+                        decimal TotalAmount = 0;
+                        for (int count = 0; count < lstBed.Count; count++)
+                        {
+                            int DayCount = lstBed[count].Daycount;
+                            decimal BedCharge = DayCount * lstBed[count].HIS_M_Category_Rate;
+                            decimal NurseCharge = DayCount * lstBed[count].HIS_M_NursCharge_Rate;
+                            TotalBedCharge = TotalBedCharge + BedCharge;
+                            TotalNurseCharge = TotalNurseCharge + NurseCharge;
+                        }
+                        TotalAmount = TotalBedCharge + TotalNurseCharge;
+                        BedHeaderInfo bedHeaderInfo = new BedHeaderInfo()
+                        {
+                            ServiceName = "BED AND NURSING SERVICE",
+                            TotalAmount = TotalAmount,
+                            AdmitID = AdmitID
+                        };
+                        lstBedInfo.Add(bedHeaderInfo);
+                    }
+                }
+                
+            }
+            catch (Exception ex)
+            {
+                string ErrorMsg = ex.ToString();
+            }
+            return Json(new { IPOrder = lstResult, Advance = lstAdv, Bed = lstBedInfo });
+        }
+        [HttpGet("GetServiceWiseTestAmount")]
+        public JsonResult GetServiceWiseTestAmount(string ServiceName, int AdmitID)
+        {
+            List<IPStamentTestInfo> lstResult = new List<IPStamentTestInfo>();
+            try
+            {
+                lstResult = _iPStatmentRepo.GetServiceWiseTestAmount(ServiceName, AdmitID);
+            }
+            catch (Exception ex)
+            {
+                string ErrorMsg = ex.ToString();
+            }
+            return Json(new { IPOrder = lstResult });
+        }
+        [HttpGet("GetBedTransDeatilsByAdmitID")]
+        public JsonResult GetBedTransDeatilsByAdmitID(int AdmitID)
+        {
+            List<BedTansDeatils> lstResult = new List<BedTansDeatils>();
+            try
+            {
+                lstResult = _iPStatmentRepo.GetBedTransDeatilsByAdmitID(AdmitID);
+            }
+            catch (Exception ex)
+            {
+                string ErrorMsg = ex.ToString();
+            }
+            return Json(new { IPOrder = lstResult });
+        }
+        [HttpGet("GetIpStatmentPatient")]
+        public JsonResult GetIpStatmentPatient()
+        {
+            List<IPStatmentPatient> lstResult = new List<IPStatmentPatient>();
+            try
+            {
+                lstResult = _iPStatmentRepo.GetIpStatmentPatient();
+            }
+            catch (Exception ex)
+            {
+                string ErrorMsg = ex.ToString();
+            }
+            return Json(new { IPPatient = lstResult });
+        }
+    }
+}

@@ -1,0 +1,499 @@
+﻿
+@{
+    ViewData["Title"] = "Licence";
+    Layout = null;
+}
+@using Syncfusion.EJ2
+@using Newtonsoft.Json
+<link href="~/AutoComplete/jquery-ui_1.11.4.css" rel="stylesheet" />
+<script src="~/AutoComplete/jquery-1.10.2.js"></script>
+<script src="~/AutoComplete/jquery-ui_1.11.4.js"></script>
+<style>
+    .main-page {
+        background: linear-gradient(-141deg, #FBFAFF 14%, #FBFAFF 100%);
+        margin: 0;
+    }
+
+    body,
+    text {
+        font-family: "Helvetica Neue", "Helvetica", "Arial", sans-serif, "-apple-system", "BlinkMacSystemFont";
+    }
+
+    .form-group.required .control-label:after {
+        content: "*";
+        color: red;
+    }
+</style>
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        UserTypebind();
+        Questionbind();
+        CityCountryBind();
+    });
+    function ValidateEmail() {
+        try {
+            var email = document.getElementById("txtemail").value;
+            var expr = /^([\w-\.]+)@@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([\w-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/;
+            if (!expr.test(email)) {
+                alert("Invalid Email Address.");
+                $("#txtemail").val('');
+                $("#txtemail").focus();
+                return false;
+            }
+            else {
+                $.ajax({
+                    type: "GET",
+                    url: rootUrl + "/api/Patient/CheckLoginUserid/?UserID=" + email,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    success: function (response) {
+                        var data = response;
+                        if (data == 'success') {
+                            alert('Email Id Already Exist.');
+                            $("#txtemail").val('');
+                            $("#txtemail").focus();
+                        }
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+            }
+        }
+        catch (e) {
+        }
+    }
+    function onlyNumberKey(evt) {
+        var ASCIICode = (evt.which) ? evt.which : evt.keyCode
+        if (ASCIICode > 31 && (ASCIICode < 48 || ASCIICode > 57))
+            return false;
+        return true;
+    }
+    function CityCountryBind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetAllCity_Country",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    //$("#drpcity").empty();
+                    //$("#drpcity").append($("<option></option>").val(0).html('-Select-'));
+                    //$.each(data.AllCity, function (key, value) {
+                    //    $("#drpcity").append($("<option></option>").val(value.CitySeqID).html(value.CityName));
+                    //});
+
+                    $("#drpcountry").empty();
+                    $("#drpcountry").append($("<option></option>").val(0).html('-Select-'));
+                    $.each(data.AllCountry, function (key, value) {
+                        $("#drpcountry").append($("<option></option>").val(value.CountrySeqId).html(value.CountryName));
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) { }
+    }
+    function UserTypebind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetUserType",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#drptypeselect").empty();
+                    $("#drptypeselect").append($("<option></option>").val(0).html('-Select-'));
+                    $.each(data, function (key, value) {
+                        $("#drptypeselect").append($("<option></option>").val(value.Type_Seqid).html(value.Type_Name));
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function Questionbind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetQuestions",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#drpquestionselect").empty();
+                    $("#drpquestionselect").append($("<option></option>").val(0).html('-Select-'));
+                    $.each(data, function (key, value) {
+                        $("#drpquestionselect").append($("<option></option>").val(value.QuestionsSeqid).html(value.QuestionName));
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function SaveLicence() {
+        try {
+            var ErrorText = "";
+            var Hosname = $("#txthosname").val();
+            var priuser = $("#txtprimaryuser").val();
+            var e = document.getElementById("drptypeselect");
+            var typeid = e.options[e.selectedIndex].value;
+            var Typename = e.options[e.selectedIndex].text;
+            var Mobile = $("#txtmobileno").val();
+            var Email = $("#txtemail").val();
+            var Clinicno = $("#txtnoofclinic").val();
+            var Userno = $("#txtnoofuser").val();
+            var f = document.getElementById("drpsearchtype");
+            var searchtype = f.options[f.selectedIndex].text;
+            var othernotes = $("#txtothers").val();
+            var Agentmobno = $("#txtagentmob").val();
+            if (Agentmobno == "")
+                Agentmobno = 0;
+            //var CityId = $("#drpcity").val();
+            var CountryId = $("#drpcountry").val();
+            var Pincode = $("#txtpincode").val();
+            if (Pincode == null)
+                Pincode = "";
+            //var g = document.getElementById("drpquestionselect");
+            //var Questiontype = g.options[g.selectedIndex].value;
+            //var Answer = $("#txtans").val();
+
+            if (Hosname == "") {
+                alert('Please Enter Hospital Name');
+                ErrorText += "Please Enter Hospital Name";
+            }
+            else if (priuser == "") {
+                alert('Please Enter Primary User');
+                ErrorText += "Please Enter Primary User";
+            }
+            else if (typeid == 0) {
+                alert('Please Select Profession');
+                ErrorText += "Please Select Profession";
+            }
+            else if (Mobile == "" || Mobile == 0) {
+                alert('Please Enter mobile No');
+                ErrorText += "Please Enter mobile No";
+            }
+            else if (Email == "") {
+                alert('Please Enter Email');
+                ErrorText += "Please Enter Email";
+            }
+            else if (Clinicno == "" || Clinicno == 0) {
+                alert('Please Enter No of Clinics');
+                ErrorText += "Please Enter No of Clinics";
+            }
+            else if (Userno == "" || Userno == 0) {
+                alert('Please Enter No of Users');
+                ErrorText += "Please Enter No of Clinics";
+            }
+            else if (searchtype == "") {
+                alert('Please Select Type of Search');
+                ErrorText += "Please Select Type of Search";
+            }
+            else if (searchtype == "Others") {
+                if (othernotes == "") {
+                    alert('Please Enter Other Notes');
+                    ErrorText += "Please Select Type of Search";
+                }
+            }
+            else if (Pincode == "") {
+                alert('Please Enter Pincode');
+                ErrorText += "Please Enter Pincode";
+            }
+            //else if (CityId == 0) {
+            //    alert('Please Select City');
+            //    ErrorText += "Please Select City";
+            //}
+            else if (CountryId == 0) {
+                alert('Please Select Country');
+                ErrorText += "Please Select Country";
+            }
+            //else if (Questiontype == 0)
+            //    alert('Please Enter Forgot Password Question');
+            //else if (Answer == "")
+            //    alert('Please Enter Answer');
+            //else if (searchtype == "Agency") {
+            //    if (Agentmobno == "" || Agentmobno == 0)
+            //        alert('Please Enter Agent Mobile No');
+            //}
+            if (ErrorText == "") {
+                var Licenceinfo = new Object();
+                Licenceinfo.UserTypeID = typeid;
+                Licenceinfo.PrimaryUserName = priuser;
+                Licenceinfo.MobileNo = Mobile;
+                Licenceinfo.EmailID = Email;
+                Licenceinfo.ClinicsCount = Clinicno;
+                Licenceinfo.UsersCount = Userno;
+                Licenceinfo.SearchType = searchtype;
+                Licenceinfo.OtherNotes = othernotes;
+                Licenceinfo.AgentMobileNo = Agentmobno;
+                Licenceinfo.Hospitalname = Hosname;
+                Licenceinfo.IsActive = true;
+                Licenceinfo.QuestionID = 0;
+                Licenceinfo.QuestionAnswer = '';
+                Licenceinfo.Typename = Typename;
+                //Licenceinfo.CityId = CityId;
+                Licenceinfo.CountryId = CountryId;
+                Licenceinfo.Pincode = Pincode;
+                $.ajax({
+                    url: "/Licence/NewLicenceInsert",
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify(Licenceinfo),
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data == true)
+                            alert('Allied Will sent the Password to your email ID.');
+                        window.location.href = "/Login/Login";
+                    },
+                    failure: function (response) {
+                        alert(response);
+                    },
+                    error: function (response) {
+                        alert(response);
+                    }
+                });
+            }
+            else
+                alert('Please Enter All Mandatory Fields.');
+        }
+        catch (e) {
+
+        }
+    }
+    function Showsearch() {
+        try {
+            var e = document.getElementById("drpsearchtype");
+            var typename = e.options[e.selectedIndex].text;
+            if (typename == "Others" || typename == "Agency") {
+                if (typename == "Others") {
+                    $("#othersdiv").css("display", "block");
+                    $("#agentdiv").css("display", "none");
+                }
+                else {
+                    $("#othersdiv").css("display", "none");
+                }
+                if (typename == "Agency") {
+                    $("#agentdiv").css("display", "block");
+                    $("#othersdiv").css("display", "none");
+                }
+                else {
+                    $("#agentdiv").css("display", "none");
+                }
+            }
+            else {
+                $("#agentdiv").css("display", "none");
+                $("#othersdiv").css("display", "none");
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function CancelClick() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+
+        }
+    }
+</script>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <environment include="Development">
+        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
+        <link rel="stylesheet" href="~/css/site.css" />
+    </environment>
+    <environment exclude="Development">
+        <link rel="stylesheet" href="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.7/css/bootstrap.min.css"
+              asp-fallback-href="~/lib/bootstrap/dist/css/bootstrap.min.css"
+              asp-fallback-test-class="sr-only" asp-fallback-test-property="position" asp-fallback-test-value="absolute" />
+        <link rel="stylesheet" href="~/css/site.min.css" asp-append-version="true" />
+    </environment>
+</head>
+<body class="text-center">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-5 col-md-offset-4">
+                <div class="panel-heading">
+                    <h3 class="panel-title"><img class="mb-4" alt="" width="250" height="90" src="~/images/KD1024-1024.png" /></h3>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-5 col-md-offset-4">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Get Licence</h3>
+                    </div>
+                    <div class="panel-body">
+                        <form role="form" id="secondview">
+                            <fieldset>
+                                <div class="form-group required">
+                                    <label class="control-label" style="color: black;float:left;">
+                                        Hospital Name
+                                    </label>
+                                    <input type="text" id="txthosname" class="form-control" placeholder="Hospital Name" autocomplete="off" autofocus />
+                                </div>
+                                <div class="form-group required">
+                                    <label class="control-label" style="color: black;float:left;">
+                                        Primary User Name
+                                    </label>
+                                    <input type="text" id="txtprimaryuser" class="form-control" placeholder="Primary User Name" autocomplete="off" autofocus />
+                                </div>
+                                <div class="form-group required">
+                                    <label class="control-label" style="color: black;float:left;">
+                                        Select Profession
+                                    </label>
+                                    <select id="drptypeselect" class="form-control" style="cursor:pointer;" autofocus required>
+                                        <option value="-Select-">-Select-</option>
+                                    </select>
+                                </div>
+                                <div class="form-group required">
+                                    <label class="control-label" style="color: black;float:left;">
+                                        Mobile No
+                                    </label>
+                                    <input type="text" id="txtmobileno" class="form-control" placeholder="Mobile No"
+                                           onkeypress="return onlyNumberKey(event)" autocomplete="off" autofocus />
+                                </div>
+                                <div class="form-group required">
+                                    <label class="control-label" style="color: black;float:left;">
+                                        Email
+                                    </label>
+                                    <input type="email" id="txtemail" class="form-control" placeholder="Email Id"
+                                           onchange="ValidateEmail()" autocomplete="off" autofocus />
+                                </div>
+                                @*<div class="form-group">
+                                        <label class="control-label" style="color: black;float:left;">
+                                            Select Forgot Password Questions
+                                            <span class="alert-danger">*</span>
+                                        </label>
+                                        <select id="drpquestionselect" class="form-control" style="cursor:pointer;" autofocus required>
+                                            <option value="-Select-">-Select-</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="control-label" style="color: black;float:left;">
+                                            Answer
+                                            <span class="alert-danger">*</span>
+                                        </label>
+                                        <input type="text" id="txtans" class="form-control" placeholder="Enter Answer" autocomplete="off" autofocus />
+                                    </div>*@
+                                <div class="form-group required">
+                                    <label class="control-label " style="color: black;float:left;">
+                                        No of Clinics/Hospitals
+                                    </label>
+                                    <input type="text" id="txtnoofclinic" maxlength="2" class="form-control"
+                                           onkeypress="return onlyNumberKey(event)" placeholder="No of Clinics/Hospitals" autocomplete="off" autofocus />
+                                </div>
+                                <div class="form-group required">
+                                    <label class="control-label" style="color: black;float:left;">
+                                        No of Users (Including Primary User)
+                                    </label>
+                                    <input type="text" id="txtnoofuser" maxlength="2" class="form-control"
+                                           onkeypress="return onlyNumberKey(event)" placeholder="No of Users" autocomplete="off" autofocus />
+                                </div>
+                                <div class="form-group required">
+                                    <label class="control-label" style="color: black;float:left;">
+                                        How you come to know about it
+                                    </label>
+                                    <select id="drpsearchtype" onchange="Showsearch();" style="cursor:pointer;" class="form-control" autofocus>
+                                        <option value="-Select-">-Select-</option>
+                                        <option value="web">Web Search</option>
+                                        <option value="customer">Customer</option>
+                                        <option value="user">User</option>
+                                        <option value="agency">Agency</option>
+                                        <option value="other">Others</option>
+                                    </select>
+                                </div>
+                                @*<div class="form-group required">
+                                        <label class="control-label" style="color: black;float:left;">
+                                            City
+                                        </label>
+                                        <select id="drpcity" style="cursor:pointer;" class="form-control" autofocus></select>
+                                    </div>*@
+                                <div class="form-group required">
+                                    <label class="control-label" style="color: black;float:left;">
+                                        Country
+                                    </label>
+                                    <select id="drpcountry" onchange="" style="cursor:pointer;" class="form-control" autofocus></select>
+                                </div>
+                                <div class="form-group required">
+                                    <label class="control-label" style="color: black;float:left;">
+                                        PIN Code
+                                    </label>
+                                    <input type="text" id="txtpincode" class="form-control" placeholder="PIN"
+                                           onkeypress="return onlyNumberKey(event)" autocomplete="off" autofocus />
+                                </div>
+                                <div class="form-group" id="othersdiv" style="display:none;">
+                                    <label class="control-label" style="color: black;float:left;">
+                                        If Others (Specify)
+                                        <span class="alert-danger">*</span>
+                                    </label>
+                                    <input type="text" id="txtothers" class="form-control" placeholder="Others" autocomplete="off" autofocus />
+                                </div>
+                                <div class="form-group" id="agentdiv" style="display:none;">
+                                    <label class="control-label" style="color: black;float:left;">
+                                        Agent Mobile No
+                                    </label>
+                                    <input type="text" id="txtagentmob" class="form-control" placeholder="Agent Mobile No" autocomplete="off" autofocus />
+                                </div>
+                                <div class="form-group">
+                                    <input type="button" id="btnlicence" class="btn btn-lg btn-primary btn-block" onclick="SaveLicence();" autocomplete="off" value="Submit" />
+                                </div>
+                                <div class="form-group">
+                                    <input type="button" id="btncancel" onclick="CancelClick();" class="btn btn-lg btn-primary btn-block" autocomplete="off" value="Cancel" />
+                                </div>
+                            </fieldset>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <environment include="Development">
+        <script src="~/lib/jquery/dist/jquery.js"></script>
+        <script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
+        <script src="~/js/site.js" asp-append-version="true"></script>
+    </environment>
+    <environment exclude="Development">
+        <script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-2.2.0.min.js"
+                asp-fallback-src="~/lib/jquery/dist/jquery.min.js"
+                asp-fallback-test="window.jQuery"
+                crossorigin="anonymous"
+                integrity="sha384-K+ctZQ+LL8q6tP7I94W+qzQsfRV2a+AfHIi9k8z8l9ggpc8X+Ytst4yBo/hH+8Fk">
+        </script>
+        <script src="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.7/bootstrap.min.js"
+                asp-fallback-src="~/lib/bootstrap/dist/js/bootstrap.min.js"
+                asp-fallback-test="window.jQuery && window.jQuery.fn && window.jQuery.fn.modal"
+                crossorigin="anonymous"
+                integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa">
+        </script>
+        <script src="~/js/site.min.js" asp-append-version="true"></script>
+    </environment>
+    @section Scripts {
+        @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    }
+</body>
+
+

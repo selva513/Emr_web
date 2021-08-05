@@ -1,0 +1,164 @@
+﻿@{
+    ViewData["Title"] = "Collection Report";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<style>
+    label {
+        font-size: 15px;
+        font-weight: 400;
+        font-style: serif;
+    }
+</style>
+<div>
+    <script>
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        $(document).ready(function () {
+            DateFunction();
+        });
+        function DateFunction() {
+
+
+            var currentdate = new Date();
+            var day = currentdate.getDate();
+            var month = currentdate.getMonth() + 1;
+            if (day < 10) {
+                day = "0" + day;
+            }
+            if (month < 10) {
+                month = "0" + month;
+            }
+            var datetime = day + "/"
+                + (month) + "/"
+                + currentdate.getFullYear();
+            $('#txtFromDate').val(datetime);
+            $('#txtTodate').val(datetime);
+
+        }
+        function onReportDetails() {
+            var fromDate = $('#txtFromDate').val();
+            var fromTime = $('#txtFromTime').val();
+            var toDate = $('#txtTodate').val();
+            var toTime = $('#txtToTime').val();
+            var Pharmacy = $('#drpPharmacy').val();
+            $.ajax({
+                url: rootUrl + "/api/CollectionReportApi/GetCollectionReportDetails",
+                type: "Get",
+                contentType: "application/json; charset=utf-8",
+                data: {
+                    FromDate: fromDate, fromTime: fromTime, ToDate: toDate, toTime: toTime, Type: Pharmacy
+                },
+                dataType: 'json',
+                success: function (response) {
+                    var html = response;
+                    sessionStorage.setItem("PrintDetails", html);
+                    openRequestedPopup();
+                },
+                failure: function (response) {
+                    alert(response);
+                },
+                error: function (response) {
+                    alert(response);
+                }
+            });
+        }
+        function openRequestedPopup() {
+            var url = rootUrl + "/Home/Print";
+            window.open(url, '_blank');
+            sessionStorage.setItem("PrintDetails", "");
+        }
+        function GotoLogin() {
+            try {
+                window.location.href = "/Login/Login";
+            }
+            catch (e) {
+            }
+        }
+        $(function () {
+            $("#txtFromDate").datepicker({
+                dateFormat: 'dd/mm/yy',
+                changeMonth: true,
+                changeYear: true,
+                yearRange: '1990:' + new Date().getFullYear().toString(),
+                onClose: function (selectedDate) {
+                    $("#txtTodate").datepicker("option", "minDate", selectedDate);
+                }
+            });
+            $("#txtTodate").datepicker({
+                dateFormat: 'dd/mm/yy',
+                changeMonth: true,
+                changeYear: true,
+                yearRange: '1990:' + new Date().getFullYear().toString(),
+                onClose: function (selectedDate) {
+                    $("#txtFromDate").datepicker("option", "maxDate", selectedDate);
+                }
+            });
+        });
+    </script>
+</div>
+<div class="content-wrapper" style=" font-family: arial, sans-serif;">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="panel panel-default DivBox" style="background-color: white;">
+                        <div class="panel-heading" style="background-color: #007bff;color: white;margin-top: 6px;height:50px;">
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <h3 class="card-title" style="padding-top: 11px;padding-left: 7px;">Collection Report</h3>
+                                    <img src="~/images/ShutdownWhite.png" style="padding-top:11px;padding-right:7px;float:right;cursor:pointer;" onclick="GotoLogin();" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-xs-2 col-sm-2 col-md-2" style="margin-right: -55px; margin-top: 7px;">
+                                    <label>Collection From</label>
+                                </div>
+                                <div class="col-xs-2 col-sm-2 col-md-2  ">
+                                    <div class="datepicker ">
+                                        <input id="txtFromDate" type="text" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                    <input type="time" id="txtFromTime" style="width: 115px;" class="form-control" hidden/>
+                                </div>
+                                <div class="col-xs-2 col-sm-2 col-md-2" style="margin-right: -55px; margin-top: 7px;">
+                                    <label>Collection To</label>
+                                </div>
+                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                    <div class="datepicker">
+                                        <input type="text" id="txtTodate" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="col-xs-1 col-sm-1 col-md-1">
+                                    <input type="time" id="txtToTime" style="width: 115px;" class="form-control" hidden/>
+                                </div>
+                            </div>
+                            <br />
+                            <div class="row">
+                                <div class="col-xs-1 col-sm-1 col-md-1">
+                                    <label style="margin-top:7px">Pharmacy</label>
+                                </div>
+                                <div class="col-xs-3 col-sm-3 col-md-3" style=" margin-left: 45px;">
+                                    <select class="form-control" id="drpPharmacy">
+                                        <option value="All">All</option>
+                                        <option value="IPPHARMACY">IPPHARMACY</option>
+                                        <option value="OPPHARMACY">OPPHARMACY</option>
+                                        <option value="MAINSTORE">MAINSTORE</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <br />
+                            <div class="row">
+                                <div class="col">
+                                    <button class="btn btn-primary" onclick="onReportDetails();">Print</button>
+                                    <button class="btn btn-primary">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

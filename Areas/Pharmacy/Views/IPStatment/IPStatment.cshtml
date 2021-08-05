@@ -1,0 +1,371 @@
+﻿
+@{
+    ViewData["Title"] = "IPStatment";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+ <script>
+     var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+     $(document).ready(function () {
+         GetIPPatientList();
+         $("#IpPatinet").show();
+         $("#IpStatment").hide();
+         //$("#IpPatinet").Show();
+     });
+     function SearchCollection(PatinetID, AdmitID) {
+            $.ajax({
+                url: rootUrl + "/api/IPReport/GetIPStamentHeaderByAdmintID",
+                type: "Get",
+                contentType: "application/json; charset=utf-8",
+                data: {
+                    PatinetID: PatinetID, AdmitID: AdmitID
+                },
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                dataType: 'json',
+                success: function (response) {
+                    var html = "";
+                    var Sno = 0;
+                    $("#tblIPStatment tbody").empty();
+                    if (response.Advance.length > 0) {
+                        for (PCHeader = 0; PCHeader < response.Advance.length; PCHeader++) {
+                            var HIS_M_ServiceName = "ADVANCES";
+                            var HIS_M_ServiceShortCode = "ADV";
+                            var Amount = response.Advance[PCHeader].Amount;
+                            var HIS_IP_PatAdmissionID = response.Advance[PCHeader].HIS_IP_PatAdmissionID;
+                            html += "<tr>";
+                            html += "<td></td>";//0
+                            html += "<td>" + HIS_M_ServiceName + "</td>";//1
+                            html += "<td>" + 0 + "</td>";//2
+                            html += "<td>" + Amount + "</td>";//3
+                            html += "<td style='display:none;'>" + HIS_M_ServiceShortCode + "</td>";//4
+                            html += "<td style='display:none;'>" + HIS_IP_PatAdmissionID + "</td>";//5
+                            html += "</tr>";
+                        }
+                        $("#tblIPStatment tbody").append(html);
+                    }
+                    html = "";
+                    if (response.Bed.length > 0) {
+                        for (PCHeader = 0; PCHeader < response.Bed.length; PCHeader++) {
+                            var HIS_M_ServiceName = "BED AND NURSING SERVICE";
+                            var HIS_M_ServiceShortCode = "BED";
+                            var Amount = response.Bed[PCHeader].TotalAmount;
+                            var HIS_IP_PatAdmissionID = response.Bed[PCHeader].AdmitID;
+                            html += "<tr>";
+                            html += "<td><input type='image' style='width:21px;height:21px;' src='" + rootUrl + "/Images/details_open.png' onclick='javascript:return CheckBedDeatilsSelect(this)'></td>";//0
+                            html += "<td>" + HIS_M_ServiceName + "</td>";//1
+                            html += "<td>" + Amount + "</td>";//2
+                            html += "<td>" + 0 + "</td>";//3
+                            html += "<td style='display:none;'>" + HIS_M_ServiceShortCode + "</td>";//4
+                            html += "<td style='display:none;'>" + HIS_IP_PatAdmissionID + "</td>";//5
+                            html += "</tr>";
+                        }
+                        $("#tblIPStatment tbody").append(html);
+                    }
+                    html = "";
+                    if (response.IPOrder.length > 0) {
+                        for (PCHeader = 0; PCHeader < response.IPOrder.length; PCHeader++) {
+                            var HIS_M_ServiceName = response.IPOrder[PCHeader].HIS_M_ServiceName;
+                            var HIS_M_ServiceShortCode = response.IPOrder[PCHeader].HIS_M_ServiceShortCode;
+                            var Amount = response.IPOrder[PCHeader].Amount;
+                            var HIS_IP_ADMISSIONID = response.IPOrder[PCHeader].HIS_IP_ADMISSIONID;
+                            html += "<tr>";
+                            html += "<td><input type='image' style='width:21px;height:21px;' src='" + rootUrl + "/Images/details_open.png' onclick='javascript:return CheckIpOrderSelect(this)'></td>";//0
+                            html += "<td>" + HIS_M_ServiceName + "</td>";//1
+                            html += "<td>" + Amount + "</td>";//2
+                            html += "<td>" + 0 + "</td>";//3
+                            html += "<td style='display:none;'>" + HIS_M_ServiceShortCode + "</td>";//4
+                            html += "<td style='display:none;'>" + HIS_IP_ADMISSIONID + "</td>";//5
+                            html += "</tr>";
+                        }
+                        $("#tblIPStatment tbody").append(html);
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none") },
+                failure: function (response) {
+                    
+                },
+                error: function (response) {
+                    
+                }
+            });
+     }
+     function CheckIpOrderSelect(SelectedRow) {
+         var row = SelectedRow.parentNode.parentNode;
+         var myrow = SelectedRow.parentNode.parentNode;
+         var rowIndex = row.rowIndex - 1;
+         var SerivceName = row.cells[1].innerHTML;
+         var AdmitID = parseInt(row.cells[5].innerHTML);
+
+         var className = myrow.cells[0].getElementsByTagName("input")[0].className;
+         if (className === "shown") {
+             var imgUrl = rootUrl + "/Images/details_open.png";
+             myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', imgUrl);
+             myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'abc');
+             $('#tblIPStatment > tbody > tr').eq(rowIndex).next().remove();
+         }
+         else {
+             var imgUrl = rootUrl + "/Images/details_close.png";
+             myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', imgUrl);
+             myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'shown');
+
+             
+             $.ajax({
+                 url: "/api/IPReport/GetServiceWiseTestAmount",
+                 type: 'Get',
+                 contentType: "application/json; charset=utf-8",
+                 data: {
+                     ServiceName: SerivceName, AdmitID: AdmitID
+                 },
+                 dataType: "json",
+                 beforeSend: function () { $("#loading").css("display", "block"); },
+                 success: function (response) {
+                     var html = "<table id='myTable1' class='table table-striped table-bordered table-hover table-full-width dataTable no-footer'>";
+                     html += "<tr>";
+                     html += "<thead><th>Test Name</th><th>Qty</th><th>Amount</th>";
+                     html += "</thead>";
+                     html += "</tr>";
+                     for (SymCount = 0; SymCount < response.IPOrder.length; SymCount++) {
+                         var LIS_TestName = response.IPOrder[SymCount].LIS_TestName;
+                         var Qty = response.IPOrder[SymCount].Qty;
+                         var Amount = response.IPOrder[SymCount].Amount;
+                         if (LIS_TestName === 'Total') {
+                             html += "<tr>";
+                             html += "<td>" + LIS_TestName + "</td>";
+                             html += "<td></td>";
+                             html += "<td>" + Amount + "</td>";
+                         }
+                         else {
+                             html += "<tr>";
+                             html += "<td>" + LIS_TestName + "</td>";
+                             html += "<td>" + Qty + "</td>";
+                             html += "<td>" + Amount + "</td>";
+                         }
+                         html += "</tr>";
+                     }
+                     html += "</table></br>";
+                     var newRow = $('<tr><td></td><td colspan="5">' + html + '</td></tr>');
+                     $('#tblIPStatment > tbody > tr').eq(rowIndex).after(newRow);
+                 },
+                 complete: function () { $("#loading").css("display", "none"); }
+             });
+         }
+         return false;
+     }
+     function CheckBedDeatilsSelect(SelectedRow) {
+         var row = SelectedRow.parentNode.parentNode;
+         var myrow = SelectedRow.parentNode.parentNode;
+         var rowIndex = row.rowIndex - 1;
+         var SerivceName = row.cells[1].innerHTML;
+         var AdmitID = parseInt(row.cells[5].innerHTML);
+
+         var className = myrow.cells[0].getElementsByTagName("input")[0].className;
+         if (className === "shown") {
+             var imgUrl = rootUrl + "/Images/details_open.png";
+             myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', imgUrl);
+             myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'abc');
+             $('#tblIPStatment > tbody > tr').eq(rowIndex).next().remove();
+         }
+         else {
+             var imgUrl = rootUrl + "/Images/details_close.png";
+             myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', imgUrl);
+             myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'shown');
+
+
+             $.ajax({
+                 url: "/api/IPReport/GetBedTransDeatilsByAdmitID",
+                 type: 'Get',
+                 contentType: "application/json; charset=utf-8",
+                 data: {
+                     AdmitID:AdmitID
+                 },
+                 dataType: "json",
+                 beforeSend: function () { $("#loading").css("display", "block"); },
+                 success: function (response) {
+                     var html = "<table id='myTable1' class='table table-striped table-bordered table-hover table-full-width dataTable no-footer'>";
+                     html += "<tr>";
+                     html += "<thead><th>Date</th><th>Particulars</th><th>Amount</th>";
+                     html += "</thead>";
+                     html += "</tr>";
+                     for (SymCount = 0; SymCount < response.IPOrder.length; SymCount++) {
+                         var StartDate = response.IPOrder[SymCount].StartDate;
+                         var EndDate = response.IPOrder[SymCount].EndDate;
+                         var Daycount = parseInt(response.IPOrder[SymCount].Daycount);
+                         var HIS_M_Category_Rate = parseFloat(response.IPOrder[SymCount].HIS_M_Category_Rate);
+                         var HIS_M_NursCharge_Rate = parseFloat(response.IPOrder[SymCount].HIS_M_NursCharge_Rate);
+                         var BedCharge = Daycount * HIS_M_Category_Rate;
+                         var NursCharge = Daycount * HIS_M_NursCharge_Rate;
+                         html += "<tr>";
+                         html += "<td>" + StartDate + "</td>";
+                         html += "<td> Bed Charge from " + StartDate + " To " + EndDate + "</td>";
+                         html += "<td>" + BedCharge + "</td></tr>";
+                         html += "<tr><td>" + StartDate + "</td><td> Nursing Charge from " + StartDate + " To " + EndDate + "</td>";
+                         html += "<td> " + NursCharge + "</td>";
+                         html += "</tr>";
+                     }
+                     html += "</table></br>";
+                     var newRow = $('<tr><td></td><td colspan="5">' + html + '</td></tr>');
+                     $('#tblIPStatment > tbody > tr').eq(rowIndex).after(newRow);
+                 },
+                 complete: function () { $("#loading").css("display", "none"); }
+             });
+         }
+         return false;
+     }
+     function GetIPPatientList() {
+         $.ajax({
+             url: rootUrl + "/api/IPReport/GetIpStatmentPatient",
+             type: "Get",
+             contentType: "application/json; charset=utf-8",
+             beforeSend: function () { $("#loading").css("display", "block"); },
+             dataType: 'json',
+             success: function (response) {
+                 var html = "";
+                 var Sno = 0;
+                 $("#tblIPStatmentPatinet tbody").empty();
+                 if (response.IPPatient.length > 0) {
+                     var Sno = 0;
+                     for (PCHeader = 0; PCHeader < response.IPPatient.length; PCHeader++) {
+                         Sno = Sno + PCHeader + 1;
+                         var R_NAME = response.IPPatient[PCHeader].R_NAME;
+                         var HIS_PATIENTID = response.IPPatient[PCHeader].HIS_PATIENTID;
+                         var PATIENT_NAME = response.IPPatient[PCHeader].PATIENT_NAME;
+                         var DOB = response.IPPatient[PCHeader].DOB;
+                         var HIS_PAT_ADMISSIONID = response.IPPatient[PCHeader].HIS_PAT_ADMISSIONID;
+                         var HIS_ADMITDTTIME = response.IPPatient[PCHeader].HIS_ADMITDTTIME;
+                         var LIS_REFDRNAME = response.IPPatient[PCHeader].LIS_REFDRNAME;
+                         var STATUS = response.IPPatient[PCHeader].STATUS;
+                         var Advance = response.IPPatient[PCHeader].Advance;
+                         var Billed = response.IPPatient[PCHeader].Billed;
+                         var Balance = response.IPPatient[PCHeader].Balance;
+                         var $tr = $('#tblIPStatmentPatinet tr[data-id="' + HIS_PATIENTID + '"]');
+                         if ($tr.length === 0) {
+                             html += "<tr onclick='OnSelecteIPPatient(this)' data-id=\"" + HIS_PATIENTID + "\">";
+                             html += "<td>" + Sno + "</td>";//0
+                             html += "<td>" + HIS_PATIENTID + "</td>";//1
+                             html += "<td>" + PATIENT_NAME + "</td>";//2
+                             html += "<td>" + R_NAME + "</td>";//3
+                             html += "<td>" + HIS_PAT_ADMISSIONID + "</td>";//4
+                             html += "<td>" + HIS_ADMITDTTIME + "</td>";//5
+                             html += "<td>" + LIS_REFDRNAME + "</td>";//6
+                             html += "<td>" + STATUS + "</td>";//7
+                             html += "</tr>";
+                             $("#tblIPStatmentPatinet tbody").append(html);
+                             html = "";
+                         }
+                         
+                     }
+                     
+                 }
+             },
+             complete: function () { $("#loading").css("display", "none") },
+             failure: function (response) {
+
+             },
+             error: function (response) {
+
+             }
+         });
+         $("#IpPatinet").show();
+         $("#IpStatment").hide();
+     }
+     function OnSelecteIPPatient(selectedrow) {
+         var PatientID = selectedrow.cells[1].innerHTML;
+         var PatinetName = selectedrow.cells[2].innerHTML;
+         var ReleationName = selectedrow.cells[3].innerHTML;
+         var AdmitID = parseInt(selectedrow.cells[4].innerHTML);
+         $("#lblPatientID").text(PatientID);
+         $("#lblPatName").text(PatinetName);
+         $("#lblReleationName").text(ReleationName);
+         $("#IpPatinet").hide();
+         $("#IpStatment").show();
+         SearchCollection(PatientID, AdmitID);
+     }
+    </script>
+<div class="content-wrapper">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="panel panel-default DivBox" style="background-color: white;">
+                    <div class="card-body">
+                        
+                        <div class="row">
+                            <div class="col-xs-10 col-sm-10 col-md-10">
+
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div class="form-group">
+                                    <button style="margin-left:7px;margin-top:7px;" class="btn btn-primary" onclick="GetIPPatientList();">Patient</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" id="IpPatinet">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <div class="table-wrap">
+                                    <table class="table table-bordered table-striped" id="tblIPStatmentPatinet">
+                                        <thead>
+                                            <tr>
+                                                <th>S.NO</th>
+                                                <th>Patient ID</th>
+                                                <th>Patient Name</th>
+                                                <th>Relation Name</th>
+                                                <th>Admit ID</th>
+                                                <th>Admit Date</th>
+                                                <th>Ref Doctor</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" id="IpStatment">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <hr />
+                                <div class="row">
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <label>PatientID:</label>
+                                    </div>
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <label id="lblPatientID"></label>
+                                    </div>
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <label>Patient Name:</label>
+                                    </div>
+                                    <div class="col-xs-3 col-sm-3 col-md-3">
+                                        <label id="lblPatName"></label>
+                                    </div>
+                                    <div class="col-xs-2 col-sm-2 col-md-2">
+                                        <label>Releation Name:</label>
+                                    </div>
+                                    <div class="col-xs-3 col-sm-3 col-md-3">
+                                        <label id="lblReleationName"></label>
+                                    </div>
+                                </div>
+                                <hr />
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="table-wrap">
+                                            <table class="table table-bordered table-striped" id="tblIPStatment">
+                                                <thead>
+                                                    <tr>
+                                                        <th></th>
+                                                        <th>Service Name</th>
+                                                        <th>Debit Amount</th>
+                                                        <th>Credit Amount</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

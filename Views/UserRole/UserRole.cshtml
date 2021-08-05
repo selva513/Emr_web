@@ -1,0 +1,1466 @@
+﻿
+@{
+    ViewData["Title"] = "UserRole";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@using Syncfusion.EJ2.Navigations;
+<link href="~/AutoComplete/jquery-ui_1.11.4.css" rel="stylesheet" />
+<script src="~/AutoComplete/jquery-1.10.2.js"></script>
+<script src="~/AutoComplete/jquery-ui_1.11.4.js"></script>
+
+<script>
+    function getValues(url) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+    function postValues(url, jdata) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(jdata),
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+</script>
+<script type="text/javascript">
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        var tabObj = new ej.navigations.Tab({
+            heightAdjustMode: "Auto"
+        });
+        tabObj.appendTo('#wholetabs');
+        BindAllMenu();
+        BindAllMenuUpdate();
+        Rolebind();
+        Hospitalbind();
+    });
+    function BindAllMenu() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetMenus",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    var MainmenuArray = new Array();
+                    $(response).find("AllMenus").each(function () {
+                        var MainMenuid = ($(this).find("Menuid").text());
+                        var MainMenuname = ($(this).find("Menuname").text());
+                        var Submenuid = ($(this).find("Submenuid").text());
+                        var Submenuname = ($(this).find("Submenuname").text());
+                        var Access = ($(this).find("Subaccess").text());
+                        var Add = ($(this).find("Subadd").text());
+                        var Modify = ($(this).find("Submodify").text());
+                        var Delete = ($(this).find("Subdelete").text());
+                        var Verify = ($(this).find("SubVerify").text());
+                        MainmenuArray.push({
+                            Mainmenuid: MainMenuid,
+                            Mainmenuname: MainMenuname,
+                            SubMenuid: Submenuid,
+                            SubMenuName: Submenuname,
+                            access: Access,
+                            add: Add,
+                            modify: Modify,
+                            deletee: Delete,
+                            Verifyy: Verify,
+                        })
+                    });
+                    $("#tblSaveReport tbody").empty();
+
+                    var html = "";
+                    var mainidlast = "";
+                    var count = 0;
+                    var tableid = 'subtable_';
+                    var Allcheckbox = 'Allcheckbox_';
+                    var checkbox1 = 'checkbox1_';
+                    var checkbox2 = 'checkbox2_';
+                    var checkbox3 = 'checkbox3_';
+                    var checkbox4 = 'checkbox4_';
+                    var checkbox5 = 'checkbox5_';
+                    var checkbox_count = 0;
+                    for (var i = 0; i < MainmenuArray.length; i++) {
+                        var mainid = MainmenuArray[i].Mainmenuid;
+                        var mainmenuname = MainmenuArray[i].Mainmenuname;
+                        var submenuid = MainmenuArray[i].SubMenuid;
+                        var submenuname = MainmenuArray[i].SubMenuName;
+                        var access1 = MainmenuArray[i].access;
+                        var add1 = MainmenuArray[i].add;
+                        var modify1 = MainmenuArray[i].modify;
+                        var delete1 = MainmenuArray[i].deletee;
+                        var Verify1 = MainmenuArray[i].Verifyy;
+                        if (i != 0) {
+                            mainidlast = MainmenuArray[i - 1].Mainmenuid;
+                            if (mainidlast != mainid) {
+                                count = count + 1;
+                                tableid = tableid + count;
+                                Allcheckbox = Allcheckbox + count;
+                                html += "</table ></td></tr>";
+                                html += "<tr>" + "<td style='display:none;'>" + tableid + "</td><td style='display:none;'>" + Allcheckbox + "</td><td>" + mainmenuname +
+                                    "</td>" + "<td style='text-align:center;'><input type='checkbox' id='" + Allcheckbox + "' onclick='Allcheck(this)' style='width: 20px !important;cursor:pointer;'></td><td colspan='5'><table class='table table-striped table-bordered table-hover dataTable table-reflow' id='" + tableid +
+                                    "' border='1' style='width:100%;'><tr><td style='width:40%;'>Sub Menu</td><td style='width:15%;'>Access</td><td style='width:15%;'>Add</td><td style='width:15%;'>Modify</td><td style='width:15%;'>Delete</td><td style='width:15%;'>Verify</td></tr>";
+                            }
+                        }
+                        else if (i == 0) {
+                            count = count + 1;
+                            tableid = tableid + count;
+                            Allcheckbox = Allcheckbox + count;
+                            html += "<tr>" + "<td style='display:none;'>" + tableid + "</td><td style='display:none;'>" + Allcheckbox + "</td><td>" + mainmenuname +
+                                "</td>" + "<td style='text-align:center;'><input type='checkbox' id='" + Allcheckbox + "' onclick='Allcheck(this)' style='width: 20px !important;cursor:pointer;'></td><td colspan='5'><table class='table table-striped table-bordered table-hover dataTable table-reflow' id='" + tableid +
+                                "' border='1' style='width:100%;'><tr><td style='width:40%;'>Sub Menu</td><td style='width:15%;'>Access</td><td style='width:15%;'>Add</td><td style='width:15%;'>Modify</td><td style='width:15%;'>Delete</td><td style='width:15%;'>Verify</td></tr>";
+                        }
+                        if (submenuname != "") {
+                            checkbox1 = checkbox1 + checkbox_count;
+                            checkbox2 = checkbox2 + checkbox_count;
+                            checkbox3 = checkbox3 + checkbox_count;
+                            checkbox4 = checkbox4 + checkbox_count;
+                            checkbox5 = checkbox5 + checkbox_count;
+                            html += "<tr><td >" + submenuname +
+                                "</td><td style='text-align:center;'><input type='checkbox' id='" + checkbox1 +
+                                "' style='width: 20px !important;cursor:pointer;'></td><td style='text-align:center;'><input type='checkbox' id='" + checkbox2 +
+                                "' style='width: 20px !important;cursor:pointer;'></td><td style='text-align:center;'><input type='checkbox' id='" + checkbox3 +
+                                "' style='width: 20px !important;cursor:pointer;'></td><td style='text-align:center;'><input type='checkbox' id='" + checkbox4 +
+                                "' style='width: 20px !important;cursor:pointer;'></td><td style='text-align:center;'><input type='checkbox' id='" + checkbox5 +
+                                "' style='width: 20px !important;cursor:pointer;'></td><td style='display:none;'>" + checkbox1 + "</td><td style='display:none;'>" + checkbox2 +
+                                "</td><td style='display:none;'>" + checkbox3 + "</td><td style='display:none;'>" + checkbox4 +
+                                "</td><td style='display:none;'>" + checkbox5 + "</td><td style='display:none;'>" + mainid + "</td><td style='display:none;'>" + mainmenuname + "</td><td style='display:none;'>" + submenuid +
+                                "</td></tr>";
+                        }
+                        checkbox_count++;
+                    }
+                    $("#tblSaveReport tbody").append(html);
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function BindAllMenuUpdate() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetMenus",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    var MainmenuArray = new Array();
+                    var xmlDoc = $.parseXML(response);
+                    var xml = $(xmlDoc);
+                    var BillDetails = xml.find("AllMenus");
+                    $("#tblSaveReport_update tbody").empty();
+                    if (BillDetails.length > 0) {
+                        $.each(BillDetails, function () {
+                            var MainMenuid = ($(this).find("Menuid").text());
+                            var MainMenuname = ($(this).find("Menuname").text());
+                            var Submenuid = ($(this).find("Submenuid").text());
+                            var Submenuname = ($(this).find("Submenuname").text());
+                            var Access = ($(this).find("Subaccess").text());
+                            var Add = ($(this).find("Subadd").text());
+                            var Modify = ($(this).find("Submodify").text());
+                            var Delete = ($(this).find("Subdelete").text());
+                            var Verify = ($(this).find("SubVerify").text());
+                            MainmenuArray.push({
+                                Mainmenuid: MainMenuid,
+                                Mainmenuname: MainMenuname,
+                                SubMenuid: Submenuid,
+                                SubMenuName: Submenuname,
+                                access: Access,
+                                add: Add,
+                                modify: Modify,
+                                deletee: Delete,
+                                Verifyy: Verify,
+                            })
+                        });
+                    }
+                    var html = "";
+                    var mainidlast = "";
+                    var count = parseInt(0);
+                    var tableid = 'Updatesubtable_';
+                    var Allcheckbox = 'UpdateAllcheckbox_';
+                    var checkbox1 = 'Updatecheckbox1_';
+                    var checkbox2 = 'Updatecheckbox2_';
+                    var checkbox3 = 'Updatecheckbox3_';
+                    var checkbox4 = 'Updatecheckbox4_';
+                    var checkbox5 = 'Updatecheckbox5_';
+                    var checkbox_count = parseInt(0);
+                    for (var i = 0; i < MainmenuArray.length; i++) {
+                        var mainid = MainmenuArray[i].Mainmenuid;
+                        var mainmenuname = MainmenuArray[i].Mainmenuname;
+                        var submenuid = MainmenuArray[i].SubMenuid;
+                        var submenuname = MainmenuArray[i].SubMenuName;
+                        var access1 = MainmenuArray[i].access;
+                        var add1 = MainmenuArray[i].add;
+                        var modify1 = MainmenuArray[i].modify;
+                        var delete1 = MainmenuArray[i].deletee;
+                        var Verify1 = MainmenuArray[i].Verifyy;
+                        if (i != 0) {
+                            mainidlast = MainmenuArray[i - 1].Mainmenuid;
+                            if (mainidlast != mainid) {
+                                count = parseInt(count) + 1;
+                                tableid = tableid + count;
+                                Allcheckbox = Allcheckbox + count;
+                                html += "</table></td></tr>";
+                                html += "<tr>" + "<td style='display:none;'>" + tableid + "</td><td style='display:none;'>" + Allcheckbox + "</td><td>" + mainmenuname +
+                                    "</td>" + "<td style='text-align:center;'><input type='checkbox' style='cursor:pointer;' id='" + Allcheckbox + "' onclick='AllcheckUpdate(this)' style='width: 20px !important;'></td><td colspan='5'><table class='table table-striped table-bordered table-hover dataTable table-reflow' id='" + tableid +
+                                    "' border='1' style='width:100%;'><tr><td style='width:40%;'>Sub Menu</td><td style='width:15%;'>Access</td><td style='width:15%;'>Add</td><td style='width:15%;'>Modify</td><td style='width:15%;'>Delete</td><td style='width:15%;'>Verify</td></tr>";
+                            }
+                        }
+                        else if (i == 0) {
+                            count = parseInt(count) + 1;
+                            tableid = tableid + count;
+                            Allcheckbox = Allcheckbox + count;
+                            html += "<tr>" + "<td style='display:none;'>" + tableid + "</td><td style='display:none;'>" + Allcheckbox + "</td><td>" + mainmenuname +
+                                "</td>" + "<td style='text-align:center;'><input type='checkbox' style='cursor:pointer;' id='" + Allcheckbox + "' onclick='AllcheckUpdate(this)' style='width: 20px !important;'></td><td colspan='5'><table class='table table-striped table-bordered table-hover dataTable table-reflow' id='" + tableid +
+                                "' border='1' style='width:100%;'><tr><td style='width:40%;'>Sub Menu</td><td style='width:15%;'>Access</td><td style='width:15%;'>Add</td><td style='width:15%;'>Modify</td><td style='width:15%;'>Delete</td><td style='width:15%;'>Verify</td></tr>";
+                        }
+                        if (submenuname != "") {
+                            checkbox1 = checkbox1 + checkbox_count;
+                            checkbox2 = checkbox2 + checkbox_count;
+                            checkbox3 = checkbox3 + checkbox_count;
+                            checkbox4 = checkbox4 + checkbox_count;
+                            checkbox5 = checkbox5 + checkbox_count;
+                            html += "<tr><td >" + submenuname +
+                                "</td><td style='text-align:center;'><input type='checkbox' id='" + checkbox1 +
+                                "' style='width: 20px !important;cursor:pointer;'></td><td style='text-align:center;'><input type='checkbox' id='" + checkbox2 +
+                                "' style='width: 20px !important;cursor:pointer;'></td><td style='text-align:center;'><input type='checkbox' id='" + checkbox3 +
+                                "' style='width: 20px !important;cursor:pointer;'></td><td style='text-align:center;'><input type='checkbox' id='" + checkbox4 +
+                                "' style='width: 20px !important;cursor:pointer;'></td><td style='text-align:center;'><input type='checkbox' id='" + checkbox5 +
+                                "' style='width: 20px !important;cursor:pointer;'></td><td style='display:none;'>" + checkbox1 + "</td><td style='display:none;'>" + checkbox2 +
+                                "</td><td style='display:none;'>" + checkbox3 + "</td><td style='display:none;'>" + checkbox4 +
+                                "</td><td style='display:none;'>" + checkbox5 + "</td><td style='display:none;'>" + mainid + "</td><td style='display:none;'>" + mainmenuname + "</td><td style='display:none;'>" + submenuid +
+                                "</td></tr>";
+                        }
+                        checkbox_count = parseInt(checkbox_count) + 1;
+                    }
+                    $("#tblSaveReport_update tbody").append(html);
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function Allcheck(SelectedRow) {
+        try {
+            var myrow = SelectedRow.parentNode.parentNode;
+            var tableid = myrow.cells[0].innerHTML;
+            var Allcheckboxid = '#' + myrow.cells[1].innerHTML;
+            var Gridtable = document.getElementById(tableid);
+            var GridRowCount = Gridtable.rows.length;
+            if (GridRowCount > 0) {
+                for (var i = 0; i < GridRowCount; i++) {
+                    if (i != 0) {
+                        var checkbox1 = '#' + Gridtable.rows[i].cells[6].innerHTML;
+                        var checkbox2 = '#' + Gridtable.rows[i].cells[7].innerHTML;
+                        var checkbox3 = '#' + Gridtable.rows[i].cells[8].innerHTML;
+                        var checkbox4 = '#' + Gridtable.rows[i].cells[9].innerHTML;
+                        var checkbox5 = '#' + Gridtable.rows[i].cells[10].innerHTML;
+                        if ($(Allcheckboxid).prop('checked')) {
+                            if ($(checkbox1).prop('checked'))
+                                $(checkbox1).prop("checked", false);
+                            else
+                                $(checkbox1).prop("checked", true);
+
+                            if ($(checkbox2).prop('checked'))
+                                $(checkbox2).prop("checked", false);
+                            else
+                                $(checkbox2).prop("checked", true);
+
+                            if ($(checkbox3).prop('checked'))
+                                $(checkbox3).prop("checked", false);
+                            else
+                                $(checkbox3).prop("checked", true);
+
+                            if ($(checkbox4).prop('checked'))
+                                $(checkbox4).prop("checked", false);
+                            else
+                                $(checkbox4).prop("checked", true);
+
+                            if ($(checkbox5).prop('checked'))
+                                $(checkbox5).prop("checked", false);
+                            else
+                                $(checkbox5).prop("checked", true);
+                        }
+                        else {
+                            $(checkbox1).prop("checked", false);
+                            $(checkbox2).prop("checked", false);
+                            $(checkbox3).prop("checked", false);
+                            $(checkbox4).prop("checked", false);
+                            $(checkbox5).prop("checked", false);
+                        }
+                    }
+                }
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function AllcheckUpdate(SelectedRow) {
+        try {
+            var myrow = SelectedRow.parentNode.parentNode;
+            var tableid = myrow.cells[0].innerHTML;
+            var Allcheckboxid = '#' + myrow.cells[1].innerHTML;
+            var Gridtable = document.getElementById(tableid);
+            var GridRowCount = Gridtable.rows.length;
+            if (GridRowCount > 0) {
+                for (var i = 0; i < GridRowCount; i++) {
+                    if (i != 0) {
+                        var checkbox1 = '#' + Gridtable.rows[i].cells[6].innerHTML;
+                        var checkbox2 = '#' + Gridtable.rows[i].cells[7].innerHTML;
+                        var checkbox3 = '#' + Gridtable.rows[i].cells[8].innerHTML;
+                        var checkbox4 = '#' + Gridtable.rows[i].cells[9].innerHTML;
+                        var checkbox5 = '#' + Gridtable.rows[i].cells[10].innerHTML;
+                        if ($(Allcheckboxid).prop('checked')) {
+                            if ($(checkbox1).prop('checked'))
+                                $(checkbox1).prop("checked", false);
+                            else
+                                $(checkbox1).prop("checked", true);
+
+                            if ($(checkbox2).prop('checked'))
+                                $(checkbox2).prop("checked", false);
+                            else
+                                $(checkbox2).prop("checked", true);
+
+                            if ($(checkbox3).prop('checked'))
+                                $(checkbox3).prop("checked", false);
+                            else
+                                $(checkbox3).prop("checked", true);
+
+                            if ($(checkbox4).prop('checked'))
+                                $(checkbox4).prop("checked", false);
+                            else
+                                $(checkbox4).prop("checked", true);
+
+                            if ($(checkbox5).prop('checked'))
+                                $(checkbox5).prop("checked", false);
+                            else
+                                $(checkbox5).prop("checked", true);
+                        }
+                        else {
+                            $(checkbox1).prop("checked", false);
+                            $(checkbox2).prop("checked", false);
+                            $(checkbox3).prop("checked", false);
+                            $(checkbox4).prop("checked", false);
+                            $(checkbox5).prop("checked", false);
+                        }
+                    }
+                }
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function Rolebind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/UserRoleApi/GetRoles",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#drproleselect").empty();
+                    $("#drproleselect").append($("<option></option>").val(0).html('-Select-'));
+                    $.each(data, function (key, value) {
+                        $("#drproleselect").append($("<option></option>").val(value.Roleseqid).html(value.Rolename));
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function CheckExistRole() {
+        try {
+            var rolename = $("#txtuserrole").val();
+            if (rolename == '')
+                alert('Please Enter Role Name');
+            else {
+                $.ajax({
+                    type: "GET",
+                    url: rootUrl + "/api/Patient/CheckRole/?Role=" + rolename,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    success: function (response) {
+                        var data = response;
+                        if (data == 'success') {
+                            alert('Role Exist.Please Enter Other Role Name');
+                            $("#txtuserrole").val('');
+                        }
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+            }
+        }
+        catch (e) {
+        }
+    }
+    function Hospitalbind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/UserRoleApi/GetHospitals",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#drphospitalselect").empty();
+                    //$("#drphospitalselect").append($("<option></option>").val(0).html('-Select-'));
+                    $.each(data, function (key, value) {
+                        $("#drphospitalselect").append($("<option></option>").val(value.HospitalID).html(value.HospitalName));
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function Clinicbind() {
+        try {
+            var e = document.getElementById("drphospitalselect");
+            var Hosid = e.options[e.selectedIndex].value;
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetClinic/?hospitalid=" + Hosid,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#drpclinicselect").empty();
+                    $("#drpclinicselect").append($("<option></option>").val(0).html('-Select-'));
+                    $.each(data, function (key, value) {
+                        $("#drpclinicselect").append($("<option></option>").val(value.ClinicID).html(value.ClinicName));
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function hospital_change() {
+        try {
+            Clinicbind();
+        }
+        catch (e) {
+        }
+    }
+    function NewRole() {
+        try {
+            var Rolename = $("#txtuserrole").val();
+            var e = document.getElementById("drphospitalselect");
+            var Hosid = e.options[e.selectedIndex].value;
+            var Hosname = e.options[e.selectedIndex].text;
+            var f = document.getElementById("drpclinicselect");
+            var clinicid = f.options[f.selectedIndex].value;
+            if (clinicid == '-Select-')
+                clinicid = 0;
+            if (Rolename == '')
+                alert('Please Enter Role Name');
+            else if (Hosname == '-Select-')
+                alert('Please Enter Hospital Name');
+            else {
+                var Rolemaster = new Object();
+                Rolemaster.Rolename = Rolename;
+                Rolemaster.HospitalID = parseInt(Hosid);
+                Rolemaster.ClinicID = clinicid;
+                Rolemaster.IsActive = true;
+                if (document.getElementById('chkmypatientdata').checked == true)
+                    Rolemaster.MyPatientData = true;
+                else
+                    Rolemaster.MyPatientData = false;
+                if (document.getElementById('chkallpatientdata').checked == true)
+                    Rolemaster.AllPatientData = true;
+                else
+                    Rolemaster.AllPatientData = false;
+                if (document.getElementById('chkalldoctordata').checked == true)
+                    Rolemaster.AllDoctorData = true;
+                else
+                    Rolemaster.AllDoctorData = false;
+                if (document.getElementById('chkdocuupload').checked == true)
+                    Rolemaster.DocumentUpload = true;
+                else
+                    Rolemaster.DocumentUpload = false;
+                var IsMainmenu = "";
+                var GridMaintable = document.getElementById("tblSaveReport");
+                var Rolename = $("#txtuserrole").val();
+                var Userrolearray = new Array();
+                if (GridMaintable.rows.length > 0) {
+                    for (var i = 0; i < GridMaintable.rows.length; i++) {
+                        if (i != 0) {
+                            var Submenutableid = GridMaintable.rows[i].cells[0].innerHTML;
+                            var Mainmenuname = GridMaintable.rows[i].cells[2].innerHTML;
+                            var Gridsubtable = document.getElementById(Submenutableid);
+                            if (Gridsubtable.rows.length > 0) {
+                                for (var j = 0; j < Gridsubtable.rows.length; j++) {
+                                    if (j == 1) {
+                                        IsMainmenu = true;
+                                    }
+                                    else {
+                                        if (j != 0) {
+                                            var Mainmenuname = Gridsubtable.rows[j].cells[12].innerHTML;
+                                            var Mainmenunamelast = Gridsubtable.rows[j - 1].cells[12].innerHTML;
+                                            if (Mainmenunamelast != Mainmenuname)
+                                                IsMainmenu = true;
+                                            else
+                                                IsMainmenu = false;
+                                        }
+                                    }
+                                    if (IsMainmenu == "")
+                                        IsMainmenu = false;
+                                    if (j != 0) {
+                                        var Access = "";
+                                        var Add = "";
+                                        var Delete = "";
+                                        var View = "";
+                                        var Verify = "";
+                                        var Mainmenuid = Gridsubtable.rows[j].cells[11].innerHTML;
+                                        var Submenuid = Gridsubtable.rows[j].cells[13].innerHTML;
+                                        var checkbox1 = '#' + Gridsubtable.rows[j].cells[6].innerHTML;
+                                        var checkbox2 = '#' + Gridsubtable.rows[j].cells[7].innerHTML;
+                                        var checkbox3 = '#' + Gridsubtable.rows[j].cells[8].innerHTML;
+                                        var checkbox4 = '#' + Gridsubtable.rows[j].cells[9].innerHTML;
+                                        var checkbox5 = '#' + Gridsubtable.rows[j].cells[10].innerHTML;
+                                        if ($(checkbox1).prop('checked'))
+                                            Access = true;
+                                        else
+                                            Access = false;
+                                        if ($(checkbox2).prop('checked'))
+                                            Add = true;
+                                        else
+                                            Add = false;
+                                        if ($(checkbox3).prop('checked'))
+                                            View = true;
+                                        else
+                                            View = false;
+                                        if ($(checkbox4).prop('checked'))
+                                            Delete = true;
+                                        else
+                                            Delete = false;
+                                        if ($(checkbox5).prop('checked'))
+                                            Verify = true;
+                                        else
+                                            Verify = false;
+                                        var Menugroup = new Object();
+                                        Menugroup.G_MainMenuid = parseInt(Mainmenuid);
+                                        Menugroup.G_SubMenuid = parseInt(Submenuid);
+                                        Menugroup.G_Access = Access;
+                                        Menugroup.G_Add = Add;
+                                        Menugroup.G_Delete = Delete;
+                                        Menugroup.G_View = View;
+                                        Menugroup.G_Verify = Verify;
+                                        Menugroup.G_IsMainMenu = IsMainmenu;
+                                        Menugroup.G_Roleid = 0;
+                                        Userrolearray.push(Menugroup);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Rolemaster.Menugroup = Userrolearray;
+                //console.log(Rolemaster);
+                var responserole = postValues("/UserRole/InsertRole", Rolemaster);
+                BindAllMenu();
+                Rolebind();
+                Hospitalbind();
+                alert('Successfully Saved');
+                $("#txtuserrole").val('');
+                $("#drphospitalselect")[0].selectedIndex = 0;
+                $("#drpclinicselect")[0].selectedIndex = 0;
+                document.getElementById('chkmypatientdata').checked = true;
+                document.getElementById('chkallpatientdata').checked = false;
+                document.getElementById('chkalldoctordata').checked = false;
+                document.getElementById('chkdocuupload').checked = false;
+            }
+        }
+        catch (e) {
+        }
+    }
+    function saveUserRole(roleid) {
+        try {
+            var IsMainmenu = "";
+            var GridMaintable = document.getElementById("tblSaveReport");
+            var Rolename = $("#txtuserrole").val();
+            if (GridMaintable.rows.length > 0) {
+                for (var i = 0; i < GridMaintable.rows.length; i++) {
+                    if (i != 0) {
+                        var Submenutableid = GridMaintable.rows[i].cells[0].innerHTML;
+                        var Mainmenuname = GridMaintable.rows[i].cells[2].innerHTML;
+                        var Gridsubtable = document.getElementById(Submenutableid);
+                        if (Gridsubtable.rows.length > 0) {
+                            for (var j = 0; j < Gridsubtable.rows.length; j++) {
+                                if (j == 1) {
+                                    IsMainmenu = true;
+                                }
+                                else {
+                                    if (j != 0) {
+                                        var Mainmenuname = Gridsubtable.rows[j].cells[12].innerHTML;
+                                        var Mainmenunamelast = Gridsubtable.rows[j - 1].cells[12].innerHTML;
+                                        if (Mainmenunamelast != Mainmenuname)
+                                            IsMainmenu = true;
+                                        else
+                                            IsMainmenu = false;
+                                    }
+                                }
+                                if (IsMainmenu == "")
+                                    IsMainmenu = false;
+                                if (j != 0) {
+                                    var Access = "";
+                                    var Add = "";
+                                    var Delete = "";
+                                    var View = "";
+                                    var Verify = "";
+                                    var Mainmenuid = Gridsubtable.rows[j].cells[11].innerHTML;
+                                    var Submenuid = Gridsubtable.rows[j].cells[13].innerHTML;
+                                    var checkbox1 = '#' + Gridsubtable.rows[j].cells[6].innerHTML;
+                                    var checkbox2 = '#' + Gridsubtable.rows[j].cells[7].innerHTML;
+                                    var checkbox3 = '#' + Gridsubtable.rows[j].cells[8].innerHTML;
+                                    var checkbox4 = '#' + Gridsubtable.rows[j].cells[9].innerHTML;
+                                    var checkbox5 = '#' + Gridsubtable.rows[j].cells[10].innerHTML;
+                                    if ($(checkbox1).prop('checked'))
+                                        Access = true;
+                                    else
+                                        Access = false;
+                                    if ($(checkbox2).prop('checked'))
+                                        Add = true;
+                                    else
+                                        Add = false;
+                                    if ($(checkbox3).prop('checked'))
+                                        View = true;
+                                    else
+                                        View = false;
+                                    if ($(checkbox4).prop('checked'))
+                                        Delete = true;
+                                    else
+                                        Delete = false;
+                                    if ($(checkbox5).prop('checked'))
+                                        Verify = true;
+                                    else
+                                        Verify = false;
+                                    var Menugroup = new Object();
+                                    Menugroup.G_MainMenuid = Mainmenuid;
+                                    Menugroup.G_SubMenuid = Submenuid;
+                                    Menugroup.G_Access = Access;
+                                    Menugroup.G_Add = Add;
+                                    Menugroup.G_Delete = Delete;
+                                    Menugroup.G_View = View;
+                                    Menugroup.G_Verify = Verify;
+                                    Menugroup.G_IsMainMenu = IsMainmenu;
+                                    Menugroup.G_Roleid = roleid;
+                                    $.ajax({
+                                        url: "/UserRole/InsertRoleandmenu",
+                                        type: "POST",
+                                        contentType: "application/json; charset=utf-8",
+                                        data: JSON.stringify(Menugroup),
+                                        dataType: 'json',
+                                        success: function (data) {
+
+                                        },
+                                        failure: function (response) {
+                                            alert(response);
+                                        },
+                                        error: function (response) {
+                                            alert(response);
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (e) {
+        }
+    }
+    function Cancelclick() {
+        try {
+            window.location.href = "/UserRole/UserRole";
+        }
+        catch (e) {
+        }
+    }
+    function role_change() {
+        try {
+            var e = document.getElementById("drproleselect");
+            var roleid = e.options[e.selectedIndex].value;
+            var rolename = e.options[e.selectedIndex].text;
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetMenuGroup/?Roleid=" + roleid,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    var OPPercentage = "";
+                    var IPPercentage = "";
+                    var IPChecked = "";
+                    var OPChecked = "";
+                    var MainmenuArray = new Array();
+                    var xmlDoc = $.parseXML(response);
+                    var xml = $(xmlDoc);
+                    var BillDetails = xml.find("AllMenugroups");
+                    if (BillDetails.length > 0) {
+                        $.each(BillDetails, function () {
+                            OPPercentage = ($(this).find("OPDiscount").text());
+                            IPPercentage = ($(this).find("IPDiscount").text());
+                            IPChecked = ($(this).find("IsAllowedip").text());
+                            OPChecked = ($(this).find("IsAllowedop").text());
+                            var MainMenuid = ($(this).find("MainMenuid").text());
+                            var Submenuid = ($(this).find("Submenuid").text());
+                            var Access = ($(this).find("Access_M").text());
+                            var Add = ($(this).find("Add_M").text());
+                            var View = ($(this).find("View_M").text());
+                            var Delete = ($(this).find("Delete_M").text());
+                            var Verify = ($(this).find("Verify_M").text());
+                            var MyPatientData = ($(this).find("MyPatientData").text());
+                            var AllPatientData = ($(this).find("AllPatientData").text());
+                            var AllDoctorData = ($(this).find("AllDoctorData").text());
+                            var DocumentUpload = ($(this).find("DocumentUpload").text());
+                            if (MyPatientData == "true")
+                                document.getElementById('chkmypatientupdate').checked = true;
+                            if (AllPatientData == "true")
+                                document.getElementById('chkallpatientupdate').checked = true;
+                            if (AllDoctorData == "true")
+                                document.getElementById('chkalldoctorupdate').checked = true;
+                            if (DocumentUpload == "true")
+                                document.getElementById('chkdocuuploadupdate').checked = true;
+                            MainmenuArray.push({
+                                Mainmenuid: MainMenuid,
+                                SubMenuid: Submenuid,
+                                access: Access,
+                                add: Add,
+                                view: View,
+                                deletee: Delete,
+                                Verifyy: Verify,
+                            })
+                        });
+                    }
+                    var Gridtable = document.getElementById('tblSaveReport_update');
+                    var GridRowCount = Gridtable.rows.length;
+                    if (GridRowCount > 0) {
+                        for (var j = 0; j < GridRowCount; j++) {
+                            if (j != 0) {
+                                var Subtableid = Gridtable.rows[j].cells[0].innerHTML;
+                                var allcheckbox = '#' + Gridtable.rows[j].cells[1].innerHTML;
+                                if ($(allcheckbox).prop("checked", false)) {
+                                    var Gridtable_Sub = document.getElementById(Subtableid);
+                                    var GridRowCount_Sub = Gridtable_Sub.rows.length;
+                                    if (GridRowCount_Sub > 0) {
+                                        for (var z = 0; z < GridRowCount_Sub; z++) {
+                                            if (z != 0) {
+                                                var checkbox1 = '#' + Gridtable_Sub.rows[z].cells[6].innerHTML;
+                                                var checkbox2 = '#' + Gridtable_Sub.rows[z].cells[7].innerHTML;
+                                                var checkbox3 = '#' + Gridtable_Sub.rows[z].cells[8].innerHTML;
+                                                var checkbox4 = '#' + Gridtable_Sub.rows[z].cells[9].innerHTML;
+                                                var checkbox5 = '#' + Gridtable_Sub.rows[z].cells[10].innerHTML;
+                                                $(checkbox1).prop("checked", false);
+                                                $(checkbox2).prop("checked", false);
+                                                $(checkbox3).prop("checked", false);
+                                                $(checkbox4).prop("checked", false);
+                                                $(checkbox5).prop("checked", false);
+                                                var Mainid = Gridtable_Sub.rows[z].cells[11].innerHTML;
+                                                if (Mainid == 2 && rolename == "Administrator")
+                                                    $(allcheckbox).prop("disabled", true);
+                                                else
+                                                    $(allcheckbox).prop("disabled", false);
+                                                var subid = Gridtable_Sub.rows[z].cells[13].innerHTML;
+                                                for (var i = 0; i < MainmenuArray.length; i++) {
+                                                    var mainid = MainmenuArray[i].Mainmenuid;
+                                                    var submenuid = MainmenuArray[i].SubMenuid;
+                                                    var access1 = MainmenuArray[i].access;
+                                                    var add1 = MainmenuArray[i].add;
+                                                    var view1 = MainmenuArray[i].view;
+                                                    var delete1 = MainmenuArray[i].deletee;
+                                                    var Verify1 = MainmenuArray[i].Verifyy;
+                                                    if (mainid == "2" && rolename == "Administrator") {
+                                                        $(checkbox1).prop("disabled", true);
+                                                        $(checkbox2).prop("disabled", true);
+                                                        $(checkbox3).prop("disabled", true);
+                                                        $(checkbox4).prop("disabled", true);
+                                                        $(checkbox5).prop("disabled", true);
+                                                    }
+                                                    else {
+                                                        $(checkbox1).prop("disabled", false);
+                                                        $(checkbox2).prop("disabled", false);
+                                                        $(checkbox3).prop("disabled", false);
+                                                        $(checkbox4).prop("disabled", false);
+                                                        $(checkbox5).prop("disabled", false);
+                                                    }
+                                                    if (Mainid == mainid && subid == submenuid) {
+                                                        $(allcheckbox).prop("checked", true);
+                                                        if (access1 == "true")
+                                                            $(checkbox1).prop("checked", true);
+                                                        else
+                                                            $(checkbox1).prop("checked", false);
+                                                        if (add1 == "true")
+                                                            $(checkbox2).prop("checked", true);
+                                                        else
+                                                            $(checkbox2).prop("checked", false);
+                                                        if (view1 == "true")
+                                                            $(checkbox3).prop("checked", true);
+                                                        else
+                                                            $(checkbox3).prop("checked", false);
+
+                                                        if (delete1 == "true")
+                                                            $(checkbox4).prop("checked", true);
+                                                        else
+                                                            $(checkbox4).prop("checked", false);
+
+                                                        if (Verify1 == "true")
+                                                            $(checkbox5).prop("checked", true);
+                                                        else
+                                                            $(checkbox5).prop("checked", false);
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function UpdateRole() {
+        try {
+            var e = document.getElementById("drproleselect");
+            var roleid = e.options[e.selectedIndex].value;
+            //var e = document.getElementById("drphospitalselect");
+            //var Hosid = e.options[e.selectedIndex].value;
+            //var Hosname = e.options[e.selectedIndex].text;
+            //var f = document.getElementById("drpclinicselect");
+            //var clinicid = f.options[f.selectedIndex].value;
+            if (roleid == 0)
+                alert('Please Enter Role Name');
+            //else if (Hosname == '-Select-')
+            //    alert('Please Enter Hospital Name');
+            else {
+                var Rolemaster = new Object();
+                Rolemaster.Roleseqid = parseInt(roleid);
+                //Rolemaster.HospitalID = Hosid;
+                //Rolemaster.ClinicID = clinicid;
+                Rolemaster.IsActive = true;
+                if (document.getElementById('chkmypatientupdate').checked == true)
+                    Rolemaster.MyPatientData = true;
+                else
+                    Rolemaster.MyPatientData = false;
+                if (document.getElementById('chkallpatientupdate').checked == true)
+                    Rolemaster.AllPatientData = true;
+                else
+                    Rolemaster.AllPatientData = false;
+                if (document.getElementById('chkalldoctorupdate').checked == true)
+                    Rolemaster.AllDoctorData = true;
+                else
+                    Rolemaster.AllDoctorData = false;
+                if (document.getElementById('chkdocuuploadupdate').checked == true)
+                    Rolemaster.DocumentUpload = true;
+                else
+                    Rolemaster.DocumentUpload = false;
+                //console.log(Rolemaster);
+                $.ajax({
+                    url: "/UserRole/Update_Role",
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify(Rolemaster),
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data != 0) {
+                            saveUpdateUserRole();
+                            BindAllMenuUpdate();
+                            alert('Successfully Updated');
+                            $("#drproleselect")[0].selectedIndex = 0;
+                            document.getElementById('chkmypatientupdate').checked = false;
+                            document.getElementById('chkallpatientupdate').checked = false;
+                            document.getElementById('chkalldoctorupdate').checked = false;
+                            document.getElementById('chkdocuuploadupdate').checked = false;
+                        }
+                        else
+                            alert('Update Failed');
+                    },
+                    failure: function (response) {
+                        alert(response);
+                    },
+                    error: function (response) {
+                        alert(response);
+                    }
+                });
+            }
+
+        }
+        catch (e) {
+        }
+    }
+    function saveUpdateUserRole() {
+        try {
+            var IsMainmenu = "";
+            var GridMaintable = document.getElementById("tblSaveReport_update");
+            var e = document.getElementById("drproleselect");
+            var Roleid = e.options[e.selectedIndex].value;
+            if (GridMaintable.rows.length > 0) {
+                for (var i = 0; i < GridMaintable.rows.length; i++) {
+                    if (i != 0) {
+                        var Submenutableid = GridMaintable.rows[i].cells[0].innerHTML;
+                        var Mainmenuname = GridMaintable.rows[i].cells[2].innerHTML;
+                        var Gridsubtable = document.getElementById(Submenutableid);
+                        if (Gridsubtable.rows.length > 0) {
+                            for (var j = 0; j < Gridsubtable.rows.length; j++) {
+                                if (j == 1) {
+                                    IsMainmenu = true;
+                                }
+                                else {
+                                    if (j != 0) {
+                                        var Mainmenuname = Gridsubtable.rows[j].cells[12].innerHTML;
+                                        var Mainmenunamelast = Gridsubtable.rows[j - 1].cells[12].innerHTML;
+                                        if (Mainmenunamelast != Mainmenuname)
+                                            IsMainmenu = true;
+                                        else
+                                            IsMainmenu = false;
+                                    }
+                                }
+                                if (IsMainmenu == "")
+                                    IsMainmenu = false;
+                                if (j != 0) {
+                                    var Access = "";
+                                    var Add = "";
+                                    var Delete = "";
+                                    var View = "";
+                                    var Verify = "";
+                                    var Mainmenuid = Gridsubtable.rows[j].cells[11].innerHTML;
+                                    var Submenuid = Gridsubtable.rows[j].cells[13].innerHTML;
+                                    var checkbox1 = '#' + Gridsubtable.rows[j].cells[6].innerHTML;
+                                    var checkbox2 = '#' + Gridsubtable.rows[j].cells[7].innerHTML;
+                                    var checkbox3 = '#' + Gridsubtable.rows[j].cells[8].innerHTML;
+                                    var checkbox4 = '#' + Gridsubtable.rows[j].cells[9].innerHTML;
+                                    var checkbox5 = '#' + Gridsubtable.rows[j].cells[10].innerHTML;
+                                    if ($(checkbox1).prop('checked'))
+                                        Access = true;
+                                    else
+                                        Access = false;
+                                    if ($(checkbox2).prop('checked'))
+                                        Add = true;
+                                    else
+                                        Add = false;
+                                    if ($(checkbox3).prop('checked'))
+                                        View = true;
+                                    else
+                                        View = false;
+                                    if ($(checkbox4).prop('checked'))
+                                        Delete = true;
+                                    else
+                                        Delete = false;
+                                    if ($(checkbox5).prop('checked'))
+                                        Verify = true;
+                                    else
+                                        Verify = false;
+
+                                    var Menugroup = new Object();
+                                    Menugroup.G_MainMenuid = parseInt(Mainmenuid);
+                                    Menugroup.G_SubMenuid = parseInt(Submenuid);
+                                    Menugroup.G_Access = Access;
+                                    Menugroup.G_Add = Add;
+                                    Menugroup.G_Delete = Delete;
+                                    Menugroup.G_View = View;
+                                    Menugroup.G_Verify = Verify;
+                                    Menugroup.G_IsMainMenu = IsMainmenu;
+                                    Menugroup.G_Roleid = parseInt(Roleid);
+                                    //console.log(Menugroup);
+                                    $.ajax({
+                                        url: "/UserRole/UpdatemenuGroup",
+                                        type: "POST",
+                                        contentType: "application/json; charset=utf-8",
+                                        data: JSON.stringify(Menugroup),
+                                        dataType: 'json',
+                                        success: function (data) {
+
+                                        },
+                                        failure: function (response) {
+                                            alert(response);
+                                        },
+                                        error: function (response) {
+                                            alert(response);
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (e) {
+        }
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+<style>
+    .main-page {
+        background: linear-gradient(-141deg, #FBFAFF 14%, #FBFAFF 100%);
+        margin: 0;
+    }
+
+    body,
+    text {
+        font-family: "Helvetica Neue", "Helvetica", "Arial", sans-serif, "-apple-system", "BlinkMacSystemFont";
+    }
+
+    .form-group.required .control-label:after {
+        content: "*";
+        color: red;
+    }
+</style>
+
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-primary">
+                        <div class="card-header" style="margin-top:15px;">
+                            <h3 class="card-title">Patient Registration</h3>
+                            <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                        </div>
+                        <form>
+                            <div class="card-body">
+                                <div id="wholetabs">
+                                    <div class="e-tab-header">
+                                        <div>New Role </div>
+                                        <div>Modify Role </div>
+                                    </div>
+                                    <br />
+                                    <div class="e-content">
+                                        <div id="newrole">
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            New User Role
+                                                        </label>
+                                                        <input type="text" id="txtuserrole" class="form-control" onchange="CheckExistRole();"
+                                                               placeholder="New User Role" autocomplete="off" autofocus required />
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Hospital
+                                                        </label>
+                                                        <select id="drphospitalselect" onchange="hospital_change()" class="form-control" disabled>
+                                                            <option value="-Select-">-Select-</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-3 col-sm-3 col-md-3" style="display:none;">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;font-weight:normal;font-size:20px;font-family:'Times New Roman';">
+                                                            My Patient Data
+                                                        </label>&nbsp;&nbsp;&nbsp;
+                                                        <input type="checkbox" style="width:15px;height:15px;cursor:pointer;" checked="checked" id="chkmypatientdata" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;font-weight:normal;font-size:20px;font-family:'Times New Roman';">
+                                                            All Patient Data
+                                                        </label>&nbsp;&nbsp;&nbsp;
+                                                        <input type="checkbox" style="width:15px;height:15px;cursor:pointer;" id="chkallpatientdata" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;font-weight:normal;font-size:20px;font-family:'Times New Roman';">
+                                                            All Doctor Data
+                                                        </label>&nbsp;&nbsp;&nbsp;
+                                                        <input type="checkbox" style="width:15px;height:15px;cursor:pointer;" id="chkalldoctordata" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;font-weight:normal;font-size:20px;font-family:'Times New Roman';">
+                                                            Document Upload
+                                                        </label>&nbsp;&nbsp;&nbsp;
+                                                        <input type="checkbox" style="width:15px;height:15px;cursor:pointer;" id="chkdocuupload" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row" style="display:none;">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Select Clinic
+                                                        </label>
+                                                        <select id="drpclinicselect" onchange="clinic_change()" class="form-control">
+                                                            <option value="-Select-">-Select-</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-12 col-sm-12 col-md-12" style="height:1300px;overflow:scroll;">
+                                                    <div>
+                                                        <table id="tblSaveReport" border="1" class="table table-striped table-bordered table-hover dataTable table-reflow">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th style="font-size: small;font-weight: normal" ;>Main Menu</th>
+                                                                    <th style="font-size: small;font-weight: normal" ;>Select All</th>
+                                                                    <th style="font-size: small;font-weight: normal" ;></th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody></tbody>
+                                                        </table>
+                                                    </div>
+                                                    <br />
+                                                    <div>
+                                                        <ejs-button id="btnsave" content="Save" onclick="NewRole();" isPrimary="true"></ejs-button>
+                                                        <ejs-button id="btnCancel" content="Cancel" onclick="Cancelclick();" isPrimary="true"></ejs-button>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                            @*<div class="row">
+                                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                                        <ejs-button id="btnsave" content="Save" onclick="NewRole();" isPrimary="true"></ejs-button>
+                                                        <ejs-button id="btnCancel" content="Cancel" onclick="Cancelclick();" isPrimary="true"></ejs-button>
+                                                    </div>
+                                                </div>*@
+                                        </div>
+                                        <div id="updaterole">
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            Select User Role
+                                                        </label>
+                                                        <select id="drproleselect" onchange="role_change()" class="form-control" style="cursor:pointer;">
+                                                            <option value="-Select-">-Select-</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-3 col-sm-3 col-md-3" style="display:none;">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;font-weight:normal;font-size:20px;font-family:'Times New Roman';">
+                                                            My Patient Data
+                                                        </label>&nbsp;&nbsp;&nbsp;
+                                                        <input type="checkbox" style="width:15px;height:15px;cursor:pointer;" id="chkmypatientupdate" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;font-weight:normal;font-size:20px;font-family:'Times New Roman';">
+                                                            All Patient Data
+                                                        </label>&nbsp;&nbsp;&nbsp;
+                                                        <input type="checkbox" style="width:15px;height:15px;cursor:pointer;" id="chkallpatientupdate" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;font-weight:normal;font-size:20px;font-family:'Times New Roman';">
+                                                            All Doctor Data
+                                                        </label>&nbsp;&nbsp;&nbsp;
+                                                        <input type="checkbox" style="width:15px;height:15px;cursor:pointer;" id="chkalldoctorupdate" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;font-weight:normal;font-size:20px;font-family:'Times New Roman';">
+                                                            Document Upload
+                                                        </label>&nbsp;&nbsp;&nbsp;
+                                                        <input type="checkbox" style="width:15px;height:15px;cursor:pointer;" id="chkdocuuploadupdate" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-12 col-sm-12 col-md-12" style="height:1300px;overflow:scroll;">
+                                                    <div>
+                                                        <table id="tblSaveReport_update" border="1" class="table table-striped table-bordered table-hover dataTable table-reflow">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th style="font-size: small;font-weight: normal" ;>Main Menu</th>
+                                                                    <th style="font-size: small;font-weight: normal" ;>Select All</th>
+                                                                    <th style="font-size: small;font-weight: normal" ;></th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody></tbody>
+                                                        </table>
+                                                    </div>
+                                                    <br />
+                                                    <div>
+                                                        <ejs-button id="btnupdate" content="Update" onclick="UpdateRole();" isPrimary="true"></ejs-button>
+                                                        <ejs-button id="btnupCancel" content="Cancel" onclick="Cancelclick();" isPrimary="true"></ejs-button>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+
+                                            @*<div class="row">
+                                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                                        <ejs-button id="btnupdate" content="Update" onclick="UpdateRole();" isPrimary="true"></ejs-button>
+                                                        <ejs-button id="btnupCancel" content="Cancel" onclick="Cancelclick();" isPrimary="true"></ejs-button>
+                                                    </div>
+                                                </div>*@
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+@*<div class="content-wrapper">
+        <div class="card card-primary">
+            <div class="card-header" style="margin-top:15px;">
+                <h3 class="card-title">User Role</h3>
+                <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+            </div>
+        </div>
+        <section class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="wholetabs">
+                            <div class="e-tab-header">
+                                <div>New Role </div>
+                                <div>Modify Role </div>
+                            </div>
+                            <br />
+                            <div class="e-content">
+                                <div id="newrole">
+                                    <div class="row">
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <div class="form-group required">
+                                                <label class="control-label" style="color: black;">
+                                                    New User Role
+
+                                                </label>
+                                                <input type="text" id="txtuserrole" class="form-control" onchange="CheckExistRole();"
+                                                       placeholder="New User Role" autocomplete="off" autofocus required />
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <div class="form-group">
+                                                <label class="control-label" style="color: black;">
+                                                    Hospital
+                                                </label>
+                                                <select id="drphospitalselect" onchange="hospital_change()" class="form-control" disabled>
+                                                    <option value="-Select-">-Select-</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-3 col-sm-3 col-md-3" style="display:none;">
+                                            <div class="form-group">
+                                                <label class="control-label" style="color: black;font-weight:normal;font-size:20px;font-family:'Times New Roman';">
+                                                    My Patient Data
+                                                </label>&nbsp;&nbsp;&nbsp;
+                                                <input type="checkbox" style="width:15px;height:15px;cursor:pointer;" checked="checked" id="chkmypatientdata" />
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <div class="form-group">
+                                                <label class="control-label" style="color: black;font-weight:normal;font-size:20px;font-family:'Times New Roman';">
+                                                    All Patient Data
+                                                </label>&nbsp;&nbsp;&nbsp;
+                                                <input type="checkbox" style="width:15px;height:15px;cursor:pointer;" id="chkallpatientdata" />
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <div class="form-group">
+                                                <label class="control-label" style="color: black;font-weight:normal;font-size:20px;font-family:'Times New Roman';">
+                                                    All Doctor Data
+                                                </label>&nbsp;&nbsp;&nbsp;
+                                                <input type="checkbox" style="width:15px;height:15px;cursor:pointer;" id="chkalldoctordata" />
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <div class="form-group">
+                                                <label class="control-label" style="color: black;font-weight:normal;font-size:20px;font-family:'Times New Roman';">
+                                                    Document Upload
+                                                </label>&nbsp;&nbsp;&nbsp;
+                                                <input type="checkbox" style="width:15px;height:15px;cursor:pointer;" id="chkdocuupload" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="display:none;">
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <div class="form-group">
+                                                <label class="control-label" style="color: black;">
+                                                    Select Clinic
+                                                </label>
+                                                <select id="drpclinicselect" onchange="clinic_change()" class="form-control">
+                                                    <option value="-Select-">-Select-</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <div >
+                                                <table id="tblSaveReport" border="1" class="table table-striped table-bordered table-hover dataTable table-reflow">
+                                                    <thead>
+                                                        <tr>
+                                                            <th style="font-size: small;font-weight: normal" ;>Main Menu</th>
+                                                            <th style="font-size: small;font-weight: normal" ;>Select All</th>
+                                                            <th style="font-size: small;font-weight: normal" ;></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <ejs-button id="btnsave" content="Save" onclick="NewRole();" isPrimary="true"></ejs-button>
+                                            <ejs-button id="btnCancel" content="Cancel" onclick="Cancelclick();" isPrimary="true"></ejs-button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="updaterole">
+                                    <div class="row">
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <div class="form-group required">
+                                                <label class="control-label" style="color: black;">
+                                                    Select User Role
+
+                                                </label>
+                                                <select id="drproleselect" onchange="role_change()" class="form-control" style="cursor:pointer;">
+                                                    <option value="-Select-">-Select-</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-3 col-sm-3 col-md-3" style="display:none;">
+                                            <div class="form-group">
+                                                <label class="control-label" style="color: black;font-weight:normal;font-size:20px;font-family:'Times New Roman';">
+                                                    My Patient Data
+                                                </label>&nbsp;&nbsp;&nbsp;
+                                                <input type="checkbox" style="width:15px;height:15px;cursor:pointer;" id="chkmypatientupdate" />
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <div class="form-group">
+                                                <label class="control-label" style="color: black;font-weight:normal;font-size:20px;font-family:'Times New Roman';">
+                                                    All Patient Data
+                                                </label>&nbsp;&nbsp;&nbsp;
+                                                <input type="checkbox" style="width:15px;height:15px;cursor:pointer;" id="chkallpatientupdate" />
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <div class="form-group">
+                                                <label class="control-label" style="color: black;font-weight:normal;font-size:20px;font-family:'Times New Roman';">
+                                                    All Doctor Data
+                                                </label>&nbsp;&nbsp;&nbsp;
+                                                <input type="checkbox" style="width:15px;height:15px;cursor:pointer;" id="chkalldoctorupdate" />
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <div class="form-group">
+                                                <label class="control-label" style="color: black;font-weight:normal;font-size:20px;font-family:'Times New Roman';">
+                                                    Document Upload
+                                                </label>&nbsp;&nbsp;&nbsp;
+                                                <input type="checkbox" style="width:15px;height:15px;cursor:pointer;" id="chkdocuuploadupdate" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <div class="card-body table-responsive p-0">
+                                                <table id="tblSaveReport_update" border="1" class="table table-striped table-bordered table-hover dataTable table-reflow">
+                                                    <thead>
+                                                        <tr>
+                                                            <th style="font-size: small;font-weight: normal" ;>Main Menu</th>
+                                                            <th style="font-size: small;font-weight: normal" ;>Select All</th>
+                                                            <th style="font-size: small;font-weight: normal" ;></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <ejs-button id="btnupdate" content="Update" onclick="UpdateRole();" isPrimary="true"></ejs-button>
+                                            <ejs-button id="btnupCancel" content="Cancel" onclick="Cancelclick();" isPrimary="true"></ejs-button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>*@
+
+
+
+

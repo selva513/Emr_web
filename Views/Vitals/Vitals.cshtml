@@ -1,0 +1,1092 @@
+﻿
+
+<style>
+</style>
+
+@*<script src="~/Chart/canvasjs.min.js"></script>*@
+
+<script>
+    $(document).ready(function () {
+        var Patientid = $("#lblpatid").text();
+        var visitid = $("#lblvisitid").text();
+        $("#ViatlGraph").hide();
+        GetVitalsByVistId();
+        VitalsDisable();
+        if (sessionStorage.getItem('Status') == 'Checked-In')
+            GetLastNotVerifyVitals(Patientid, visitid);
+    });
+    function GetLastNotVerifyVitals(Patientid, visitid) {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/EmrApi/GetVitalsLastData/?Patientid=" + Patientid + "&Visitid=" + visitid + "",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    $(response).find("LastVitalsDetails").each(function () {
+                        const Notes = ($(this).find("Notes").text());
+                        const Height = ($(this).find("Height").text());
+                        const Weight = ($(this).find("Weight").text());
+                        const BPSystolic = ($(this).find("BPSystolic").text());
+                        const BPDiastolic = ($(this).find("BPDiastolic").text());
+                        const Pulse = ($(this).find("Pulse").text());
+                        const Respiration = ($(this).find("Respiration").text());
+                        const Temperature = ($(this).find("Temperature").text());
+                        const OxygenSaturation = ($(this).find("OxygenSaturation").text());
+                        const BMI = ($(this).find("BMI").text());
+                        const BloodSugar = ($(this).find("BloodSugar").text());
+
+                        $("#VitalsWeighttxt").val(Weight);
+                        $("#VitalsHeight").val(Height);
+                        $("#VitalsBPSystolictxt").val(BPSystolic);
+                        $("#VitalsBPDiastolictxt").val(BPDiastolic);
+                        $("#VitalsRespirationtxt").val(Respiration);
+                        $("#VitalsTemperaturetxt").val(Temperature);
+                        $("#VitalsOxygenSaturationtxt").val(OxygenSaturation);
+                        $("#VitalsBMItxt").val(BMI);
+                        $("#VitalsSugartxt").val(BloodSugar);
+                        $("#VitalsPulsetxt").val(Pulse);
+                        $("#Vitalscomment").val(Notes);
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function s(response) {
+                }
+            });
+        }
+        catch (e) {
+
+        }
+    }
+    function VitalsDisable() {
+        var sendJsonData = {};
+        var response = postValues("/Emr/GetPatDetails", sendJsonData);
+        if (response.Pat.length > 0) {
+            var DoctorCompare = response.Pat[0].DoctorCompare;
+            if (DoctorCompare == false) {
+                document.getElementById('btnVerifiyVitals').disabled = true;
+            }
+            else {
+                var verifyresponse = getValues("/Emr/GetVerifyDetails");
+                if (verifyresponse == false) {
+                    $("#btnVerifiyVitals").prop('disabled', true);
+                }
+                else {
+                    $("#btnVerifiyVitals").prop('disabled', false);
+                }
+            }
+        }
+    }
+    function VitalSave() {
+        var weight = $("#VitalsWeighttxt").val();
+
+        if (weight !== "")
+            weight = parseFloat($("#VitalsWeighttxt").val());
+        else
+            weight = null;
+
+        var height = $("#VitalsHeight").val();
+        if (height !== "")
+            height = parseFloat($("#VitalsHeight").val());
+        else
+            height = null;
+
+        var Bpsystolic = $("#VitalsBPSystolictxt").val();
+        if (Bpsystolic !== "")
+            Bpsystolic = parseFloat($("#VitalsBPSystolictxt").val());
+        else
+            Bpsystolic = null;
+
+        var Bpdiastolic = $("#VitalsBPDiastolictxt").val();
+        if (Bpdiastolic !== "")
+            Bpdiastolic = parseFloat($("#VitalsBPDiastolictxt").val());
+        else
+            Bpdiastolic = null;
+
+        var Respiration = $("#VitalsRespirationtxt").val();
+        if (Respiration !== "")
+            Respiration = parseFloat($("#VitalsRespirationtxt").val());
+        else
+            Respiration = null;
+
+        var Teperature = $("#VitalsTemperaturetxt").val();
+        if (Teperature !== "")
+            Teperature = parseFloat($("#VitalsTemperaturetxt").val());
+        else
+            Teperature = null;
+
+        var oxygen = $("#VitalsOxygenSaturationtxt").val();
+        if (oxygen !== "")
+            oxygen = parseFloat($("#VitalsOxygenSaturationtxt").val());
+        else
+            oxygen = null;
+
+        var Bloodsugar = $("#VitalsSugartxt").val();
+        if (Bloodsugar !== "")
+            Bloodsugar = parseFloat($("#VitalsSugartxt").val());
+        else
+            Bloodsugar = null;
+
+        var Pulse = $("#VitalsPulsetxt").val();
+        if (Pulse !== "")
+            Pulse = parseFloat($("#VitalsSugartxt").val());
+        else
+            Pulse = null;
+        var Bmi = $("#VitalsBMItxt").val();
+        if (Bmi !== "")
+            Bmi = parseFloat($("#VitalsBMItxt").val());
+        else
+            Bmi = null;
+
+        var sendJsonData = {
+            PatientID: $("#lblpatid").text(),
+            VisitId: $("#lblvisitid").text(),
+            Height: height,
+            Weight: weight,
+            BPSystolic: Bpsystolic,
+            BPDiastolic: Bpdiastolic,
+            Pulse: Pulse,
+            Respiration: Respiration,
+            Temperature: Teperature,
+            OxygenSaturation: oxygen,
+            BMI: Bmi,
+            BloodSugar: Bloodsugar,
+            Notes: $("#Vitalscomment").val()
+        };
+        $.ajax({
+            url: "/api/EmrApi/VitalSave",
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(sendJsonData),
+            dataType: "json",
+            success: function (data) {
+                if (data.msg === "Error") {
+                    ShowMessage(data.msg, "Error");
+                }
+                else {
+                    ShowMessage(data.msg, "Success");
+                    GetVitalsByVistId();
+                    CloseVitlasStatus();
+                }
+            }
+        });
+        return false;
+    }
+    function VitalVerifiy() {
+        var weight = $("#VitalsWeighttxt").val();
+
+        if (weight !== "")
+            weight = parseFloat($("#VitalsWeighttxt").val());
+        else
+            weight = null;
+
+        var height = $("#VitalsHeight").val();
+        if (height !== "")
+            height = parseFloat($("#VitalsHeight").val());
+        else
+            height = null;
+
+        var Bpsystolic = $("#VitalsBPSystolictxt").val();
+        if (Bpsystolic !== "")
+            Bpsystolic = parseFloat($("#VitalsBPSystolictxt").val());
+        else
+            Bpsystolic = null;
+
+        var Bpdiastolic = $("#VitalsBPDiastolictxt").val();
+        if (Bpdiastolic !== "")
+            Bpdiastolic = parseFloat($("#VitalsBPDiastolictxt").val());
+        else
+            Bpdiastolic = null;
+
+        var Respiration = $("#VitalsRespirationtxt").val();
+        if (Respiration !== "")
+            Respiration = parseFloat($("#VitalsRespirationtxt").val());
+        else
+            Respiration = null;
+
+        var Teperature = $("#VitalsTemperaturetxt").val();
+        if (Teperature !== "")
+            Teperature = parseFloat($("#VitalsTemperaturetxt").val());
+        else
+            Teperature = null;
+
+        var oxygen = $("#VitalsOxygenSaturationtxt").val();
+        if (oxygen !== "")
+            oxygen = parseFloat($("#VitalsOxygenSaturationtxt").val());
+        else
+            oxygen = null;
+
+        var Bloodsugar = $("#VitalsSugartxt").val();
+        if (Bloodsugar !== "")
+            Bloodsugar = parseFloat($("#VitalsSugartxt").val());
+        else
+            Bloodsugar = null;
+
+        var Pulse = $("#VitalsPulsetxt").val();
+        if (Pulse !== "")
+            Pulse = parseFloat($("#VitalsSugartxt").val());
+        else
+            Pulse = null;
+        var Bmi = $("#VitalsBMItxt").val();
+        if (Bmi !== "")
+            Bmi = parseFloat($("#VitalsBMItxt").val());
+        else
+            Bmi = null;
+
+        var sendJsonData = {
+            PatientID: $("#lblpatid").text(),
+            VisitId: $("#lblvisitid").text(),
+            Height: height,
+            Weight: weight,
+            BPSystolic: Bpsystolic,
+            BPDiastolic: Bpdiastolic,
+            Pulse: Pulse,
+            Respiration: Respiration,
+            Temperature: Teperature,
+            OxygenSaturation: oxygen,
+            BMI: Bmi,
+            BloodSugar: Bloodsugar,
+            Notes: $("#Vitalscomment").val()
+        };
+        $.ajax({
+            url: "/api/EmrApi/VitalVerifiy",
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(sendJsonData),
+            dataType: "json",
+            success: function (data) {
+                if (data.msg === "Error") {
+                    ShowMessage(data.msg, "Error");
+                }
+                else {
+                    // ShowMessage(data.msg, "Success");
+                    GetVitalsByVistId();
+                    ClearAll();
+                    CloseVitlasStatus();
+                }
+            }
+        });
+        return false;
+    }
+    //function VitalVerifiy() {
+    //    var sendJsonData = {
+    //        PatientID: $("#lblpatid").text(),
+    //        VisitId: $("#lblvisitid").text(),
+    //        Height: $("#VitalsHeight").val(),
+    //        Weight: $("#VitalsWeighttxt").val(),
+    //        BPSystolic: $("#VitalsBPSystolictxt").val(),
+    //        BPDiastolic: $("#VitalsBPDiastolictxt").val(),
+    //        Pulse: $("#VitalsPulsetxt").val(),
+    //        Respiration: $("#VitalsRespirationtxt").val(),
+    //        Temperature: $("#VitalsTemperaturetxt").val(),
+    //        OxygenSaturation: $("#VitalsOxygenSaturationtxt").val(),
+    //        BMI: $("#VitalsBMItxt").val(),
+    //        BloodSugar: $("#VitalsSugartxt").val(),
+    //        Notes: $("#Vitalscomment").val()
+    //    };
+    //    $.ajax({
+    //        url: "/api/EmrApi/VitalVerifiy",
+    //        type: 'post',
+    //        contentType: "application/json; charset=utf-8",
+    //        data: JSON.stringify(sendJsonData),
+    //        dataType: "json",
+    //        success: function (data) {
+    //            if (data.msg === "Error") {
+    //                ShowMessage(data.msg, "Error");
+    //            }
+    //            else {
+    //                // ShowMessage(data.msg, "Success");
+    //                GetVitalsByVistId();
+    //                ClearAll();
+    //                CloseVitlasStatus();
+    //            }
+    //        }
+    //    });
+    //    return false;
+    //}
+   
+    function isNumberanddot(evt) {
+        var theEvent = evt || window.event;
+        var key = theEvent.keyCode || theEvent.which;
+        key = String.fromCharCode(key);
+        if (key.length == 0) return;
+        var regex = /^[0-9.]+$/;
+        if (!regex.test(key)) {
+            theEvent.returnValue = false;
+            if (theEvent.preventDefault) theEvent.preventDefault();
+        }
+    }
+    function CalculateBMI() {
+        var Height = parseFloat($("#VitalsHeight").val());
+        if (Height > 175) {
+            let answer = window.confirm("Height you enter (" + Height + ") seems to be higher than usual.Do you want to continue with this value? Press OK to continue. Cancel to Re-enter value.")
+            if (!answer) {
+                $("#VitalsHeight").val('');
+                $("#VitalsBMItxt").val('');
+                document.getElementById('VitalsHeight').focus();
+            }
+            else {
+                CalculateBMIMethod();
+            }
+        }
+        else {
+            CalculateBMIMethod();
+        }
+    }
+    function CalculateBMIMethod() {
+        try {
+            var Height = parseFloat($("#VitalsHeight").val());
+            var Weight = parseFloat($("#VitalsWeighttxt").val());
+            var HeihtPer = parseFloat(Height / 100);
+            var Percentage = parseFloat(HeihtPer * HeihtPer);
+            var BMI = parseFloat(Weight / Percentage);
+            $("#VitalsBMItxt").val(BMI.toFixed(2));
+            document.getElementById('VitalsBPSystolictxt').focus();
+        } catch (e) {
+
+        }
+    }
+    function GetVitalsByVistId() {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+
+        var arg = $("#lblpatid").text();
+        $.ajax({
+            url: rootUrl + "/api/EmrApi/GetVitlasByVisitId/?PatientID=" + arg + "",
+            type: 'GET',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: onVitlasSuccess,
+            complete: function () {
+                $("#loading").css("display", "none");
+                var sendJsonData = {};
+                var response = postValues("/Emr/GetPatDetails", sendJsonData);
+                if (response.Pat.length > 0) {
+                    var DoctorCompare = response.Pat[0].DoctorCompare;
+                    if (DoctorCompare == false) {
+                        document.getElementById('btnVerifiyVitals').disabled = true;
+                    }
+                    else {
+                        var verifyresponse = getValues("/Emr/GetVerifyDetails");
+                        if (verifyresponse == false) {
+                            $("#btnVerifiyVitals").prop('disabled', true);
+                        }
+                        else {
+                            $("#btnVerifiyVitals").prop('disabled', false);
+                        }
+                    }
+                }
+            }
+        });
+    }
+    function onVitlasSuccess(response) {
+        $("#tblVitals THEAD").empty();
+        $("#tblVitals tbody").empty();
+        var dataCol = "<tr><td>Date</td>";
+        var dataRowHeight = "<tr><td>Height <Span style='color:Blue;'>(cm)<Span></td>";
+        var dataRowWeigth = "<tr><td>Weight <Span style='color:Blue;'>(kg)<Span></td>";
+        var dataRowSYSTOLIC = "<tr><td>Systolic</td>";
+        var dataRowDIASTOLIC = "<tr><td>Bp <Span style='color:Blue;'>(mmHg)<Span></td>";
+        var datarowBMI = "<tr><td>BMI <Span style='color:Blue;'>(kg/m<sup>2</sup>)<Span></td>";
+        var dataRowPulse = "<tr><td>Pulse <Span style='color:Blue;'>(bpm)<Span></td>";
+        var dataRowTemp = "<tr><td>Temperature <Span style='color:Blue;'>(<sup>0</sup>F)<Span></td>";
+        var dataRowRespiration = "<tr><td>Respiration <Span style='color:Blue;'>(bp)<Span></td>";
+        var dataRowOxygenSaturation = "<tr><td>Oxygen Saturation <Span style='color:Blue;'>(%)<Span></td>";
+        var dataRowBloodsugar = "<tr><td>Blood Sugar <Span style='color:Blue;'>(mg/dL)<Span></td>;"
+        var dataRowNotes = "<tr><td>Notes</td>;"
+        var PatCount = 0;
+        for (PatCount = 0; PatCount < response.length; PatCount++) {
+
+            var ViatlDate = "";
+            if (response[PatCount].IsVerfied === false) {
+                ViatlDate = response[PatCount].VitalDate + "<br/><Span style='color:red;'>As Reported by patient<Span>";
+            }
+            else {
+                ViatlDate = response[PatCount].VitalDate;
+            }
+            var Hieght = response[PatCount].Height;
+            if (Hieght !== null)
+                Hieght = Hieght;
+            else
+                Hieght = "-";
+            var weight = response[PatCount].Weight;
+            if (weight !== null)
+                weight = weight;
+            else
+                weight = "-";
+            var BMI = response[PatCount].BMI;
+            if (BMI !== null)
+                BMI = response[PatCount].BMI;
+            else
+                BMI = "-";
+            var PULSE = response[PatCount].Pulse;
+            if (PULSE !== null)
+                PULSE = response[PatCount].Pulse;
+            else
+                PULSE = "-";
+            var Respiration = response[PatCount].Respiration;
+            if (Respiration !== null)
+                Respiration = response[PatCount].Respiration;
+            else
+                Respiration = "-";
+
+            var TEMP = response[PatCount].Temperature;
+            if (TEMP !== null)
+                TEMP = response[PatCount].Temperature + "";
+            else
+                TEMP = "-";
+            var OxygenSaturation = response[PatCount].OxygenSaturation;
+            if (OxygenSaturation !== null)
+                OxygenSaturation = response[PatCount].OxygenSaturation;
+            else
+                OxygenSaturation = "-";
+            var EMR_PAT_BP_SYSTOLIC = response[PatCount].BPSystolic;
+            if (EMR_PAT_BP_SYSTOLIC !== null)
+                EMR_PAT_BP_SYSTOLIC = response[PatCount].BPSystolic;
+            else
+                EMR_PAT_BP_SYSTOLIC = "-";
+
+            var EMR_PAT_BP_DIASTOLIC = response[PatCount].BPDiastolic;
+
+            if (EMR_PAT_BP_DIASTOLIC !== null)
+                EMR_PAT_BP_DIASTOLIC = (EMR_PAT_BP_SYSTOLIC) + " /" + response[PatCount].BPDiastolic;
+            else
+                EMR_PAT_BP_DIASTOLIC = "-";
+            var EMR_PAT_Blood_SUgar = response[PatCount].BloodSugar;
+            if (EMR_PAT_Blood_SUgar !== null)
+                EMR_PAT_Blood_SUgar = response[PatCount].BloodSugar;
+            else
+                EMR_PAT_Blood_SUgar = "-";
+            var Notes = response[PatCount].Notes;
+            if (Notes !== null && Notes != "")
+                Notes = response[PatCount].Notes;
+            else
+                Notes = "-";
+            dataCol += "<td>" + ViatlDate + "</td>";
+            dataRowHeight += "<td>" + Hieght + "</td>";
+            dataRowWeigth += "<td>" + weight + "</td>";
+            dataRowSYSTOLIC += "<td>" + EMR_PAT_BP_SYSTOLIC + "</td>";
+            dataRowDIASTOLIC += "<td>" + EMR_PAT_BP_DIASTOLIC + "</td>";
+            datarowBMI += "<td>" + BMI + "</td>";
+            dataRowPulse += "<td>" + PULSE + "</td>";
+            dataRowRespiration += "<td>" + Respiration + "</td>";
+            dataRowTemp += "<td>" + TEMP + "</td>";
+            dataRowOxygenSaturation += "<td>" + OxygenSaturation + "</td>";
+            dataRowBloodsugar += "<td>" + EMR_PAT_Blood_SUgar + "</td>";
+            dataRowNotes += "<td>" + Notes + "</td>";
+        }
+        dataCol += "</tr>";
+        dataRowHeight += "</tr>";
+        dataRowWeigth += "</tr>";
+        dataRowSYSTOLIC += "</tr>";
+        dataRowDIASTOLIC += "</tr>";
+        datarowBMI += "</tr>";
+        dataRowPulse += "</tr>";
+        dataRowRespiration += "</tr>";
+        dataRowOxygenSaturation += "</tr>";
+        dataRowBloodsugar += "</tr>";
+        dataRowNotes += "</tr>";
+        $("#tblVitals THEAD").append(dataCol);
+        $("#tblVitals tbody").append(dataRowWeigth);
+        $("#tblVitals tbody").append(dataRowHeight);
+        //$("#tblVitals tbody").append(dataRowSYSTOLIC);
+        $("#tblVitals tbody").append(dataRowDIASTOLIC);
+        $("#tblVitals tbody").append(dataRowPulse);
+        $("#tblVitals tbody").append(dataRowRespiration);
+        $("#tblVitals tbody").append(dataRowTemp);
+        $("#tblVitals tbody").append(dataRowOxygenSaturation);
+        $("#tblVitals tbody").append(datarowBMI);
+        $("#tblVitals tbody").append(dataRowBloodsugar);
+        $("#tblVitals tbody").append(dataRowNotes);
+        return false;
+    }
+    function GetPreviousVitals() {
+        if ($("#chkPrevious").is(":checked")) {
+            var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+            var arg = $("#lblpatid").text();
+            $.ajax({
+                url: rootUrl + "/api/EmrApi/GetVitlasByVisitId/?PatientID=" + arg + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    for (PatCount = 0; PatCount < response.length; PatCount++) {
+                        $("#VitalsHeight").val(response[0].Height);
+                        $("#VitalsWeighttxt").val(response[0].Weight);
+                        $("#VitalsBPSystolictxt").val(response[0].BPSystolic);
+                        $("#VitalsBPDiastolictxt").val(response[0].BPDiastolic);
+                        $("#VitalsPulsetxt").val(response[0].Pulse);
+                        $("#VitalsRespirationtxt").val(response[0].Respiration);
+                        $("#VitalsTemperaturetxt").val(response[0].Temperature);
+                        $("#VitalsOxygenSaturationtxt").val(response[0].OxygenSaturation);
+                        $("#VitalsBMItxt").val(response[0].BMI);
+                        $("#VitalsSugartxt").val(response[0].BloodSugar);
+                        $("#Vitalscomment").val(response[0].Notes);
+                        break;
+                    }
+                }
+            });
+        }
+        else {
+            ClearAll();
+        }
+    }
+    function ClearAll() {
+        $("#VitalsHeight").val("");
+        $("#VitalsWeighttxt").val("");
+        $("#VitalsBPSystolictxt").val("");
+        $("#VitalsBPDiastolictxt").val("");
+        $("#VitalsPulsetxt").val("");
+        $("#VitalsRespirationtxt").val("");
+        $("#VitalsTemperaturetxt").val("");
+        $("#VitalsOxygenSaturationtxt").val("");
+        $("#VitalsBMItxt").val("");
+        $("#VitalsSugartxt").val("");
+        $("#Vitalscomment").val("");
+        $('#chkPrevious').prop('checked', false);
+    }
+    function ShowMessage(message, messagetype) {
+        var cssclass;
+        switch (messagetype) {
+            case 'Success':
+                cssclass = 'alert-success'
+                break;
+            case 'Error':
+                cssclass = 'alert-danger'
+                break;
+            case 'Warning':
+                cssclass = 'alert-warning'
+                break;
+            default:
+                cssclass = 'alert-info'
+        }
+        $('#alert_container').append('<div id="alert_div"  class="alert fade in ' + cssclass + '"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><strong>' + messagetype + '!</strong> <span>' + message + '</span></div>');
+
+        setTimeout(function () {
+            $("#alert_div").fadeTo(2000, 500).slideUp(500, function () {
+                $("#alert_div").remove();
+            });
+        }, 5000);
+    }
+    function ViatlsChart() {
+        if ($("#OldVitals").hasClass('col-xs-12 col-sm-12 col-md-12')) {
+            GetVitalsByVistId();
+            BackNormalScreen();
+        }
+        else {
+            $("#VitalsTable").hide();
+            $("#ViatlGraph").show();
+            $("#CurrentVitals").hide();
+            $("#OldVitals").removeClass("col-xs-6 col-sm-6 col-md-6");
+            $("#OldVitals").addClass("col-xs-12 col-sm-12 col-md-12");
+            var arg = $("#lblpatid").text();
+            var c = document.getElementById("MultiLineChart");
+            var ctx = c.getContext("2d");
+            var chartOptions = {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        boxWidth: 80,
+                        fontColor: 'black'
+                    }
+                }
+            };
+            var tData = getValues("/Emr/MultiLineChartData/?PatientID=" + arg + "");
+            var myLineChart = new Chart(ctx, {
+                type: 'line',
+                data: tData
+            });
+        }
+
+    }
+    function BackNormalScreen() {
+        $("#VitalsTable").show();
+        $("#ViatlGraph").hide();
+        $("#CurrentVitals").show();
+        $("#OldVitals").removeClass("col-xs-12 col-sm-12 col-md-12");
+        $("#OldVitals").addClass("col-xs-6 col-sm-6 col-md-6");
+    }
+    function GetAllVitalsByVistId() {
+        if ($("#OldVitals").hasClass('col-xs-12 col-sm-12 col-md-12')) {
+            GetVitalsByVistId();
+            BackNormalScreen();
+            //$("#btnOldExamintion").html('<span class="glyphicon glyphicon-th-list"></span> More');
+            $("#moreid").attr('src', '/images/MOREX.png');
+        }
+        else {
+            $("#VitalsTable").show();
+            $("#ViatlGraph").hide();
+            $("#CurrentVitals").hide();
+            $("#OldVitals").removeClass("col-xs-6 col-sm-6 col-md-6");
+            $("#OldVitals").addClass("col-xs-12 col-sm-12 col-md-12");
+            $("#moreid").attr('src', '/images/Less.png');
+            //$("#btnOldExamintion").html('Less');
+            var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+            var arg = $("#lblpatid").text();
+            $.ajax({
+                url: rootUrl + "/api/EmrApi/GetAllVitlasByVisitId/?PatientID=" + arg + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: onVitlasSuccess,
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+
+    }
+    function VitalBackScreen() {
+        GetVitalsByVistId();
+        BackNormalScreen();
+    }
+    function IsAlreadyVitalsCheck(IsVerified) {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        var PatID = $("#lblpatid").text();
+        var VisitId = $("#lblvisitid").text();
+        var weight = $("#VitalsWeighttxt").val();
+        var height = $("#VitalsHeight").val();
+        var Bpsystolic = $("#VitalsBPSystolictxt").val();
+        var Bpdiastolic = $("#VitalsBPDiastolictxt").val();
+        var Respiration = $("#VitalsRespirationtxt").val();
+        var Teperature = $("#VitalsTemperaturetxt").val();
+        var oxygen = $("#VitalsOxygenSaturationtxt").val();
+        var Bloodsugar = $("#VitalsSugartxt").val();
+        var Pulse = $("#VitalsPulsetxt").val();
+        var notes = $("#Vitalscomment").val();
+        if (weight == "" && height == "" && Bpsystolic == "" && Bpdiastolic == "" && Respiration == "" && Teperature == "" && oxygen == "" && Bloodsugar == "" && Pulse == "" && notes == "") {
+            alert('Please Enter atleast one Data to save');
+        }
+        else {
+            $.ajax({
+                url: rootUrl + "/Emr/CheckVitlasAlreadyExists/?PatientID=" + PatID + "&VisitID=" + VisitId + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    const verify = data.verified;
+                    const notverify = data.notverified;
+                    if (notverify == 1) {
+                        if (IsVerified === true)
+                            VitalVerifiy();
+                        else
+                            VitalSave();
+                    }
+                    else if (verify == 1)
+                        OpenVitlasStatus();
+
+                    else {
+                        if (IsVerified === true)
+                            VitalVerifiy();
+                        else
+                            VitalSave();
+                    }
+                    //if (data === "Already Exists") {
+                    //    OpenVitlasStatus();
+                    //}
+                    //else {
+                    //    if (IsVerified === true)
+                    //        VitalVerifiy();
+                    //    else
+                    //        VitalSave();
+                    //}
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+    }
+    function OpenVitlasStatus() {
+        document.getElementById('VitalInfo').ej2_instances[0].show();
+    }
+    function CloseVitlasStatus() {
+        document.getElementById('VitalInfo').ej2_instances[0].hide();
+    }
+    function ConfirmWeight() {
+        try {
+            let weight = $("#VitalsWeighttxt").val();
+            if (weight > 100) {
+                let answer = window.confirm("Weight you enter (" + weight + ") seems to be higher than usual.Do you want to continue with this value? Press OK to continue. Cancel to Re-enter value.")
+                if (!answer) {
+                    $("#VitalsWeighttxt").val('');
+                    document.getElementById('VitalsWeighttxt').focus();
+                }
+                else {
+                    document.getElementById('VitalsHeight').focus();
+                }
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function ConfirmBPSystolic() {
+        try {
+            let BPSystolic = $("#VitalsBPSystolictxt").val();
+            if (BPSystolic < 120 || BPSystolic > 190) {
+                let answer = window.confirm("BPSystolic you enter (" + BPSystolic + ") seems to be higher or lower than usual.Do you want to continue with this value? Press OK to continue. Cancel to Re-enter value.")
+                if (!answer) {
+                    $("#VitalsBPSystolictxt").val('');
+                    document.getElementById('VitalsBPSystolictxt').focus();
+                }
+                else {
+                    document.getElementById('VitalsBPDiastolictxt').focus();
+                }
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function ConfirmBPDiastolic() {
+        try {
+            let BPDiastolic = $("#VitalsBPDiastolictxt").val();
+            if (BPDiastolic < 80 || BPDiastolic > 100) {
+                let answer = window.confirm("BPDiastolic you enter (" + BPDiastolic + ") seems to be higher or lower than usual.Do you want to continue with this value? Press OK to continue. Cancel to Re-enter value.")
+                if (!answer) {
+                    $("#VitalsBPDiastolictxt").val('');
+                    document.getElementById('VitalsBPDiastolictxt').focus();
+                }
+                else {
+                    document.getElementById('VitalsRespirationtxt').focus();
+                }
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function ConfirmRespiration() {
+        try {
+            let Respiration = $("#VitalsRespirationtxt").val();
+            if (Respiration < 12 || Respiration > 16) {
+                let answer = window.confirm("Respiration you enter (" + Respiration + ") seems to be higher or lower than usual.Do you want to continue with this value? Press OK to continue. Cancel to Re-enter value.")
+                if (!answer) {
+                    $("#VitalsRespirationtxt").val('');
+                    document.getElementById('VitalsRespirationtxt').focus();
+                }
+                else {
+                    document.getElementById('VitalsTemperaturetxt').focus();
+                }
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function ConfirmTemperature() {
+        try {
+            let Temperature = $("#VitalsTemperaturetxt").val();
+            if (Temperature < 95 || Temperature > 105.5) {
+                let answer = window.confirm("Temperature you enter (" + Temperature + ") seems to be higher or lower than usual.Do you want to continue with this value? Press OK to continue. Cancel to Re-enter value.")
+                if (!answer) {
+                    $("#VitalsTemperaturetxt").val('');
+                    document.getElementById('VitalsTemperaturetxt').focus();
+                }
+                else {
+                    document.getElementById('VitalsOxygenSaturationtxt').focus();
+                }
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function ConfirmOxygenSaturation() {
+        try {
+            let OxygenSaturation = $("#VitalsOxygenSaturationtxt").val();
+            if (OxygenSaturation < 75 || OxygenSaturation > 100) {
+                let answer = window.confirm("Oxygen Saturation you enter (" + OxygenSaturation + ") seems to be higher or lower than usual.Do you want to continue with this value? Press OK to continue. Cancel to Re-enter value.")
+                if (!answer) {
+                    $("#VitalsOxygenSaturationtxt").val('');
+                    document.getElementById('VitalsOxygenSaturationtxt').focus();
+                }
+                else {
+                    document.getElementById('VitalsSugartxt').focus();
+                }
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function ConfirmSugar() {
+        try {
+            let Sugar = $("#VitalsSugartxt").val();
+            if (Sugar < 72 || Sugar > 140) {
+                let answer = window.confirm("Sugar you enter (" + Sugar + ") seems to be higher or lower than usual.Do you want to continue with this value? Press OK to continue. Cancel to Re-enter value.")
+                if (!answer) {
+                    $("#VitalsSugartxt").val('');
+                    document.getElementById('VitalsSugartxt').focus();
+                }
+                else {
+                    document.getElementById('VitalsPulsetxt').focus();
+                }
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function ConfirmPulse() {
+        try {
+            let Pulse = $("#VitalsPulsetxt").val();
+            if (Pulse < 60 || Pulse > 100) {
+                let answer = window.confirm("Pulse you enter (" + Pulse + ") seems to be higher or lower than usual.Do you want to continue with this value? Press OK to continue. Cancel to Re-enter value.")
+                if (!answer) {
+                    $("#VitalsPulsetxt").val('');
+                    document.getElementById('VitalsPulsetxt').focus();
+                }
+                else {
+                    document.getElementById('Vitalscomment').focus();
+                }
+            }
+        }
+        catch (e) {
+
+        }
+    }
+</script>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xs-10 col-sm-10 col-md-10"></div>
+        <div class="col-xs-2 col-sm-2 col-md-2" style="padding-left:75px;">
+            <div class="form-group">
+                <img id="moreid" src="~/images/MOREX.png" style="height:40px;cursor:pointer;" onclick="GetAllVitalsByVistId();" title="More" />
+                <img src="~/images/VitalChart.png" style="height:40px;cursor:pointer;" onclick="ViatlsChart();" title="Vital Chart" />
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-6 col-sm-6 col-md-6" id="CurrentVitals">
+            <div class="panel panel-default DivBox">
+                <div class="row">
+                    <div class="col-xs-1 col-sm-1 col-md-1">
+                        <div class="form-check">
+                            <input type="checkbox" style="height:22px;width:30px" onclick="GetPreviousVitals();"
+                                   class="form-check-input" id="chkPrevious" title="Load Previous Data">
+                            <label class="form-check-label" for="chkPrevious"></label>
+                        </div>
+                    </div>
+                    <div class="col-xs-5 col-sm-5 col-md-5">
+                        <div class="form-group">
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="VitalsWeighttxt" placeholder="Weight" onchange="ConfirmWeight();" onkeypress="return isNumberanddot(event)"
+                                       class="form-control input-sm inputEmr" />
+                                <div class="input-group-append" id="btnGroupAddon">
+                                    <span class="input-group-text">Kg</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="VitalsHeight" placeholder="Height" onkeypress="return isNumberanddot(event)"
+                                       class="form-control input-sm inputEmr" onchange="CalculateBMI();">
+                                <div class="input-group-append">
+                                    <span class="input-group-text">cm</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="VitalsBPSystolictxt" placeholder="BP Systolic" onchange="ConfirmBPSystolic();"
+                                       onkeypress="return isNumberanddot(event)" class="form-control input-sm inputEmr">
+                                <div class="input-group-append">
+                                    <span class="input-group-text">mmHg</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="VitalsBPDiastolictxt" placeholder="BP Diastolic" onchange="ConfirmBPDiastolic();"
+                                       onkeypress="return isNumberanddot(event)"
+                                       class="form-control input-sm inputEmr">
+                                <div class="input-group-append">
+                                    <span class="input-group-text">mmHg</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="VitalsRespirationtxt" placeholder="Respiration" onchange="ConfirmRespiration();"
+                                       class="form-control input-sm inputEmr">
+                                <div class="input-group-append">
+                                    <span class="input-group-text">bp</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="VitalsTemperaturetxt" placeholder="Body Temperature" onchange="ConfirmTemperature();"
+                                       onkeypress="return isNumberanddot(event)" class="form-control input-sm inputEmr">
+                                <div class="input-group-append">
+                                    <span class="input-group-text"><sup>0</sup>F</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="VitalsOxygenSaturationtxt" onchange="ConfirmOxygenSaturation();" onkeypress="return isNumberanddot(event)"
+                                       placeholder="Oxygen Saturation" class="form-control input-sm inputEmr">
+                                <div class="input-group-append">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="VitalsBMItxt" readonly="readonly" placeholder="BMI" onkeypress="return isNumberanddot(event)"
+                                       class="form-control input-sm inputEmr">
+                                <div class="input-group-append">
+                                    <span class="input-group-text">kg/m<sup>2</sup></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="VitalsSugartxt" placeholder="Blood Sugar" onchange="ConfirmSugar();" onkeypress="return isNumberanddot(event)"
+                                       class="form-control input-sm inputEmr">
+                                <div class="input-group-append">
+                                    <span class="input-group-text">mg/dL</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="VitalsPulsetxt" placeholder="Pulse" onchange="ConfirmPulse();" onkeypress="return isNumberanddot(event)"
+                                       class="form-control input-sm inputEmr">
+                                <div class="input-group-append">
+                                    <span class="input-group-text">bpm</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-11 col-sm-11 col-md-11" style="width: 100%;">
+                        <div class="form-group">
+                            <textarea class="form-control input-sm inputEmr" wrap="soft" rows="3" id="Vitalscomment" placeholder="Enter Notes"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" id="VitalsbtnDiv">
+                    <div class="col-lg-12">
+                        <button type="button" id="btnSaveVitals" class="btn" onclick="IsAlreadyVitalsCheck(false);" title="Save">
+                            <img src="~/images/SAVES.png"  style="height:50px;width:50px;">@*width:50px;*@
+                        </button>
+                        <button type="button" id="btnVerifiyVitals" class="btn" onclick="IsAlreadyVitalsCheck(true);" title="Save and Verify">
+                            <img src="~/images/verify-512.png" style="height:50px;width:50px;">
+                        </button>
+                        <button type="button" id="btncancel" onclick="ClearAll();" class="btn" title="Cancel">
+                            <img src="~/images/CANCEL-512.png" style="height:50px;width:50px;">
+                        </button>
+                        @*<button type="button" id="btnClear" class="btn" onclick="ClearAll();" title="Clear">
+                                <img src="~/images/Clear.png" style="height:50px;width:50px;">
+                            </button>*@
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="messagealert" id="alert_container">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6" id="OldVitals">
+            <div class="panel panel-default DivBox">
+                <div class="row" id="VitalsTable" style="padding:10px;">
+                    <div class="col-xs-12 col-sm-12 col-md-12">
+                        <div class="row">
+                            <div class="table-responsive">
+                                <table id="tblVitals" class="table table-bordered table-striped dataTable table-reflow tableHB">
+                                    <thead>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row" style="display:none;">
+                            <button type="button" id="btnVitlasBack" class="btn btn-info" style="background-color:blue;" onclick="VitalBackScreen();">
+                                <span class="glyphicon glyphicon-arrow-right"></span>Back
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="padding:10px;">
+                    <div class="col-xs-12 col-sm-12 col-md-12" id="ViatlGraph">
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <canvas id="MultiLineChart" style="height:250px;" class="col-lg-12"></canvas>
+                            </div>
+                        </div>
+                        <br />
+                        <div class="row" style="display:none;">
+                            <button type="button" id="btnGraphBack" class="btn btn-info" style="background-color:blue;" onclick="VitalBackScreen();">
+                                <span class="glyphicon glyphicon-arrow-right"></span>Back
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div>
+        <ejs-dialog id="VitalInfo" showCloseIcon="true" cssClass="ejs-help" header="Inforamtion" style="max-height:400px" visible="false" width="634px">
+            <e-content-template>
+                <div class="row">
+                    <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                        <div class="form-group">
+                            <span style="font-size: 15px !important;font-family: Source Sans Pro,sans-serif !important;">
+                                There are data in the current visit Do you want to add new data?
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                        <div class="form-group">
+                            <button type="button" class="btn EmrbtnPrimary" onclick="VitalSave();" title="Save">
+                                Save
+                            </button>
+                            <button type="button" class="btn EmrbtnPrimary" onclick="VitalVerifiy();" title="Save and Verify">
+                                Save & Verify
+                            </button>
+                            <button type="button" class="btn EmrbtnPrimary" onclick="CloseVitlasStatus();" title="Cancel">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </e-content-template>
+        </ejs-dialog>
+    </div>
+</div>

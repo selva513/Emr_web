@@ -1,0 +1,1857 @@
+﻿@{
+    ViewData["Title"] = "Investigation";
+}
+@using Syncfusion.EJ2.Navigations;
+@using Newtonsoft.Json
+<link href="~/AutoComplete/jquery-ui_1.11.4.css" rel="stylesheet" />
+<script src="~/AutoComplete/jquery-1.10.2.js"></script>
+<script src="~/AutoComplete/jquery-ui_1.11.4.js"></script>
+
+<style>
+    .unselectable {
+        background-color: #ddd;
+        cursor: not-allowed;
+    }
+
+    img.disabled {
+        opacity: 0.5;
+    }
+</style>
+
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        $("#txtEditor").Editor();
+        var Patientid = $("#lblpatid").text();
+        var visitid = $("#lblvisitid").text();
+        if (sessionStorage.getItem('Status') == 'Checked-In')
+            GetOldInvestigation(Patientid, visitid);
+        var HISConnected = sessionStorage.getItem("HISConnected");
+        if (HISConnected != null && HISConnected != "" && HISConnected != "null" && HISConnected == "True")
+            document.getElementById('Adddiv').style.display = 'none';
+        else
+            document.getElementById('Adddiv').style.display = 'block';
+        //GetHISConfig();
+        //CheckHISConnected();
+        //GetLastInvestigation();
+        //var HVisitid = sessionStorage.getItem("HISVisitid");
+        //if (HVisitid != null && HVisitid != "" && HVisitid!="null") {
+        //    document.getElementById("txtInvestPickHeader").disabled = true;
+        //    $("#btnInvSaveAsPickList").prop("disabled", true);
+        //    $("#btnInvSavePickList").prop("disabled",true);
+        //}
+        //else {
+        //    $("#btnInvSaveAsPickList").prop("disabled", false);
+        //    $("#btnInvSavePickList").prop("disabled",false);
+        //    document.getElementById("txtInvestPickHeader").disabled = false;
+        //}
+    });
+    function GetHISConfig() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetHISConfig",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    var data = response;
+                    if (data != "" && data != null) {
+                        var HISConnected = data[0].IsConnectedHIS;
+                        //if (HISConnected == true)
+                        //    $("#chkInvestPrevious").prop("disabled", true);
+                        //else
+                        //    $("#chkInvestPrevious").prop("disabled", false);
+                    }
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function GetOldInvestigation(Patientid, visitid) {
+        var sendJsonData = {};
+        var response = postValues("/Emr/GetPatDetails", sendJsonData);
+        if (response.Pat.length > 0) {
+            var DoctorCompare = response.Pat[0].DoctorCompare;
+            if (DoctorCompare == false) {
+                document.getElementById('btnInvSafy').disabled = true;
+            }
+            else {
+                var verifyresponse = getValues("/Emr/GetVerifyDetails");
+                if (verifyresponse == false) {
+                    $("#btnInvSafy").prop('disabled', true);
+                }
+                else {
+                    $("#btnInvSafy").prop('disabled', false);
+                }
+            }
+        }
+        var html = "";
+        var i = 0;
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/EmrApi/GetInvLastData/?Patientid=" + Patientid + "&Visitid=" + visitid + "",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    $("#tblInvestigations tbody").empty();
+                    $(response).find("LastInvestDetails").each(function () {
+                        var InvestigationNotes = ($(this).find("InvestigationNotes").text());
+                        var Seqid = ($(this).find("Seqid").text());
+                        var InvestigationSeqid = ($(this).find("InvestigationSeqid").text());
+                        var InvestigationName = ($(this).find("InvestigationName").text());
+                        html += "<tr data-id=\"" + InvestigationSeqid + "\">";
+                        html += "<td><input type=\"checkbox\" style=\"width:16px;height:16px;cursor:pointer;\"  checked></td>";
+                        html += "<td  style='color:blue;'>" + InvestigationName + "</td>";
+                        html += "<td style='display:none;'>" + InvestigationSeqid + "</td>";
+                        html += "<td style='display:none;'>" + 0 + "</td>";
+                        html += "<td style='text-align: center;'>";
+                        html += "<img src='../Images/Delete.png'  onclick='return DeleteInvestigation(this)' style='width: 25px !important;height:25px !important;cursor:pointer;'>";
+                        html += "</td>";
+                        html += "<td style='display:none;'> " + false + "</td>";
+                        html += "</tr>";
+                        $("#txtInvestNotes").val(InvestigationNotes);
+                    });
+                    $("#tblInvestigations tbody").append(html);
+                },
+                failure: function (response) {
+                },
+                error: function s(response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function GetLastInvestigation() {
+        try {
+            var arg = $("#lblpatid").text();
+            $.ajax({
+                url: rootUrl + "/Emr/GetInvestigationByPatient/?PatID=" + arg + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: OnSuccessVisitInvest,
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+
+
+            //var sendJsonData = {};
+            //var response = postValues("/Emr/GetPatDetails", sendJsonData);
+            //if (response.Pat.length > 0) {
+            //    var DoctorCompare = response.Pat[0].DoctorCompare;
+            //    if (DoctorCompare == false) {
+            //        document.getElementById('btnInvSafy').disabled = true;
+            //    }
+            //    else {
+            //        var verifyresponse = getValues("/Emr/GetVerifyDetails");
+            //        if (verifyresponse == false) {
+            //            $("#btnInvSafy").prop('disabled', true);
+            //        }
+            //        else {
+            //            $("#btnInvSafy").prop('disabled', false);
+            //        }
+            //    }
+            //}
+            //var Patientid = $("#lblpatid").text();
+            //$.ajax({
+            //url: "/Emr/GetLastInvestigation",
+            //type: 'post',
+            //contentType: "application/json; charset=utf-8",
+            //data: JSON.stringify(Patientid),
+            //dataType: "json",
+            //beforeSend: function () { $("#loading").css("display", "block"); },
+            //success: function (response) {
+            //   if (response.length > 0) {
+            //    var html = "";
+            //    $("#OldInvestigation").html(html);
+            //    html += "<span style='color: darkred;'>Investigation:</span>";
+            //    html += "<br/>";
+            //    html += "<table id='tbloldinvest' class='table table-bordered table-striped dataTable table-reflow'>";
+            //    html += "<thead><tr><td></td>";
+            //    html += "<td>SNO</td><td>Investigation</td><td style='display:none;'>Rate</td><td>Result</td></tr></thead><tbody>";
+            //    for (var i = 0; i < response.length; i++) {
+            //        var Profileid = response[i].LIS_Profileid;
+            //        var Packageid = response[i].LIS_Packageid;
+            //        var InvestigationSeqid=response[i].InvestigationSeqid;
+            //        html += "<tr>";
+            //        if (Profileid != 0 || Packageid != 0)
+            //            html += "<td><input type='image' style='width:21px;height:21px;' src='../Images/details_open.png' onclick='javascript:return CheckSelectInvest(this)'></td>";
+            //        else
+            //            html += "<td></td>";
+            //        html += "<td>" + parseInt(i + 1) + "</td>";
+            //        html += "<td>" + response[i].InvestigationName + "</td><td style='display:none;'>" + response[i].InvestigationTotal + "</td>";
+            //        if (response[i].LIS_RESULT != null)
+            //            html += "<td>" + response[i].LIS_RESULT + "</td>";
+            //        else
+            //            html += "<td></td>";
+            //        html += "<td style='display:none;'>" + Profileid + "</td>";
+            //        html += "<td style='display:none;'>" + Packageid + "</td>";
+            //        html += "<td style='display:none;'>" + InvestigationSeqid + "</td>";
+            //        html += "</tr>";
+            //    }
+            //    html += "</tbody><table>";
+            //    html += "<br/>";
+            //    if (response[0].InvestigationNotes != null) {
+            //        html += "<span style='color: darkred;'>Investigation Notes:</span>";
+            //        html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span>" + response[0].InvestigationNotes + "</span></div></div>";
+            //    }
+            //    if (response[0].Department != null) {
+            //        html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span style='color: darkred;'>Referrals:</span></div></div>";
+            //        html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span style='color: darkred;'>Cross Referral(Department):</span><br/>";
+            //        html += "<span> " + response[0].Department + "</span></div></div>";
+            //        html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span style='color: darkred;'>Reason for Referral :</span><br/>";
+            //        html += "<span> " + response[0].DepartmentRefNotes + "</span></div></div>";
+            //    }
+            //    if (response[0].Doctor != null) {
+            //        html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span style='color: darkred;'>Cross Referral:</span></div></div>";
+            //        html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span style='color: darkred;'>Cross Referral(Doctor):</span><br/>";
+            //        html += "<span> " + response[0].Doctor + "</span></div></div>";
+            //        html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span style='color: darkred;'>Reason for Referral :</span><br/>";
+            //        html += "<span> " + response[0].DoctorRefNotes + "</span></div></div>";
+            //    }
+
+            //    $("#OldInvestigation").html(html);
+            //}
+            //},
+            //complete: function () { $("#loading").css("display", "none"); }
+            //});
+        }
+        catch (e) {
+
+        }
+    }
+    function OnSuccessVisitInvest(response) {
+        try {
+            if (response.Header.length > 0) {
+                var html = "";
+                var Sno = 0;
+                html += "<table id='tblInvestiHeader' class='table table-bordered table-striped dataTable table-reflow'>";
+                html += "<thead><tr><td></td><td>S.no</td><td>Visit Date</td><td>Status</td></tr></thead><tbody>";
+                for (PCHeader = 0; PCHeader < response.Header.length; PCHeader++) {
+                    Sno = PCHeader + 1;
+                    var VisitDate = response.Header[PCHeader].CreatedDatetime;
+                    var PsHedSeqID = response.Header[PCHeader].Seqid;
+                    var status = response.Header[PCHeader].IsVerified;
+                    var InvestigationNotes = response.Header[PCHeader].InvestigationNotes;
+                    html += "<tr>";
+                    html += "<td><input type='image' style='width:21px;height:21px;' src='../Images/details_open.png' onclick='javascript:return CheckSelectInvestigation(this)'></td>";
+                    html += "<td style='display:none;'>" + PsHedSeqID + "</td>";
+                    html += "<td>" + Sno + "</td>";
+                    html += "<td>" + VisitDate + "</td>";
+                    if (status === true) {
+                        html += "<td>Verified</td>";
+                    }
+                    else {
+                        html += "<td>Not Verified</td>";
+                    }
+                    html += "<td style='display:none;'>" + InvestigationNotes + "</td>";
+                    html += "</tr>";
+                }
+                html += "</tbody></table>";
+                $("#OldInvestigation").html('');
+                $("#OldInvestigation").html(html);
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function CheckSelectInvestigation(SelectedRow) {
+        var row = SelectedRow.parentNode.parentNode;
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = row.rowIndex - 1;
+        var PSeqID = row.cells[1].innerHTML;
+
+        var className = myrow.cells[0].getElementsByTagName("input")[0].className;
+        if (className === "shown") {
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', '../Images/details_open.png');
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'abc');
+            $('#tblInvestiHeader > tbody > tr').eq(rowIndex).next().remove();
+        }
+        else {
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', '../Images/details_close.png');
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'shown');
+
+            var arg = PSeqID;
+            $.ajax({
+                url: "/Emr/GetInvestigationDetailsByHid/?HeaderSeqID=" + arg + "",
+                type: 'Get',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    if (response.length > 0) {
+                        var html = "";
+                        //$("#OldInvestigation").html(html);
+                        html += "<table id='tbloldinvest' class='table table-bordered table-striped dataTable table-reflow'>";
+
+                        for (var i = 0; i < response.length; i++) {
+                            if (i == 0) {
+                                html += "<thead><tr><td></td>";
+                                html += "<td>SNO</td><td>Investigation</td><td style='display:none;'>Rate</td><td>Result</td></tr></thead>";
+                            }
+                            var Profileid = response[i].LIS_Profileid;
+                            var Packageid = response[i].LIS_Packageid;
+                            var InvestigationSeqid = response[i].InvestigationSeqid;
+                            html += "<tr>";
+                            if (Profileid != 0 || Packageid != 0)
+                                html += "<td><input type='image' style='width:21px;height:21px;' src='../Images/details_open.png' onclick='javascript:return CheckSelectInvest(this)'></td>";
+                            else
+                                html += "<td></td>";
+                            html += "<td>" + parseInt(i + 1) + "</td>";
+                            html += "<td>" + response[i].InvestigationName + "</td><td style='display:none;'>" + response[i].InvestigationTotal + "</td>";
+                            if (response[i].LIS_RESULT != null)
+                                html += "<td>" + response[i].LIS_RESULT + "</td>";
+                            else
+                                html += "<td></td>";
+                            html += "<td style='display:none;'>" + Profileid + "</td>";
+                            html += "<td style='display:none;'>" + Packageid + "</td>";
+                            html += "<td style='display:none;'>" + InvestigationSeqid + "</td>";
+                            html += "</tr>";
+                        }
+                        html += "<table>";
+                        html += "<br/>";
+                        if (response[0].InvestigationNotes != null && response[0].InvestigationNotes!="") {
+                            html += "<span style='color: darkred;'>Investigation Notes:</span>";
+                            html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span>" + response[0].InvestigationNotes + "</span></div></div>";
+                        }
+                        //if (response[0].Department != null) {
+                        //    html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span style='color: darkred;'>Referrals:</span></div></div>";
+                        //    html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span style='color: darkred;'>Cross Referral(Department):</span><br/>";
+                        //    html += "<span> " + response[0].Department + "</span></div></div>";
+                        //    html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span style='color: darkred;'>Reason for Referral :</span><br/>";
+                        //    html += "<span> " + response[0].DepartmentRefNotes + "</span></div></div>";
+                        //}
+                        //if (response[0].Doctor != null) {
+                        //    html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span style='color: darkred;'>Cross Referral:</span></div></div>";
+                        //    html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span style='color: darkred;'>Cross Referral(Doctor):</span><br/>";
+                        //    html += "<span> " + response[0].Doctor + "</span></div></div>";
+                        //    html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span style='color: darkred;'>Reason for Referral :</span><br/>";
+                        //    html += "<span> " + response[0].DoctorRefNotes + "</span></div></div>";
+                        //}
+                        var newRow = $('<tr><td></td><td colspan="7">' + html + '</td></tr>');
+                        $('#tblInvestiHeader > tbody > tr').eq(rowIndex).after(newRow);
+                       // $("#OldInvestigation").html(html);
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        return false;
+    }
+    function CheckHISConnected() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/EmrApi/CheckISConnect",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    var data = response;
+                    if (data == "1")
+                        document.getElementById("maindiv").style.display = "none";
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function OnDepartmentChange(e) {
+        try {
+            var Department = document.getElementById('txtInvestdept').ej2_instances[0];
+            var query = new ej.data.Query();
+            query = (e.text !== '') ? query.where('Investigation_Name', 'Contains', e.text, true) : query;
+            e.updateData(Department.dataSource, query);
+            if (document.getElementById('nodeptdata')) {
+                document.getElementById('btndept').onclick = function () {
+                    var customValue = (document.getElementById('txtInvestdept')).value;
+                    var tData = getValues("/Emr/CreateNewDepartment/?DeptName=" + customValue + "");
+                    var newItem = { 'DepartmentName': tData.DepartmentName, 'DeptSeqID': tData.DeptSeqID };
+                    (Department.dataSource).push(newItem);
+                    Department.hidePopup();
+                    Department.addItem(newItem);
+                    Department.value = customValue;
+                    document.getElementById('txtInvestdept').ej2_instances[0].text = "";
+                    alert('Department Added Successfully');
+                };
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function onInvestfiltering(e) {
+        try {
+            var HISConnected = sessionStorage.getItem("HISConnected");
+            if (HISConnected != null && HISConnected != "" && HISConnected != "null" && HISConnected == "True")
+                document.getElementById("noinvestdata").style.display = "none";
+            else
+                document.getElementById("noinvestdata").style.display = "block";
+            var Investigation = document.getElementById('cmbInvestigation').ej2_instances[0];
+            var query = new ej.data.Query();
+            query = (e.text !== '') ? query.where('Investigation_Name', 'Contains', e.text, true) : query;
+            e.updateData(Investigation.dataSource, query);
+            if (document.getElementById('noinvestdata')) {
+                document.getElementById('btninvest').onclick = function () {
+                    var customValue = (document.getElementById('cmbInvestigation')).value;
+                    var tData = getValues("/Emr/CreateNewInvestigation/?InvestName=" + customValue + "");
+                    var newItem = { 'Investigation_Name': tData.Investigation_Name, 'Investigation_Seqid': tData.Investigation_Seqid };
+                    (Investigation.dataSource).push(newItem);
+                    Investigation.hidePopup();
+                    Investigation.addItem(newItem);
+                    Investigation.value = customValue;
+                    document.getElementById('cmbInvestigation').ej2_instances[0].text = "";
+                    alert('Test Added Successfully');
+                };
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function OnInvestigationChange() {
+        try {
+            var Investigation = document.getElementById('cmbInvestigation').ej2_instances[0];
+            var InvId = Investigation.value;
+            var InvName = Investigation.text;
+            if (InvName !== null) {
+                var table = $('#tblInvestigations');
+                var $tr = $('#tblInvestigations tr[data-id="' + InvId + '"]');
+                if ($tr.length === 0) {
+                    var HISConnected = sessionStorage.getItem("HISConnected");
+                    if (HISConnected != null && HISConnected != "" && HISConnected != "null" && HISConnected == "True")
+                        CreateNewHISInvestRow(InvId, InvName, false);
+                    else
+                        CreateNewInvestRow(InvId, InvName);
+                }
+                document.getElementById('cmbInvestigation').ej2_instances[0].text = "";
+                document.getElementById('cmbInvestigation').ej2_instances[0].value = "";
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function CreateNewInvestRow(InvId, InvName) {
+        var html = "";
+        var Rate = "0.00";
+        var HISPackage = false;
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/EmrApi/GetInvestRate/?Investid=" + InvId + "",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    Rate = response;
+                    if (InvId > 0) {
+                        html += "<tr data-id=\"" + InvId + "\"><td><input type=\"checkbox\" style=\"width:16px;height:16px;cursor:pointer;\" ></td>";
+                        html += "<td style='color:blue;'>" + InvName + "</td>";
+                        html += "<td style='display:none;'>" + InvId + "</td>";
+                        html += "<td style='display:none;'>" + Rate + "</td>";
+                        html += "<td style='text-align: center;'>";
+                        html += "<img src='../Images/Delete.png'  onclick='return DeleteInvestigation(this)' style='width: 25px !important;height:25px !important;cursor:pointer;'>";
+                        html += "</td>";
+                        html += "<td style='display:none;'>" + HISPackage + "</td>";
+                        html += "</tr>";
+                        $("#tblInvestigations tbody").append(html);
+                        document.getElementById('cmbInvestigation').ej2_instances[0].text = "";
+                    }
+
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+
+        }
+        return html;
+    }
+    function CreateNewHISInvestRow(InvId, InvName,HISPackage) {
+        var html = "";
+        var Rate = "0.00";
+        try {
+            if (HISPackage == true) {
+                if (InvId > 0) {
+                    html += "<tr data-id=\"" + InvId + "\"><td><input type=\"checkbox\" style=\"width:16px;height:16px;cursor:pointer;\" onclick='return FocusRow(this)'></td>";
+                    html += "<td style='color:blue;'>" + InvName + "</td>";
+                    html += "<td style='display:none;'>" + InvId + "</td>";
+                    html += "<td style='display:none;'>0</td>";
+                    html += "<td style='text-align: center;'>";
+                    html += "<img src='../Images/Delete.png'  onclick='return DeleteInvestigation(this)'  style='width: 25px !important;height:25px !important;cursor:pointer;'>";
+                    html += "</td>";
+                    html += "<td style='display:none;'>" + HISPackage + "</td>";
+                    html += "</tr>";
+                    $("#tblInvestigations tbody").append(html);
+                }
+            }
+            else {
+                $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/EmrApi/GetInvestRate/?Investid=" + InvId + "",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    Rate = response;
+                    if (InvId > 0) {
+                        html += "<tr data-id=\"" + InvId + "\"><td><input type=\"checkbox\" style=\"width:16px;height:16px;cursor:pointer;\" onclick='return FocusRow(this)'></td>";
+                        html += "<td style='color:blue;'>" + InvName + "</td>";
+                        html += "<td style='display:none;'>" + InvId + "</td>";
+                        html += "<td style='display:none;'>" + Rate + "</td>";
+                        html += "<td style='text-align: center;'>";
+                        html += "<img src='../Images/Delete.png'  onclick='return DeleteInvestigation(this)' style='width: 25px !important;height:25px !important;cursor:pointer;'>";
+                        html += "</td>";
+                        html += "<td style='display:none;'>" + HISPackage + "</td>";
+                        html += "</tr>";
+                        $("#tblInvestigations tbody").append(html);
+                        document.getElementById('cmbInvestigation').ej2_instances[0].text = "";
+                    }
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+            }
+
+            document.getElementById('cmbInvestigation').ej2_instances[0].text = "";
+            //document.getElementById('txtInvestPickHeader').ej2_instances[0].text = "";
+        }
+        catch (e) {
+
+        }
+        return html;
+    }
+    function DeleteInvestigation(SelectedRow) {
+        try {
+            var myrow = SelectedRow.parentNode.parentNode;
+            var rowIndex = myrow.rowIndex;
+            document.getElementById("tblInvestigations").deleteRow(myrow.rowIndex);
+            var table = document.getElementById("tblInvestigations");
+            var rowCount = table.rows.length;
+            var i = myrow.rowIndex;
+            document.getElementById('cmbInvestigation').ej2_instances[0].text = "";
+            document.getElementById('txtInvestPickHeader').ej2_instances[0].text = "";
+            document.getElementById('cmbInvestigation').ej2_instances[0].value = "";
+        }
+        catch (e) {
+
+        }
+        return false;
+    }
+    function OpenInvestAsPickList() {
+        try {
+            var tbl12 = document.getElementById("tblInvestigations");
+            var html = "";
+            var row12 = tbl12.rows.length;
+            $("#tblSaveAsNewInvestPickLsit tbody").empty();
+            for (k = 1; k < row12; k++) {
+                var sval12 = tbl12.rows[k];
+                var checkbox = sval12.cells[0].getElementsByTagName("input");
+                if ($(checkbox).is(':checked')) {
+                    var InvestName = sval12.cells[1].innerHTML;
+                    var InvestID = parseFloat(sval12.cells[2].innerHTML);
+                    var Rate = sval12.cells[3].innerHTML;
+                    html += "<tr><td>" + InvestName + "</td></tr>";
+                }
+            }
+            $("#tblSaveAsNewInvestPickLsit tbody").append(html);
+            document.getElementById('Investdialog').ej2_instances[0].show();
+        }
+        catch (e) {
+
+        }
+    }
+    function SaveAsInvesPickList() {
+        try {
+            var tbl12 = document.getElementById("tblInvestigations");
+            var PickListName = document.getElementById("txtInvestPickListName").value;
+            if (PickListName.length > 0) {
+                var PickArray = new Array();
+                var row12 = tbl12.rows.length;
+                var HISConnected = sessionStorage.getItem("HISConnected");
+                if (HISConnected != null && HISConnected != "" && HISConnected != "null" && HISConnected == "True") {
+                    for (k = 1; k < row12; k++) {
+                        var sval12 = tbl12.rows[k];
+                        var checkbox = sval12.cells[0].getElementsByTagName("input");
+                        if ($(checkbox).is(':checked')) {
+                            var InvestigationName = sval12.cells[1].innerHTML;
+                            var InvestigationID = sval12.cells[2].innerHTML;
+                            var TestAmt = sval12.cells[3].innerHTML;
+                            var objDetails = new Object();
+                            objDetails.HIS_PackageID = 0;
+                            objDetails.HIS_PACKAGENAME = PickListName;
+                            objDetails.HIS_TestID = InvestigationID;
+                            objDetails.HIS_TestAmt = TestAmt;
+                            PickArray.push(objDetails);
+                        }
+                    }
+                    var response = postValues("/Emr/CreateNewHISPickList", PickArray);
+                }
+                else {
+                    for (k = 1; k < row12; k++) {
+                        var sval12 = tbl12.rows[k];
+                        var checkbox = sval12.cells[0].getElementsByTagName("input");
+                        if ($(checkbox).is(':checked')) {
+                            var InvestigationName = sval12.cells[1].innerHTML;
+                            var InvestigationID = sval12.cells[2].innerHTML;
+                            var objDetails = new Object();
+                            objDetails.PicklistSeqid = 0;
+                            objDetails.PicklistName = PickListName;
+                            objDetails.InvestigationSeqid = InvestigationID;
+                            PickArray.push(objDetails);
+                        }
+                    }
+                    var response = postValues("/Emr/CreateNewInvestPickList", PickArray);
+                }
+                document.getElementById('Investdialog').ej2_instances[0].hide();
+                document.getElementById('txtInvestPickListName').value = "";
+                $("#tblSaveAsNewInvestPickLsit tbody").empty();
+                alert('Picklist Created Successfully');
+            }
+            else {
+                alert("Please Enter Pick List Name");
+            }
+        }
+        catch (e) {
+
+        }
+        return false;
+    }
+    function SaveInvpickList() {
+        var tbl12 = document.getElementById("tblInvestigations");
+        var PickListName = document.getElementById('txtInvestPickHeader').ej2_instances[0].value;
+        if (PickListName.length > 0) {
+            var PickArray = new Array();
+            var row12 = tbl12.rows.length;
+            var HISConnected = sessionStorage.getItem("HISConnected");
+            if (HISConnected != null && HISConnected != "" && HISConnected != "null" && HISConnected == "True") {
+                    for (k = 1; k < row12; k++) {
+                        var sval12 = tbl12.rows[k];
+                        var checkbox = sval12.cells[0].getElementsByTagName("input");
+                        if ($(checkbox).is(':checked')) {
+                            var InvestigationName = sval12.cells[1].innerHTML;
+                            var InvestigationID = sval12.cells[2].innerHTML;
+                            var TestAmt = sval12.cells[3].innerHTML;
+                            var objDetails = new Object();
+                            objDetails.HIS_PackageID = 0;
+                            objDetails.HIS_PACKAGENAME = PickListName;
+                            objDetails.HIS_TestID = InvestigationID;
+                            objDetails.HIS_TestAmt = TestAmt;
+                            PickArray.push(objDetails);
+                        }
+                    }
+                    var response = postValues("/Emr/CreateNewHISPickList", PickArray);
+                }
+                else {
+                    for (k = 1; k < row12; k++) {
+                        var sval12 = tbl12.rows[k];
+                        var checkbox = sval12.cells[0].getElementsByTagName("input");
+                        if ($(checkbox).is(':checked')) {
+                            var InvestigationName = sval12.cells[1].innerHTML;
+                            var InvestigationID = sval12.cells[2].innerHTML;
+                            var objDetails = new Object();
+                            objDetails.PicklistSeqid = 0;
+                            objDetails.PicklistName = PickListName;
+                            objDetails.InvestigationSeqid = InvestigationID;
+                            PickArray.push(objDetails);
+                        }
+                    }
+                    var response = postValues("/Emr/CreateNewInvestPickList", PickArray);
+                }
+                document.getElementById('Investdialog').ej2_instances[0].hide();
+                $("#tblSaveAsNewInvestPickLsit tbody").empty();
+                alert('Picklist Created Successfully');
+            }
+            else {
+                alert("Please Enter Pick List Name");
+            }
+        return false;
+    }
+    function Departmentonfiltering(e) {
+        var query = new ej.data.Query();
+        query = (e.text !== '') ? query.where('DepartmentName', 'Contains', e.text, true) : query;
+        e.updateData(@Html.Raw(JsonConvert.SerializeObject(ViewBag.Department)), query);
+    }
+    function Doctoronfiltering(e) {
+        var query = new ej.data.Query();
+        query = (e.text !== '') ? query.where('DoctorName', 'Contains', e.text, true) : query;
+        e.updateData(@Html.Raw(JsonConvert.SerializeObject(ViewBag.Doctor)), query);
+    }
+    function OnInvestPickListChange() {
+        var PickListName = document.getElementById('txtInvestPickHeader').ej2_instances[0].value;
+        if (PickListName.length > 0) {
+            var HISConnected = sessionStorage.getItem("HISConnected");
+            if (HISConnected != null && HISConnected != "" && HISConnected != "null" && HISConnected == "True")
+                GetDefaultHISInvestigation(PickListName,false);
+            else
+                GetDefaultInvestigation(PickListName);
+        }
+    }
+    function GetDefaultHISInvestigation(PicklistName,ISPackage) {
+        var arg = PicklistName;
+        $.ajax({
+            url: rootUrl + "/api/EmrApi/GetDefaultHISInvestPick/?DefaultValue=" + arg + "",
+            type: 'GET',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                for (Count = 0; Count < response.length; Count++) {
+                    var InvSeqID = response[Count].Investigation_Seqid;
+                    var Investigation = response[Count].Investigation_Name;
+                    var $tr = $('#tblInvestigations tr[data-id="' + InvSeqID + '"]');
+                    if ($tr.length === 0)
+                        CreateNewHISInvestRow(InvSeqID, Investigation, ISPackage);
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function GetDefaultInvestigation(PicklistName) {
+        var arg = PicklistName;
+        $.ajax({
+            url: rootUrl + "/api/EmrApi/GetDefaultInvestPick/?DefaultValue=" + arg + "",
+            type: 'GET',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                for (Count = 0; Count < response.length; Count++) {
+                    var InvSeqID = response[Count].Investigation_Seqid;
+                    var Investigation = response[Count].Investigation_Name;
+                    var $tr = $('#tblInvestigations tr[data-id="' + InvSeqID + '"]');
+                    if ($tr.length === 0)
+                        CreateNewInvestRow(InvSeqID, Investigation);
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function InvestigationChange() {
+        try {
+            //$("#btnVerifiyVitals").prop('disabled', true);
+        }
+        catch (e) {
+
+        }
+    }
+    function AddLetter() {
+        try {
+            var CrossReferral = document.getElementById('txtInvestreferral').ej2_instances[0].value;
+            if (CrossReferral != null) {
+                var CrossReferralDr = document.getElementById('txtInvestreferral').ej2_instances[0].text;
+                document.getElementById('Addletterdialog').ej2_instances[0].show();
+                var Patientid = $("#lblpatid").text();
+                var Patientname = $("#lblpatname").text();
+                var Age = $("#lblage").text();
+                var Gender = $("#lblgender").text();
+                var Doctor = $("#lblrefdoc").text();
+                $("#lblinvpatid").text(Patientid);
+                $("#lblinvpatname").text(Patientname);
+                $("#lblinvage").text(Age);
+                $("#lblinvgender").text(Gender);
+                $("#lblinvdoc").text(Doctor);
+                $("#lblinvrefdoctor").text(CrossReferralDr);
+            }
+            else
+                alert('Please Enter Cross Referral Name');
+        }
+        catch (e) {
+
+        }
+    }
+    function CancelLetter() {
+        try {
+            document.getElementById('Addletterdialog').ej2_instances[0].hide();
+        }
+        catch (e) {
+
+        }
+    }
+    function SaveAsLetters() {
+        try {
+            var Patientid = $("#lblpatid").text();
+            var Patientname = $("#lblpatname").text();
+            var Age = $("#lblage").text();
+            var Gender = $("#lblgender").text();
+            var visitid = $("#lblvisitid").text();
+            var CrossReferralDr = document.getElementById('txtInvestreferral').ej2_instances[0].value;
+            var EditorVal= $("#txtEditor").Editor("getText");
+            var sendJsonData = {
+                PatientID: Patientid,
+                FirstName: Patientname,
+                Age: Age,
+                Gender: Gender,
+                VisitID: visitid,
+                DoctorID: CrossReferralDr,
+                LetterBody:EditorVal
+                };
+            var response = postValues("/Emr/CreateNewInvVisit", sendJsonData);
+            $("#txtEditor").Editor("setText","");
+            document.getElementById('Addletterdialog').ej2_instances[0].hide();
+        }
+        catch (e) {
+
+        }
+    }
+</script>
+<script>
+    var windowObjectReference;
+    function IsAlreadyInvestExists(IsVerified) {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        var PatID = $("#lblpatid").text();
+        var VisitId = $("#lblvisitid").text();
+        var tblinvest = document.getElementById("tblInvestigations");
+        var notes = $("#txtInvestNotes").val();
+
+        if (tblinvest.rows.length == 1 ) {
+            alert('Please Enter Investigation to save');
+        }
+        else {
+            $.ajax({
+                url: rootUrl + "/Emr/IsAlreadyInvExists/?PatientID=" + PatID + "&VisitID=" + VisitId + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    const verify = data.verified;
+                    const notverify = data.notverified;
+                    if (notverify == 1) {
+                        if (IsVerified === true) {
+                            InvestigationSave(true);
+                        }
+                        else {
+                            InvestigationSave(false);
+                        }
+                    }
+                    else if (verify == 1)
+                        OpenInvestStatus();
+
+                    else {
+                        if (IsVerified === true) {
+                            InvestigationSave(true);
+                        }
+                        else {
+                            InvestigationSave(false);
+                        }
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+
+    }
+    function OpenInvestStatus() {
+        document.getElementById('InvestigationInfo').ej2_instances[0].show();
+    }
+    function CloseInvestStatus() {
+        document.getElementById('InvestigationInfo').ej2_instances[0].hide();
+    }
+    function InvestigationSave(IsVerified) {
+        try {
+            var Patientid = $("#lblpatid").text();
+            var visitid = $("#lblvisitid").text();
+            var Department = document.getElementById('txtInvestdept').ej2_instances[0].value;
+            if (Department == null)
+                Department = 0;
+            var DepartmentNotes = $("#txtreason").val();
+            var CrossReferralDr = document.getElementById('txtInvestreferral').ej2_instances[0].value;
+            if (CrossReferralDr == null)
+                CrossReferralDr = 0;
+            var RefNots = $("#txtreasonref").val();
+            var Detail = new Array();
+            var tbl12 = document.getElementById("tblInvestigations");
+            var row12 = tbl12.rows.length;
+            for (k = 1; k < row12; k++) {
+                var sval12 = tbl12.rows[k];
+                var checkbox = sval12.cells[0].getElementsByTagName("input");
+                if ($(checkbox).is(':checked')) {
+                    var PackageActive = sval12.cells[5].innerHTML;
+                    if (PackageActive == "true") {
+                        PackageActive = true;
+                    }
+                    else {
+                        PackageActive = false;
+                    }
+                    var objDetail = new Object();
+                    objDetail.PatInvestDetSeqid = 0;
+                    objDetail.InvestigationSeqid = parseFloat(sval12.cells[2].innerHTML);
+                    objDetail.InvestigationName = sval12.cells[1].innerHTML;
+                    objDetail.InvestigationTotal = parseFloat(sval12.cells[3].innerHTML);
+                    objDetail.HIS_PackageActive = PackageActive;
+                    Detail.push(objDetail);
+                }
+            }
+            var InvestNotes = $("#txtInvestNotes").val();
+            var sendJsonData = {
+                PatientId: Patientid,
+                VisitId: visitid,
+                InvestigationNotes: InvestNotes,
+                Departmentid: Department,
+                DepartmentRefNotes: DepartmentNotes,
+                Doctorid: CrossReferralDr,
+                DoctorRefNotes: RefNots,
+                IsVerified: IsVerified,
+                InvDetails: Detail
+            };
+            $.ajax({
+                url: "/Emr/CreateNewPatInv",
+                type: 'post',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(sendJsonData),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    if (response.Header.length > 0) {
+                        var html = "";
+                        var Sno = 0;
+                        html += "<table id='tblInvestiHeader' class='table table-bordered table-striped dataTable table-reflow'>";
+                        html += "<thead><tr><td></td><td>S.no</td><td>Visit Date</td><td>Status</td></tr></thead><tbody>";
+                        for (PCHeader = 0; PCHeader < response.Header.length; PCHeader++) {
+                            Sno = PCHeader + 1;
+                            var VisitDate = response.Header[PCHeader].CreatedDatetime;
+                            var PsHedSeqID = response.Header[PCHeader].Seqid;
+                            var status = response.Header[PCHeader].IsVerified;
+                            var InvestigationNotes = response.Header[PCHeader].InvestigationNotes;
+                            html += "<tr>";
+                            html += "<td><input type='image' style='width:21px;height:21px;' src='../Images/details_open.png' onclick='javascript:return CheckSelectInvestigation(this)'></td>";
+                            html += "<td style='display:none;'>" + PsHedSeqID + "</td>";
+                            html += "<td>" + Sno + "</td>";
+                            html += "<td>" + VisitDate + "</td>";
+                            if (status === true) {
+                                html += "<td>Verified</td>";
+                            }
+                            else {
+                                html += "<td>Not Verified</td>";
+                            }
+                            html += "<td style='display:none;'>" + InvestigationNotes + "</td>";
+                            html += "</tr>";
+                        }
+                        html += "</tbody></table>";
+                        $("#OldInvestigation").html('');
+                        $("#OldInvestigation").html(html);
+                    }
+                    document.getElementById('InvestigationInfo').ej2_instances[0].hide();
+                    //var html = "";
+                    //$("#OldInvestigation").html(html);
+
+                    ////html += "<table id='tblInvestiHeader' class='table table-bordered table-striped dataTable table-reflow'>";
+                    ////html += "<thead><tr><td></td><td>S.no</td><td>Visit Date</td><td>Status</td></tr></thead><tbody>";
+
+                    //html += "<span style='color: darkred;'>Investigation:</span>";
+                    //html += "<br/>";
+                    //html += "<table id='tbloldinvest' class='table table-bordered table-striped dataTable table-reflow'>";
+                    //html += "<thead><tr><td></td>";
+                    //html += "<td>SNO</td><td>Investigation</td><td style='display:none;'>Rate</td><td>Result</td></tr></thead><tbody>";
+                    //for (var i = 0; i < response.length; i++) {
+                    //    var Profileid = response[i].LIS_Profileid;
+                    //    var Packageid = response[i].LIS_Packageid;
+                    //    var InvestigationSeqid = response[i].InvestigationSeqid;
+                    //    html += "<tr>";
+                    //    if (Profileid != 0 || Packageid != 0)
+                    //        html += "<td><input type='image' style='width:21px;height:21px;' src='../Images/details_open.png' onclick='javascript:return CheckSelectInvest(this)'></td>";
+                    //    else
+                    //        html += "<td></td>";
+                    //    html += "<td>" + parseInt(i + 1) + "</td>";
+                    //    html += "<td>" + response[i].InvestigationName + "</td><td style='display:none;'>" + response[i].InvestigationTotal + "</td>";
+                    //    if (response[i].LIS_RESULT != null)
+                    //        html += "<td>" + response[i].LIS_RESULT + "</td>";
+                    //    else
+                    //        html += "<td></td>";
+                    //    html += "<td style='display:none;'>" + Profileid + "</td>";
+                    //    html += "<td style='display:none;'>" + Packageid + "</td>";
+                    //    html += "<td style='display:none;'>" + InvestigationSeqid + "</td>";
+                    //    html += "</tr>";
+                    //}
+                    //html += "</tbody><table>";
+                    //html += "<br/>";
+                    //if (response[0].InvestigationNotes != null) {
+                    //    html += "<span style='color: darkred;'>Investigation Notes:</span>";
+                    //    html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span>" + response[0].InvestigationNotes + "</span></div></div>";
+                    //}
+                    //if (response[0].Department != null) {
+                    //    html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span style='color: darkred;'>Referrals:</span></div></div>";
+                    //    html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span style='color: darkred;'>Cross Referral(Department):</span><br/>";
+                    //    html += "<span> " + response[0].Department + "</span></div></div>";
+                    //    html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span style='color: darkred;'>Reason for Referral :</span><br/>";
+                    //    html += "<span> " + response[0].DepartmentRefNotes + "</span></div></div>";
+                    //}
+                    //if (response[0].Doctor != null) {
+                    //    html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span style='color: darkred;'>Cross Referral:</span></div></div>";
+                    //    html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span style='color: darkred;'>Cross Referral(Doctor):</span><br/>";
+                    //    html += "<span> " + response[0].Doctor + "</span></div></div>";
+                    //    html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'><span style='color: darkred;'>Reason for Referral :</span><br/>";
+                    //    html += "<span> " + response[0].DoctorRefNotes + "</span></div></div>";
+                    //}
+                    //$("#OldInvestigation").html(html);
+                    if (IsVerified == true) {
+                        document.getElementById('cmbInvestigation').ej2_instances[0].text = "";
+                        document.getElementById('txtInvestPickHeader').ej2_instances[0].text = "";
+                        $("#tblInvestigations tbody").empty();
+                        $("#txtInvestNotes").val("");
+                        document.getElementById('txtInvestdept').ej2_instances[0].text = "";
+                        $("#txtreason").val("");
+                        document.getElementById('txtInvestreferral').ej2_instances[0].text = "";
+                        $("#txtreasonref").val("");
+                        $("#chkInvestPrevious").prop("checked", false);
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        catch (e) {
+
+        }
+    }
+    function CheckSelectInvest(SelectedRow) {
+        var row = SelectedRow.parentNode.parentNode;
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = row.rowIndex - 1;
+        var Patientid = $("#lblpatid").text();
+        var Profileid = row.cells[5].innerHTML;
+        var Packageid = row.cells[6].innerHTML;
+        var Investid = row.cells[7].innerHTML;
+
+
+        var className = myrow.cells[0].getElementsByTagName("input")[0].className;
+        if (className === "shown") {
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', '../Images/details_open.png');
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'abc');
+            $('#tbloldinvest > tbody > tr').eq(rowIndex).next().remove();
+        }
+        else {
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', '../Images/details_close.png');
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'shown');
+
+
+            $.ajax({
+                url: "/Emr/GetProfiletests/?Patid=" + Patientid + "&Profileid="+Profileid+"&Packageid="+Packageid+"&Investid="+Investid+"",
+                type: 'Get',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    var html = "<table id='myTableinvest' class='table table-striped table-bordered table-hover table-full-width dataTable no-footer'>";
+                    html += "<tr>";
+                    html += "<thead><th>SN0</th><th>Test Name</th><th>Result</th></thead>";
+                    html += "</tr><tbody >";
+                    var Sno = 0;
+                    for (TestCount = 0; TestCount < response.Profilelist.length; TestCount++) {
+                        Sno = TestCount + 1;
+                        html += "<tr>";
+                        html += "<td>" + Sno + "</td>";
+                        html += "<td>" + response.Profilelist[TestCount].Testname + "</td>";
+                        html += "<td>" + response.Profilelist[TestCount].Result + "</td>";
+                        html += "</tr>";
+                    }
+                    html += " </tbody></table>";
+
+                    var newRow = $('<tr><td></td><td colspan="3">' + html + '</td></tr>');
+                    $('#tbloldinvest > tbody > tr').eq(rowIndex).after(newRow);
+                 },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        return false;
+    }
+    function GetAllPatientInvestByPatid() {
+        try {
+            if (document.getElementById("investmoreimg").src = "/images/MOREX.png")
+            {
+                var arg = $("#lblpatid").text();
+                $.ajax({
+                    url: rootUrl + "/Emr/GetInvestigationByPatient/?PatID=" + arg + "",
+                    type: 'GET',
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    beforeSend: function () { $("#loading").css("display", "block"); },
+                    success: OnSuccessInvestigation,
+                    complete: function () { $("#loading").css("display", "none"); }
+                });
+            }
+            else {
+                GetLastInvestigation();
+                document.getElementById("investmoreimg").src = "/images/MOREX.png";
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function OnSuccessInvestigation(response) {
+        if (response.Header.length > 0) {
+            var html = "";
+            for (PCHeader = 0; PCHeader < response.Header.length; PCHeader++) {
+                var VisitDate = response.Header[PCHeader].CreatedDatetime;
+                var PsHedSeqID = response.Header[PCHeader].Seqid;
+                html += "<div class='row'><div class='col-xs-12'><table id='tbloldinvest' Class='table table-bordered table-striped dataTable table-reflow'>";
+                html += "<thead><tr><td colspan='3' style='font-weight: 700;color: darkred;'>Investigation-" + VisitDate + " </td>";
+                html += "<td style='font-weight: 700;color: darkred;'>Verified</td></thead><tbody>";
+                for (PCDetails = 0; PCDetails < response.Details.length; PCDetails++) {
+                    var InvestHeader = response.Details[PCDetails].PatInvestHeaderSeqid;
+                    var InvestigationID = response.Details[PCDetails].InvestigationSeqid;
+                    var InvestigationName = response.Details[PCDetails].InvestigationName;
+                    var InvestigationTot = response.Details[PCDetails].InvestigationTotal;
+                    var LIS_RESULT = response.Details[PCDetails].LIS_RESULT;
+                    var Profileid = response.Details[PCDetails].LIS_Profileid;
+                    var Packageid = response.Details[PCDetails].LIS_Packageid;
+                    if (PsHedSeqID === InvestHeader) {
+                        html += "<tr data-id=\"" + InvestigationID + "\">";
+                        if (Profileid != 0 || Packageid != 0)
+                            html += "<td><input type='image' style='width:21px;height:21px;' src='../Images/details_open.png' onclick='javascript:return CheckSelectInvest(this)'></td>";
+                        else
+                            html += "<td></td>";
+                        html += "<td>" + parseInt(PCDetails + 1) + "</td><td>" + InvestigationName + "</td><td style='display:none;'>" + InvestigationTot + "</td>";
+                        if (LIS_RESULT != null)
+                            html += "<td>" + LIS_RESULT + "</td>";
+                        else
+                            html += "<td></td>";
+
+                        html += "<td style='display:none;'>" + Profileid + "</td>";
+                        html += "<td style='display:none;'>" + Packageid + "</td>";
+                        html += "<td style='display:none;'>" + InvestigationID + "</td>";
+                        html += "</tr>";
+                    }
+                }
+                html += "</tbody></table></div></div>";
+                if (response.Header[PCHeader].InvestigationNotes != null) {
+                     html += "<div class='row'><div class='col-xs-12'><div class='form-group'><span style='color: darkred;'>Investigation Notes</span><br/>"
+                     html += "<span>" + response.Header[PCHeader].InvestigationNotes + "</span></div></div></div>";
+                }
+                if (response.Header[PCHeader].DepartmentName != null) {
+                    html += "<div class='row'><div class='col-xs-12'><div class='form-group'><span style='color: darkred;'>Cross Referral(Department)</span><br/>";
+                    html += "<span>" + response.Header[PCHeader].DepartmentName + "</span></div></div></div>";
+                    html += "<div class='row'><div class='col-xs-12'><div class='form-group'><span style='color: darkred;'>Reason for Referral</span><br/>";
+                    html += "<span>" + response.Header[PCHeader].DepartmentRefNotes + "</span></div></div></div>";
+                }
+                if (response.Header[PCHeader].DoctorName != null) {
+                    html += "<div class='row'><div class='col-xs-12'><div class='form-group'><span style='color: darkred;'>Cross Referral(Doctor)</span><br/>";
+                    html += "<span>" + response.Header[PCHeader].DoctorName + "</span></div></div></div>";
+                    html += "<div class='row'><div class='col-xs-12'><div class='form-group'><span style='color: darkred;'>Reason for Referral</span><br/>";
+                    html += "<span>" + response.Header[PCHeader].DoctorRefNotes + "</span></div></div></div>";
+                }
+            }
+            document.getElementById("investmoreimg").src = "/images/Less.png"
+            $("#OldInvestigation").html(html);
+        }
+    }
+    function InvestigationPrint() {
+        try {
+            var arg = $("#lblvisitid").text();
+            $.ajax({
+                url: rootUrl + "/Emr/GetInvestigationByVisit/?Visitid=" + arg + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: OnSuccessInvestPrint,
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        catch (e) {
+
+        }
+    }
+    function OnSuccessInvestPrint(response) {
+        var Hospitaldtl = "";
+        var Patdtl = "";
+        var html = "";
+        if (response.Header.length > 0) {
+            if (response.HospitalDtl.length > 0) {
+                Hospitaldtl += "<table class='TableFont' style='width:95%;'><tr>";
+                Hospitaldtl += "<td><img src='data:image/jpeg;base64," + response.HospitalDtl[0].HospitalLogo + "' style='width:100%; max-width:200px;height:100px;'></td>";
+                Hospitaldtl += "<td><table style='float:right;' class='TableFont'>";
+                Hospitaldtl += "<tr><td style='float:right;'>" + response.HospitalDtl[0].HospitalName + "</td></tr>";
+                Hospitaldtl += "<tr><td style='float:right;'>" + response.HospitalDtl[0].HospitalAddress + " " + response.HospitalDtl[0].HospitalAddress1 + " " + response.HospitalDtl[0].HospitalAddress2 + "</td></tr>";
+                if( response.HospitalDtl[0].HospitalMobileNo!=0&& response.HospitalDtl[0].HospitalMobileNo!="")
+                    Hospitaldtl += "<tr><td style='float:right;'>Mobile : " + response.HospitalDtl[0].HospitalMobileNo + "</td></tr>";
+                Hospitaldtl += "<tr><td style='float:right;'>Phone : " + response.HospitalDtl[0].HospitalLandlineNo + "</td></tr>";
+                Hospitaldtl += "<tr><td style='float:right;'>" + response.HospitalDtl[0].City + "";
+                if (response.HospitalDtl[0].Pin != "" && response.HospitalDtl[0].Pin != null)
+                    Hospitaldtl += "-" + response.HospitalDtl[0].Pin + "</td></tr>";
+                else
+                    Hospitaldtl += "</td></tr>";
+                if(response.HospitalDtl[0].Country != "" && response.HospitalDtl[0].Country != null)
+                    Hospitaldtl += "<tr><td style='float:right;'>" + response.HospitalDtl[0].Country + "</td></tr>";
+                Hospitaldtl += "</table></td>";
+                Hospitaldtl += "</tr></table>";
+                Hospitaldtl += "<table style='width:100%;'><tr><td style='font-weight: bold;border-top: solid 1px black;'></td></tr></table>";
+            }
+            html += Hospitaldtl;
+            if (response.PatientDtl.length > 0) {
+                Patdtl += "<table class='TableFont' style='float:left;width:50%;'>";
+                Patdtl += "<tr>";
+                Patdtl += "<td><b>UHID No </b></td><td>:</td><td>" + response.PatientDtl[0].PatientID + "</td>";
+                Patdtl += "</tr>";
+                Patdtl += "<tr>";
+                Patdtl += "<td><b>Age </b></td><td>:</td><td>" + response.PatientDtl[0].Age + "</td>";
+                Patdtl += "</tr>";
+                Patdtl += "<tr>";
+                Patdtl += "<td><b>Doctor Name </b></td><td>:</td><td>" + response.PatientDtl[0].RefDoctor + "</td>";
+                Patdtl += "</tr>";
+                Patdtl += "</table>";
+
+                Patdtl += "<table class='TableFont' style='float: right;width:50%;'>";
+                Patdtl += "<tr>";
+                Patdtl += "<td><b>Patient Name</b></td><td>:</td><td>" + response.PatientDtl[0].FirstName + "</td>";
+                Patdtl += "</tr>";
+                Patdtl += "<tr>";
+                Patdtl += "<td><b>Gender</b></td><td>:</td><td>" + response.PatientDtl[0].Gender + "</td>";
+                Patdtl += "</tr>";
+                Patdtl += "</table>";
+
+                Patdtl += "<table style='width:100%;'><tr><td style='font-weight: bold;border-top: solid 1px black;'></td></tr></table>";
+            }
+            html += Patdtl;
+            for (PCHeader = 0; PCHeader < response.Header.length; PCHeader++) {
+                var DtlSeqid = 0;
+                if (PCHeader != 0) {
+                    html += "<div style='page-break-before: always;'></div>";
+                    html += Hospitaldtl;
+                    html += Patdtl;
+                }
+                var VisitDate = response.Header[PCHeader].CreatedDatetime;
+                var PsHedSeqID = response.Header[PCHeader].Seqid;
+                html += "<table  border='0' style='width:100%;' Class='table table-bordered table-striped dataTable table-reflow TableFont'>";
+                html += "<thead><tr><td colspan='4' style='font-weight: 700;'>Investigation-" + VisitDate + " </td>";
+                html += "</thead><tbody>";
+                html += "<tr><td style='font-weight:bold;'>SNO</td><td style='font-weight:bold;'>Investigation</td><td colspan='2' style='font-weight:bold;'>Result</td></tr>";
+                for (PCDetails = 0; PCDetails < response.Details.length; PCDetails++) {
+                    var InvestHeader = response.Details[PCDetails].PatInvestHeaderSeqid;
+                    var InvestigationID = response.Details[PCDetails].InvestigationSeqid;
+                    var InvestigationName = response.Details[PCDetails].InvestigationName;
+                    var InvestigationTot = response.Details[PCDetails].InvestigationTotal;
+                    var LIS_RESULT = response.Details[PCDetails].LIS_RESULT;
+                    var Profileid = response.Details[PCDetails].LIS_Profileid;
+                    var Packageid = response.Details[PCDetails].LIS_Packageid;
+                    var HISOrderid = response.Details[PCDetails].HIS_Orderid;
+                    var ProfileDtlseqid = 0;
+                    var PackageDtlseqid = 0;
+                    if (PsHedSeqID === InvestHeader) {
+                        DtlSeqid = parseInt(DtlSeqid + 1);
+
+                        html += "<tr><td>" + DtlSeqid + "</td><td>" + InvestigationName + "</td>";
+                        if (LIS_RESULT != null)
+                            html += "<td colspan='2'>" + LIS_RESULT + "</td></tr>";
+                        else
+                            html += "<td colspan='2'></td></tr>";
+                        if (Profileid != 0) {
+                            var profileresponse = getValues("/Emr/GetProfileDetails/?Profileid=" + Profileid + "&HISOrderid=" + HISOrderid + "");
+                            if (profileresponse.ProfileDetails.length > 0) {
+                                for (var s = 0; s < profileresponse.ProfileDetails.length; s++) {
+                                    ProfileDtlseqid = parseInt(ProfileDtlseqid + 1);
+                                    var Investname = profileresponse.ProfileDetails[s].InvestigationName;
+                                    var Result = profileresponse.ProfileDetails[s].LIS_RESULT;
+                                    if (s == 0)
+                                        html += "<tr><td></td><td style='font-weight:bold;'>SNO</td><td style='font-weight:bold;'>Investigation</td><td style='font-weight:bold;'>Result</td></tr>";
+                                    html += "<tr>";
+                                    html += "<td></td><td>" + ProfileDtlseqid + "</td><td>" + Investname + "</td>";
+                                    if (Result != null)
+                                        html += "<td>" + Result + "</td>";
+                                    else
+                                        html += "<td></td>";
+                                    html += "</tr>";
+                                }
+                            }
+                        }
+                        else if (Packageid != 0) {
+                            var packageresponse = getValues("/Emr/GetPackageDetails/?Packageid=" + Packageid + "&HISOrderid=" + HISOrderid + "");
+                            if (packageresponse.PackageDetails.length > 0) {
+                                for (var l = 0; l < packageresponse.PackageDetails.length; l++) {
+                                    PackageDtlseqid = parseInt(PackageDtlseqid + 1);
+                                    var Investname = packageresponse.PackageDetails[l].InvestigationName;
+                                    var Result = packageresponse.PackageDetails[l].LIS_RESULT;
+                                    if (l == 0)
+                                        html += "<tr><td></td><td style='font-weight:bold;'>SNO</td><td style='font-weight:bold;'>Investigation</td><td style='font-weight:bold;'>Result</td></tr>";
+                                    html += "<tr>";
+                                    html += "<td></td><td>" + PackageDtlseqid + "</td><td>" + Investname + "</td>";
+                                    if (Result != null)
+                                        html += "<td>" + Result + "</td>";
+                                    else
+                                        html += "<td></td>";
+                                    html += "</tr>";
+                                }
+                            }
+                        }
+                    }
+                }
+                html += "</tbody></table><br/>";
+                if (response.Header[PCHeader].InvestigationNotes != null) {
+                    html += "<div class='row'><div class='col-xs-12'><div class='form-group'><span><b>Investigation Notes : </b></span>"
+                    html += "<span>" + response.Header[PCHeader].InvestigationNotes + "</span></div></div></div><br/>";
+                }
+                if (response.Header[PCHeader].DepartmentName != null) {
+                    html += "<div class='row'><div class='col-xs-12'><div class='form-group'><span><b>Cross Referral(Department) : </b></span>";
+                    html += "<span>" + response.Header[PCHeader].DepartmentName + "</span></div></div></div><br/>";
+                    html += "<div class='row'><div class='col-xs-12'><div class='form-group'><span ><b>Reason for Referral : </b></span>";
+                    html += "<span>" + response.Header[PCHeader].DepartmentRefNotes + "</span></div></div></div><br/>";
+                }
+                if (response.Header[PCHeader].DoctorName != null) {
+                    html += "<div class='row'><div class='col-xs-12'><div class='form-group'><span ><b>Cross Referral(Doctor) : </b></span>";
+                    html += "<span>" + response.Header[PCHeader].DoctorName + "</span></div></div></div><br/>";
+                    html += "<div class='row'><div class='col-xs-12'><div class='form-group'><span><b>Reason for Referral : </b></span>";
+                    html += "<span>" + response.Header[PCHeader].DoctorRefNotes + "</span></div></div></div>";
+                }
+            }
+            sessionStorage.setItem("PrintDetails", html);
+            openRequestedPopup();
+        }
+        else {
+            alert('No Records Found');
+        }
+    }
+    function openRequestedPopup() {
+        var url = '@Url.Action("Print", "Home")';
+        window.open(url, '_blank');
+    }
+    function OnFocus(args) {
+        this.showPopup();
+    }
+    function investopenPopup() {
+        var multiselectObj = document.getElementById("txtInvestPickHeader");
+        multiselectObj.ej2_instances[0].showPopup();
+    }
+    function investonCreate() {
+        document.getElementById("txtInvestPickHeader").addEventListener("click", investopenPopup);
+    }
+    function investactionComplete(e) {
+        if (this.suggestionCount) {
+            e.result = e.result.slice(0, this.suggestionCount)
+        }
+    }
+    function investfiltering(args) {
+        var dataSource;
+        new ej.data.DataManager({ url: "/api/EmrApi/GetInvestPickListHeader/", adaptor: new ej.data.WebApiAdaptor }).executeQuery(new ej.data.Query().where('PicklistName', 'Contains', args.text, true)).then((e) => {
+            dataSource = e.result;
+            var dropdown_query = new ej.data.Query();
+            if (args.text !== '') {
+                dropdown_query = dropdown_query.where('PicklistName', 'Contains', args.text, true);
+                args.updateData(dataSource, dropdown_query);
+            } else {
+                args.updateData(dataSource);
+            }
+        });
+    }
+    function onInvestSelect(e) {
+        this.onBlur(e);
+    }
+    function OpenAddInvestigationPopup() {
+        $("#txtAddNewInvestigation").val("");
+        document.getElementById('AddInvestigation').ej2_instances[0].show();
+    }
+    function AddNewInvestigation() {
+        var InvestigationName = $("#txtAddNewInvestigation").val();
+        if (InvestigationName.length > 0) {
+            var tDataa = getValues("/Emr/CreateNewInvestigation/?InvestName=" + InvestigationName + "");
+            if (tDataa.Investigation_Name === "Already Exists") {
+                alert("Already Exists");
+            }
+            else {
+                alert("Save Success");
+                var newItems = { 'Investigation_Name': tDataa.Investigation_Name, 'Investigation_Seqid': tDataa.Investigation_Seqid };
+                var Investigations = document.getElementById('cmbInvestigation').ej2_instances[0];
+                Investigations.addItem(newItems);
+                document.getElementById('AddInvestigation').ej2_instances[0].hide();
+            }
+        }
+        else {
+            alert("please Enter Investigation Name");
+        }
+    }
+    function SendToMediview() {
+        var arg = $("#lblpatid").text();
+        $.ajax({
+            url: "/Emr/SendMediview/?PatientID=" + arg + "",
+            type: 'GET',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (data) {
+                alert(data);
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+    function OpenMediviewReport() {
+        var arg = $("#lblpatid").text();
+        $.ajax({
+            url: "/Emr/GetMediviewReports/?PatientID=" + arg + "",
+            type: 'GET',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                var html = "";
+                var Sno = 0;
+                html += "<table id='tblMediviewReport' class='table table-bordered table-striped dataTable table-reflow'>";
+                html += "<thead><tr><td>S.no</td><td>Report Date</td><td>Reports</td></tr></thead><tbody>";
+                for (RCount = 0; RCount < response.length; RCount++) {
+                    Sno = RCount + 1;
+                    var ReportDate = response[RCount].ReportDate;
+                    var ReportPath = response[RCount].ImagePath;
+                    html += "<tr>";
+                    html += "<td>" + Sno + "</td>";
+                    html += "<td>" + ReportDate + "</td>";
+                    html += "<td><a  href='" + ReportPath + "' target='_blank'><img src='/images/PDF.png' style='height:30px;width:30px;'></a></td>";
+                }
+                html += "</tbody></table>";
+                $("#MediviewReportContainer").html(html);
+                document.getElementById('MediviewReport').ej2_instances[0].show();
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+    function GetLatestPatInvestigation() {
+        if ($("#chkInvestPrevious").is(":checked")) {
+            //var sendJsonData = {};
+            //var response = postValues("/Emr/GetPatDetails", sendJsonData);
+            //if (response.Pat.length > 0) {
+            //    var DoctorCompare = response.Pat[0].DoctorCompare;
+            //    if (DoctorCompare == false) {
+            //        document.getElementById('btnInvSafy').disabled = true;
+            //    }
+            //    else {
+            //        var verifyresponse = getValues("/Emr/GetVerifyDetails");
+            //        if (verifyresponse == false) {
+            //            $("#btnInvSafy").prop('disabled', true);
+            //        }
+            //        else {
+            //            $("#btnInvSafy").prop('disabled', false);
+            //        }
+            //    }
+            //}
+            var arg = $("#lblpatid").text();
+            $.ajax({
+                url: "/Emr/GetLatestPatInvestigation/?PatientId=" + arg + "",
+                type: 'Get',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: OnSuccessPatInvestigation,
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        else {
+            ClearAllInvestForm();
+        }
+    }
+    function ClearAllInvestForm() {
+        try {
+            document.getElementById('cmbInvestigation').ej2_instances[0].text = "";
+            document.getElementById('txtInvestPickHeader').ej2_instances[0].text = "";
+            $("#tblInvestigations tbody").empty();
+            $("#txtInvestNotes").val("");
+            document.getElementById('txtInvestdept').ej2_instances[0].text = "";
+            $("#txtreason").val("");
+            document.getElementById('txtInvestreferral').ej2_instances[0].text = "";
+            $("#txtreasonref").val("");
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+    function OnSuccessPatInvestigation(response) {
+        var html = "";
+        var HISPackage = false;
+        if (response.PatInvestHeader.length > 0) {
+            for (InvestigateCount = 0; InvestigateCount < response.PatInvestHeader.length; InvestigateCount++) {
+                $("#txtInvestNotes").val(response.PatInvestHeader[InvestigateCount].InvestigationNotes);
+            }
+        }
+        if (response.PatInvestDetail.length > 0) {
+            $("#tblInvestigations tbody").empty();
+            for (InvestiCount = 0; InvestiCount < response.PatInvestDetail.length; InvestiCount++) {
+                var Investid = response.PatInvestDetail[InvestiCount].InvestigationSeqid;
+                var InvestName = response.PatInvestDetail[InvestiCount].InvestigationName;
+                html += "<tr data-id=\"" + Investid + "\"><td><input type=\"checkbox\" style=\"width:16px;height:16px;cursor:pointer;\" onclick='return FocusRow(this)' checked></td>";
+                html += "<td style='color:blue;'>" + InvestName + "</td>";
+                html += "<td style='display:none;'>" + Investid + "</td>";
+                html += "<td style='display:none;'>0</td>";
+                html += "<td style='text-align: center;'>";
+                html += "<img src='../Images/Delete.png'  onclick='return DeleteInvestigation(this)' style='width: 25px !important;height:25px !important;cursor:pointer;'>";
+                html += "</td>";
+                html += "<td style='display:none;'>" + HISPackage + "</td>";
+                html += "</tr>";
+            }
+            $("#tblInvestigations tbody").append(html);
+            document.getElementById('cmbInvestigation').ej2_instances[0].text = "";
+        }
+    }
+</script>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group" style="float:right;display:none;">
+                <a class="list-group-item" target="_blank"
+                   style="width:8%;background-color:blue;color:white;padding-right:57px;" href="/Home/InvestigationReport">Report</a>
+            </div>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group" style="float:right;">
+                <button type="button" id="btnMediview" class="btn EmrBtn" onclick="SendToMediview();">Send To Mediview</button>
+                <button type="button" id="btnMediviewReport" class="btn EmrBtn" onclick="OpenMediviewReport();">Mediview Reports</button>
+                <button type="button" id="btninvreport" style="display:none;" class="btn" onclick="InvestigationPrint();" title="Print"><img src="~/images/Print.png" style="height:50px;width:50px;" /></button>
+                <button type="button" id="btnmoreInvest" class="btn" onclick="GetAllPatientInvestByPatid();" title="More"><img src="~/images/MOREX.png" id="investmoreimg" style="height:50px;width:50px;" /></button>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-7 col-sm-7 col-md-7">
+            <div class="panel panel-default DivBox">
+                <div class="row">
+                    <div class="col-xs-1 col-sm-1 col-md-1">
+                        <div class="form-check">
+                            <input type="checkbox" style="height:22px;width:30px" onclick="GetLatestPatInvestigation();" class="form-check-input"
+                                   id="chkInvestPrevious" title="Load Previous Data">
+                            <label class="form-check-label" for="chkInvestPrevious"></label>
+                        </div>
+                    </div>
+                    <div class="col-xs-4 col-sm-4 col-md-4" style="padding:0px;">
+                        <div class="form-group">
+                            <ejs-combobox id="cmbInvestigation" allowFiltering="true" cssClass="inputEmr"
+                                          dataSource="@ViewBag.Investigation" placeholder="Search Investigation" popupHeight="230px"
+                                          filtering="onInvestfiltering" change="OnInvestigationChange" focus="OnFocus" select="onInvestSelect">
+                                <e-combobox-fields text="Investigation_Name" value="Investigation_Seqid"></e-combobox-fields>
+                            </ejs-combobox>
+                        </div>
+                    </div>
+                    <div class="col-xs-1 col-sm-1 col-md-1" id="Adddiv">
+                        <div class="form-group">
+                            <span>
+                                <img src="~/images/ADD ITEM.png" style="height:45px;cursor:pointer;width:40px;margin-top:-8px;"
+                                     title="Add New Investigation" onclick="OpenAddInvestigationPopup();" />
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-xs-4 col-sm-4 col-md-4" style="padding:0px 0px 0px 11px;">
+                        <div class="form-group">
+                            <ejs-autocomplete id="txtInvestPickHeader" filterType="Contains" highlight="true" cssClass="inputEmr"
+                                              placeholder="Investigation Pick list" suggestionCount="10"
+                                              change="OnInvestPickListChange" filtering="investfiltering" actionComplete="investactionComplete" created="investonCreate">
+                                <e-data-manager url="/api/EmrApi/GetInvestPickListHeader/" adaptor="WebApiAdaptor"></e-data-manager>
+                                <e-autocomplete-fields value="PicklistName"></e-autocomplete-fields>
+                            </ejs-autocomplete>
+                        </div>
+                    </div>
+                    <div class="col-xs-1 col-sm-1 col-md-1" style="width:50px;">
+                        <div class="form-group">
+                            <img src="~/images/SAVEA PICKLISTX.png" style="height:40px;cursor:pointer;" title="Save As PickList" onclick="OpenInvestAsPickList();" />
+                        </div>
+                    </div>
+                    <div class="col-xs-1 col-sm-1 col-md-1" style="width:50px;">
+                        <div class="form-group">
+                            <img src="~/images/SAVE TO PICK LIST.png" style="height:40px;cursor:pointer;" title="Save To PickList" onclick="SaveInvpickList();" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="padding:11px;">
+                    <div class="col-xs-12 col-sm-12 col-md-12">
+                        <div class="table-responsive">
+                            <table id="tblInvestigations" class="table table-bordered table-striped dataTable table-reflow tableHB">
+                                <thead>
+                                    <tr>
+                                        <td></td>
+                                        <td>Investigation</td>
+                                        <td style="display:none;">Rate</td>
+                                        <td>Delete</td>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="form-group">
+                        <textarea class="form-control inputEmr" id="txtInvestNotes" placeholder="Notes" onchange="InvestigationChange();"></textarea>
+                    </div>
+                </div>
+                <div class="row" style="display:none;">
+                    <div class="col-xs-12 col-sm-12 col-md-12" style="padding:11px;border-bottom: 1px solid #e5e5e5;">
+                        <div class="form-group">
+                            <fieldset>
+                                <legend style="font-size:18px;">Referrals:</legend>
+                                <div class="col-xs-12 col-sm-12 col-md-12" style="padding:0px;">
+                                    <div class="form-group">
+                                        <ejs-combobox id="txtInvestdept" cssClass="inputEmr"
+                                                      noRecordsTemplate="@Html.Raw("<div>"
+                                               +"<div id=\"nodeptdata\"> No matched item, do you want to add it as new department in list?</div>"
+                                               + "<button id=\"btndept\" class=\"e-control e-btn\">Add New Department</button></div>")"
+                                                      allowFiltering="true" filtering="Departmentonfiltering"
+                                                      change="OnDepartmentChange"
+                                                      dataSource="@ViewBag.Department"
+                                                      placeholder="Referred to (Department)" popupHeight="230px">
+                                            <e-combobox-fields text="DepartmentName" value="DeptSeqID"></e-combobox-fields>
+                                        </ejs-combobox>
+                                    </div>
+                                </div>
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="form-group">
+                                        <textarea class="form-control inputEmr" id="txtreason" placeholder="Reason for Referral"
+                                                  onchange="InvestigationChange();"></textarea>
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="display:none;">
+                    <div class="col-xs-12 col-sm-12 col-md-12" style="padding:11px;border-bottom: 1px solid #e5e5e5;">
+                        <div class="form-group">
+                            <fieldset>
+                                <legend style="font-size:18px;">Cross Referral:</legend>
+                                <div class="col-xs-12 col-sm-12 col-md-12" style="padding:0px;">
+                                    <div class="form-group">
+                                        <ejs-combobox id="txtInvestreferral" cssClass="inputEmr"
+                                                      allowFiltering="true" filtering="Doctoronfiltering"
+                                                      dataSource="@ViewBag.Doctor" placeholder="Cross Referral" popupHeight="230px">
+                                            <e-combobox-fields text="DoctorName" value="DoctorSeqID"></e-combobox-fields>
+                                        </ejs-combobox>
+                                    </div>
+                                </div>
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="form-group">
+                                        <textarea class="form-control inputEmr" id="txtreasonref" placeholder="Reason for Referral" onchange="InvestigationChange();"></textarea>
+                                    </div>
+                                </div>
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <button type="button" id="btnAddLetter" class="btn EmrbtnPrimary" onclick="AddLetter();">
+                                        <span class="glyphicon glyphicon-plus-sign"></span> Add Letter
+                                    </button>
+                                </div>
+                            </fieldset>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" id="Investbtndiv">
+                    <div class="col-xs-12 col-sm-12 col-md-12" style="padding:11px;border-bottom: 1px solid #e5e5e5;">
+                        <div class="form-group">
+                            <button type="button" id="btnSave" class="btn" onclick="IsAlreadyInvestExists(false);" title="Save">
+                                <img src="~/images/SAVES.png" style="height:50px;width:50px;">
+                            </button>
+                            <button type="button" id="btnInvSafy" class="btn" onclick="IsAlreadyInvestExists(true);" title="Save and verify">
+                                <img src="~/images/verify-512.png" style="height:50px;width:50px;">
+                            </button>
+                            <button type="button" id="btncancel" onclick="CancelViewclick();" class="btn" title="Cancel">
+                                <img src="~/images/CANCEL-512.png" style="height:50px;width:50px;">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-5 col-sm-5 col-md-5">
+            <div class="panel panel-default DivBox">
+                <div id="OldInvestigation" class="row" style="padding:15px;">
+
+                </div>
+            </div>
+        </div>
+        <div>
+            <ejs-dialog id="Investdialog" showCloseIcon="true" cssClass="ejs-dialog" header="Investigation Pick Lsit Name" style="max-height:400px" visible="false" width="634px">
+                <e-content-template>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtInvestPickListName" class="form-control" placeholder="Enter Pick List Name" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <div class="table-responsive">
+                                    <table id="tblSaveAsNewInvestPickLsit" class="table table-bordered table-striped dataTable table-reflow">
+                                        <thead>
+                                            <tr>
+                                                <td style="font-weight: 700;color: darkred;">Investigation</td>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <button type="button" id="btnInvSavePickList" class="btn" onclick="SaveAsInvesPickList();">
+                                    <img src="~/images/SAVES.png" style="height:50px;width:50px;" title="Save">
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </e-content-template>
+            </ejs-dialog>
+        </div>
+        <div style="margin-right:1000px;">
+            <ejs-dialog id="Addletterdialog" showCloseIcon="true" cssClass="ejs-invdialog" header="Add Letter" style="max-height:1000px;margin-left:100px;background-color:lightgray;" visible="false" width="1000px">
+                <e-content-template>
+                    <div class="row">
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <label>Patient ID:</label>
+                                <label id="lblinvpatid"></label>
+                            </div>
+                        </div>
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <label>Patient Name:</label>
+                                <label id="lblinvpatname"></label>
+                            </div>
+                        </div>
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <label>Age:</label>
+                                <label id="lblinvage"></label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <label>Gender:</label>
+                                <label id="lblinvgender"></label>
+                            </div>
+                        </div>
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <label>Reffering Dr:</label>
+                                <label id="lblinvrefdoctor"></label>
+                            </div>
+                        </div>
+                        <div class="col-xs-4 col-sm-4 col-md-4">
+                            <div class="form-group">
+                                <label>Consulting Dr:</label>
+                                <label id="lblinvdoc"></label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="control-section">
+                            <div id="content" class="box-form">
+                                <form id="form-element" class="form-vertical">
+                                    <div class="form-group">
+                                        <div class="row">
+                                            <div class="col-xs-4" id="ReportEditer">
+                                                <div class="row" id="RoEditer">
+                                                    <div class="form-group">
+                                                        <div class="col-lg-12 nopadding" style="width:990px;margin-left:10px;">
+                                                            <textarea id="txtEditor"></textarea>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <br />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <button type="button" id="btnaddletter" style="background-color:blue;" class="btn btn-info" onclick="SaveAsLetters();">
+                                    <span class="glyphicon glyphicon-floppy-disk"></span> Save
+                                </button>
+                                <button type="button" id="btncancelletter" style="background-color:blue;" class="btn btn-info" onclick="CancelLetter();">
+                                    <span class="glyphicon glyphicon-remove-circle"></span> Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </e-content-template>
+            </ejs-dialog>
+        </div>
+        <div>
+            <ejs-dialog id="AddInvestigation" showCloseIcon="true" cssClass="ejs-dialog" header="Add Investigation" style="max-height:400px" visible="false" width="634px">
+                <e-content-template>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtAddNewInvestigation" class="form-control inputEmr" placeholder="Enter Investigation" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <button type="button" id="btnAddNewInvestigation" class="btn" onclick="AddNewInvestigation();">
+                                    <img src="~/images/SAVES.png" style="height:50px;width:50px;" title="Save">
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </e-content-template>
+            </ejs-dialog>
+        </div>
+        <div>
+            <ejs-dialog id="MediviewReport" showCloseIcon="true" cssClass="ejs-dialog" header="Add Investigation" style="max-height:400px" visible="false" width="634px">
+                <e-content-template>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;" id="MediviewReportContainer">
+
+                        </div>
+                    </div>
+                </e-content-template>
+            </ejs-dialog>
+        </div>
+        <div>
+            <ejs-dialog id="InvestigationInfo" showCloseIcon="true" cssClass="ejs-help" header="Inforamtion" style="max-height:400px" visible="false" width="634px">
+                <e-content-template>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <span style="font-size: 15px !important;font-family: Source Sans Pro,sans-serif !important;">
+                                    There are data in the current visit Do you want to add new data?
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <button type="button" class="btn EmrbtnPrimary" onclick="InvestigationSave(false);" title="Yes">
+                                    Save
+                                </button>
+                                <button type="button" id="btnInvestInfoStatusYes" class="btn EmrbtnPrimary" onclick="InvestigationSave(true);" title="Yes">
+                                    Save & Verify
+                                </button>
+                                <button type="button" id="btnInvestInfoStatusNo" class="btn EmrbtnPrimary" onclick="CloseInvestStatus();" title="No">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </e-content-template>
+            </ejs-dialog>
+        </div>
+    </div>
+</div>
+
+

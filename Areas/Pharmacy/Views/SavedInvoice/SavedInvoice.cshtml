@@ -1,0 +1,481 @@
+﻿
+@*
+    For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
+*@
+<script type="text/javascript">
+    $(document).ready(function () {
+        GetSavedInvoiceSupplierMaster();
+    });
+    function GetTop50Invoice() {
+        $.ajax({
+            url: "/Pharma/Invoice/GetTop50Invoice",
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.length > 0) {
+                    BindTop50Invoice(response);
+                }
+                else {
+                    $("#tblSavedInvoice tbody").empty();
+                }
+               
+            }
+        });
+    }
+    function BindTop50Invoice(response) {
+        if (response.length > 0) {
+            var html = "";
+            var Sno = 0;
+            $("#tblSavedInvoice tbody").empty();
+            for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                Sno = PCHeader + 1;
+                var PH_IN_SEQID = response[PCHeader].PH_IN_SEQID;
+                var PH_IN_SUPP_INVNO = response[PCHeader].PH_IN_SUPP_INVNO;
+                var PH_IN_ENTRYDATE = response[PCHeader].PH_IN_ENTRYDATE;
+                var InvoiceType = response[PCHeader].InvoiceType;
+                var InvoiceGSTType = response[PCHeader].InvoiceGSTType;
+                var PH_SupplierName = response[PCHeader].PH_SupplierName;
+                var Amount = response[PCHeader].Amount;
+                var Tax = response[PCHeader].Tax;
+                var NetAmount = response[PCHeader].NetAmount;
+                var DiscountAmt = response[PCHeader].DiscountAmt;
+                var PH_INWareHouse = response[PCHeader].PH_INWareHouse;
+
+                html += "<tr>";
+                html += "<td><input type='image' style='width:21px;height:21px;' src='" + rootUrl + "/Images/details_open.png' onclick='javascript:return CheckInvoiceSelect(this)'></td>";
+                html += "<td>" + Sno + "</td>";
+                html += "<td style='display:none;'>" + PH_IN_SEQID + "</td>";
+                html += "<td>" + PH_SupplierName + "</td>";
+                html += "<td>" + PH_IN_SUPP_INVNO + "</td>";
+                html += "<td>" + PH_IN_ENTRYDATE + "</td>";
+                html += "<td>" + InvoiceType + "</td>";
+                html += "<td>" + InvoiceGSTType + "</td>";
+                html += "<td>" + Amount + "</td>";
+                html += "<td>" + Tax + "</td>";
+                html += "<td>" + DiscountAmt + "</td>";
+                html += "<td>" + NetAmount + "</td>";
+                html += "<td style='text-align: center;display:none;'>";
+                html += "<img src='" + rootUrl + "/Images/DELETE-32.png'  onclick='return DeleteInvoiceRow(this)' style='cursor:pointer;width: 30px !important;height:30px !important;'></td>";
+                html += "<td style='display:none;'>" + PH_INWareHouse + "</td>";
+                html += "<td><input type='button' value='Print' class='btn btn-primary' onclick='PrintSavedInvoiceBySeqID(this);'/></td>";
+                html += "</tr>";
+            }
+            $("#tblSavedInvoice tbody").append(html);
+        }
+        
+    }
+    function CheckInvoiceSelect(SelectedRow) {
+        var row = SelectedRow.parentNode.parentNode;
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = row.rowIndex - 1;
+        var PSeqID = row.cells[2].innerHTML;
+
+        var className = myrow.cells[0].getElementsByTagName("input")[0].className;
+        if (className === "shown") {
+            var imgUrl = rootUrl + "/Images/details_open.png";
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', imgUrl);
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'abc');
+            $('#tblSavedInvoice > tbody > tr').eq(rowIndex).next().remove();
+        }
+        else {
+            var imgUrl = rootUrl + "/Images/details_close.png";
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', imgUrl);
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'shown');
+
+            var arg = parseFloat(PSeqID);
+            $.ajax({
+                url: "/Pharma/Invoice/GetInvoiceDrugDeatils/?SeqID=" + arg + "",
+                type: 'Get',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    var html = "<table id='myTable1' class='table table-striped table-bordered table-hover table-full-width dataTable no-footer'>";
+                    html += "<tr>";
+                    html += "<thead><th>Brand Name</th><th>Batch</th><th>Expiry DT</th>";
+                    html += "<th>Qty</th><th>Free Qty</th>";
+                    html += "<th>Purchase Cost</th><th>MRP</th><th>GST</th>";
+                    html += "</thead>";
+                    html += "</tr>";
+                    for (SymCount = 0; SymCount < response.Deatils.length; SymCount++) {
+                        html += "<tr>";
+                        html += "<td>" + response.Deatils[SymCount].PH_ITEM_DRUGNAME_BRAND + "</td>";
+                        html += "<td>" + response.Deatils[SymCount].PH_INDTL_DRUGBATCHNO + "</td>";
+                        html += "<td>" + response.Deatils[SymCount].PH_INDTL_DRUGEXPIRY + "</td>";
+                        html += "<td>" + response.Deatils[SymCount].PH_INDTL_RECVDQTY + "</td>";
+                        html += "<td>" + response.Deatils[SymCount].PH_INDTL_BONUSQTY + "</td>";
+                        html += "<td>" + response.Deatils[SymCount].PurchaseCost + "</td>";
+                        html += "<td>" + response.Deatils[SymCount].BillCost + "</td>";
+                        html += "<td>" + response.Deatils[SymCount].GST + "</td>";
+                        html += "</tr>";
+                    }
+                    html += "</table></br>";
+                    html += "<table id='myTable1' class='table table-striped table-bordered table-hover table-full-width dataTable no-footer'>";
+                    html += "<tr style='text-align: center;'>";
+                    html += "<thead><th>GST %</th><th>Amt</th><th>Tax</th>";
+                    html += "<th>Discount Amt</th><th>Total Amt</th>";
+                    html += "</thead>";
+                    html += "</tr>";
+                    for (PsCount = 0; PsCount < response.Summary.length; PsCount++) {
+                        var TaxPre = response.Summary[PsCount].GST;
+                        var Amt = response.Summary[PsCount].PurAmount;
+                        var SummaryTax = response.Summary[PsCount].PurTaxAmount;
+                        var SummaryNetAmount = response.Summary[PsCount].PurNetAmount;
+                        var SummaryDisAmount = response.Summary[PsCount].PurDisAmount;
+                        var NetValue = SummaryNetAmount - SummaryDisAmount;
+                        html += "<tr>";
+                        html += "<td style='text-align: center;'>" + TaxPre + "</td>";
+                        html += "<td style='text-align: center;'>" + Amt + "</td>";
+                        html += "<td style='text-align: center;'>" + SummaryTax + "</td>";
+                        html += "<td style='text-align: center;'>" + SummaryDisAmount + "</td>";
+                        html += "<td style='text-align: center;'>" + NetValue + "</td>";
+                        html += "</tr>";
+                    }
+                    html += "</table></br>";
+                    var newRow = $('<tr><td></td><td colspan="11">' + html + '</td></tr>');
+                    $('#tblSavedInvoice > tbody > tr').eq(rowIndex).after(newRow);
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        return false;
+    }
+    function PrintSavedInvoiceBySeqID(SelectedRow) {
+        try {
+            var row = SelectedRow.parentNode.parentNode;
+            var SeqID = row.cells[2].innerHTML;
+
+            $.ajax({
+                url: "/Pharma/Invoice/GetInvoiceDetailsById?SeqID=" + SeqID,
+                type: "GET",
+                dataType: "json",
+                success: function (response) {
+                    var html = "";
+
+                    if (response.lstHdr.length > 0 && response.lstDtl.length > 0 && response.DtlSummary.length > 0) {
+                        var address1 = response.lstHdr[0].PH_Supplier_Address1;
+                        var address2 = response.lstHdr[0].PH_Supplier_Address2;
+                        if (address1 == undefined) {
+                            address1 =""
+                        }
+                        if (address2 == undefined) {
+                            address2 = ""
+                        }
+                        var address = address1 + " " + address2;
+
+                        var gst = response.lstHdr[0].PH_Supplier_GSTRegNo;
+                        if (gst == undefined) {
+                            gst = ""
+                        }
+                        var email = response.lstHdr[0].PH_Supplier_EmailId;
+                        if (email == undefined) {
+                            email = "";
+
+                        }
+                        var supplierName = response.lstHdr[0].PH_SupplierName;
+                        if (supplierName == undefined) {
+                            supplierName = "";
+                        }
+                        var entryDate = response.lstHdr[0].PH_IN_ENTRYDATE;
+                        if (entryDate == undefined) {
+                            entryDate = "";
+                        }
+                       
+                        var TotalPurAmount = 0;
+                        var TotalPurTaxAmount = 0;
+                        var TotalPurNetAmount = 0;
+                        html += "<table style='font-family:sans-serif;font-size:12px;font-weight:500;'>";
+                        html += "<tbody>";
+                        html += "<tr>";
+                        html += "<td style='width: 196px!important;' >Invoice Number</td>";
+                        html += "<td>:</td>";
+                        html += "<td style='width: 341px!important;'>" + response.lstHdr[0].PH_IN_SUPP_INVNO + "</td>";
+                        html += "<td style='width: 196px!important;' >Invoice Date</td>";
+                        html += "<td>:</td>";
+                        html += "<td style='width: 341px!important;'>" + entryDate + "</td>";
+                        html += "</tr>";
+                        html += "<tr>";
+                        html += "<td style='width: 196px!important;' >Supplier Name</td>";
+                        html += "<td>:</td>";
+                        html += "<td style='width: 341px!important;'>" + supplierName + "</td>";
+                        html += "<td style='width: 196px!important;' >Address</td>";
+                        html += "<td>:</td>";
+                        html += "<td style='width: 341px!important;'>" + address + "</td>";
+                        html += "</tr>";
+                        html += "<tr>";
+                        html += "<td style='width: 196px!important;' >GST</td>";
+                        html += "<td>:</td>";
+                        html += "<td style='width: 341px!important;'>" + gst + "</td>";
+                        html += "<td style='width: 196px!important;' >EmailId</td>";
+                        html += "<td>:</td>";
+                        html += "<td style='width: 341px!important;'>" + email + "</td>";
+                        html += "</tr>";
+                        html += "</tbody>";
+                        html += "</table>";
+                        html += "<br/>";
+
+
+
+                        html += "<table border='1' style='font-family:sans-serif;font-size:12px;font-weight:500;border-collapse:collapse;width:100%;'>";
+                        html += "<thead style='font-weight:bold;'>";
+                        html += "<tr>";
+                        html += "<td>S.No</td>";
+                        html += "<td>Brand Name</td>";
+                        html += "<td>Batch</td>";
+                        html += "<td>Expiry DT</td>";
+                        html += "<td>Qty</td>";
+                        html += "<td>Free Qty</td>";
+                        html += "<td>Purchase Cost</td>";
+                        html += "<td>MRP</td>";
+                        html += "<td>GST %</td>";
+                        html += "<td>Amount</td>";
+                        html += "<td>Tax Amount</td>";
+                        html += "<td>Total Amount</td>";
+                        html += "</tr>";
+                        html += "</thead>";
+                        html += "<tbody>";
+                        for (var dtl = 0; dtl < response.lstDtl.length; dtl++) {
+                            var sno = dtl + 1;
+                            var pamount = parseFloat(response.lstDtl[dtl].PurAmount);
+                            TotalPurAmount = TotalPurAmount + parseFloat(response.lstDtl[dtl].PurAmount);
+                            TotalPurTaxAmount = TotalPurTaxAmount + parseFloat(response.lstDtl[dtl].PurTaxAmount);
+                            TotalPurNetAmount = TotalPurNetAmount + parseFloat(response.lstDtl[dtl].PurNetAmount);
+                            var TotalPurDisAmount = parseFloat(response.lstDtl[dtl].PurDiscountAmt);
+                            var net = TotalPurNetAmount - TotalPurDisAmount;
+                            var netTotal = parseFloat(net);
+
+                            html += "<tr>";
+                            html += "<td>" + sno + "</td>";
+                            html += "<td>" + response.lstDtl[dtl].PH_ITEM_DRUGNAME_BRAND + "</td>";
+                            html += "<td>" + response.lstDtl[dtl].PH_INDTL_DRUGBATCHNO + "</td>";
+                            html += "<td>" + response.lstDtl[dtl].PH_INDTL_DRUGEXPIRY + "</td>";
+                            html += "<td style='text-align: right;'>" + response.lstDtl[dtl].PH_INDTL_RECVDQTY + "</td>";
+                            html += "<td style='text-align: right;'>" + response.lstDtl[dtl].PH_INDTL_BONUSQTY + "</td>";
+                            html += "<td style='text-align: right;'>" + response.lstDtl[dtl].PurchaseCost + "</td>";
+                            html += "<td style='text-align: right;'>" + response.lstDtl[dtl].BillCost + "</td>";
+                            html += "<td style='text-align: right;'>" + response.lstDtl[dtl].GST + "</td>";
+                            html += "<td style='text-align: right;'>" + response.lstDtl[dtl].PurAmount + "</td>";
+                            html += "<td style='text-align: right;'>" + response.lstDtl[dtl].PurTaxAmount + "</td>";
+                            html += "<td style='text-align: right;'>" + response.lstDtl[dtl].PurNetAmount + "</td>";
+                            html += "</tr>";
+                        }
+
+                        html += "</tbody>";
+                        html += "</table>";
+
+                        html += "<table style='font-family:sans-serif;font-weight: 500;font-size: 12px;width:100%;'>";
+                        html += "<tbody>";
+                        html += "<tr>";
+                        html += "<td style='width: 706px !important;'></td>";
+                        html += "<td style='width: 90px !important;' >Total</td>";
+                        html += "<td>:</td>";
+                        html += "<td align='right' style='width:80px !important;'>" + TotalPurAmount.toFixed(3) + "</td>";
+                        html += "</tr>";
+                        html += "<tr>";
+                        html += "<td></td>";
+                        html += "<td style='width: 90px !important;' >GST</td>";
+                        html += "<td>:</td>";
+                        html += "<td align='right' style='width:80px !important;'>" + TotalPurTaxAmount.toFixed(3) + "</td>";
+                        html += "</tr>";
+                        html += "<tr>";
+                        html += "<td style='width: 706px !important;'></td>";
+                        html += "<td style='width: 90px !important;' >Dis Amt</td>";
+                        html += "<td>:</td>";
+                        html += "<td align='right' style='width:80px !important;'>" + TotalPurDisAmount.toFixed(3) + "</td>";
+                        html += "</tr>";
+                        html += "<tr style='font-size:16px !important;' >";
+                        html += "<td></td>";
+                        html += "<td style='width: 90px !important;' >Net Total</td>";
+                        html += "<td>:</td>";
+                        html += "<td align='right' style='width:80px !important;'>" + netTotal.toFixed(3) + "</td>";
+                        html += "</tr>";
+                        html += "</tbody>";
+                        html += "</table>";
+
+                        html += "<br/>";
+                        html += "<table border='1' style='font-family:sans-serif;font-size:12px;font-weight:500;border-collapse:collapse;float:left;'>";
+                        html += "<thead style='font-weight:bold;'>";
+                        html += "<tr>";
+                        html += "<td>S.No</td>";
+                        html += "<td>GST %</td>";
+                        html += "<td>Amount</td>";
+                        html += "<td>Tax Amount</td>";
+                        html += "<td>Dis Amount</td>";
+                        html += "<td>Total Amount</td>";
+                        html += "</tr>";
+                        html += "</thead>";
+                        html += "<tbody>";
+                        for (var sum = 0; sum < response.DtlSummary.length; sum++) {
+                            var sno = sum + 1;
+                            var TaxPre = response.DtlSummary[sum].GST;
+                            var Amt = response.DtlSummary[sum].PurAmount;
+                            var SummaryTax = response.DtlSummary[sum].PurTaxAmount;
+                            var SummaryDisAmount = response.DtlSummary[sum].PurDisAmount;
+                            var SummaryNetAmount = response.DtlSummary[sum].PurNetAmount;
+                            var netAmount = SummaryNetAmount - SummaryDisAmount;
+                            html += "<tr>";
+                            html += "<td>" + sno + "</td>";
+                            html += "<td>" + TaxPre + "</td>";
+                            html += "<td style='text-align: right;'>" + Amt + "</td>";
+                            html += "<td style='text-align: right;'>" + SummaryTax + "</td>";
+                            html += "<td style='text-align: right;'>" + SummaryDisAmount + "</td>";
+                            html += "<td style='text-align: right;'>" + netAmount + "</td>";
+                            html += "</tr>";
+                        }
+
+                        html += "</tbody>";
+                        html += "</table>";
+                    }
+
+                    sessionStorage.setItem("PrintDetails", html);
+                    openSavedInvoiceRequestedPopup();
+                },
+                error: function (response) { console.log(response); }
+            });
+        }
+        catch (e) { }
+    }
+    function openSavedInvoiceRequestedPopup() {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        var url = rootUrl + '/Pharmacy/Dispense/print';
+        window.open(url, '_blank');
+        sessionStorage.setItem("PrintDetails", "");
+    }
+    function OnChangeSavedInvoiceSupplier() {
+        var SupplierID = $("#ddlSavedInvoiceListSuplier").val();
+        GetSupplierTop50Invoice(SupplierID);
+    }
+    function GetSavedInvoiceSupplierMaster() {
+        $.ajax({
+            url: "/Pharma/Invoice/GetAllSupplierMaster",
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.length > 0) {
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var PH_SupplierID = response[PCHeader].PH_SupplierID;
+                        var PH_SupplierName = response[PCHeader].PH_SupplierName;
+                        $('#ddlSavedInvoiceListSuplier')
+                            .append($("<option></option>").val(PH_SupplierID).html(PH_SupplierName));
+                    }
+                }
+            }
+        });
+    }
+    function GetSupplierTop50Invoice(SupplierID) {
+        $.ajax({
+            url: "/Pharma/Invoice/GetSupplierTop50Invoice",
+            type: "GET",
+            data: {
+                SupplierID: SupplierID
+            },
+            dataType: "json",
+            success: function (response) {
+                if (response.length > 0) {
+                    var html = "";
+                    var Sno = 0;
+                    $("#tblSavedInvoice tbody").empty();
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        Sno = PCHeader + 1;
+                        var PH_IN_SEQID = response[PCHeader].PH_IN_SEQID;
+                        var PH_IN_SUPP_INVNO = response[PCHeader].PH_IN_SUPP_INVNO;
+                        var PH_IN_ENTRYDATE = response[PCHeader].PH_IN_ENTRYDATE;
+                        var InvoiceType = response[PCHeader].InvoiceType;
+                        var InvoiceGSTType = response[PCHeader].InvoiceGSTType;
+                        var PH_SupplierName = response[PCHeader].PH_SupplierName;
+                        var Amount = response[PCHeader].Amount;
+                        var Tax = response[PCHeader].Tax;
+                        var NetAmount = response[PCHeader].NetAmount;
+                        var DiscountAmt = response[PCHeader].DiscountAmt;
+                        var PH_INWareHouse = response[PCHeader].PH_INWareHouse;
+
+                        html += "<tr>";
+                        html += "<td><input type='image' style='width:21px;height:21px;' src='" + rootUrl + "/Images/details_open.png' onclick='javascript:return CheckInvoiceSelect(this)'></td>";
+                        html += "<td>" + Sno + "</td>";
+                        html += "<td style='display:none;'>" + PH_IN_SEQID + "</td>";
+                        html += "<td>" + PH_SupplierName + "</td>";
+                        html += "<td>" + PH_IN_SUPP_INVNO + "</td>";
+                        html += "<td>" + PH_IN_ENTRYDATE + "</td>";
+                        html += "<td>" + InvoiceType + "</td>";
+                        html += "<td>" + InvoiceGSTType + "</td>";
+                        html += "<td>" + Amount + "</td>";
+                        html += "<td>" + Tax + "</td>";
+                        html += "<td>" + DiscountAmt + "</td>";
+                        html += "<td>" + NetAmount + "</td>";
+                        html += "<td style='text-align: center;display:none;'>";
+                        html += "<img src='" + rootUrl + "/Images/DELETE-32.png'  onclick='return DeleteInvoiceRow(this)' style='cursor:pointer;width: 30px !important;height:30px !important;'></td>";
+                        html += "<td style='display:none;'>" + PH_INWareHouse + "</td>";
+                        html += "<td><input type='button' value='Print' class='btn btn-primary' onclick='PrintSavedInvoiceBySeqID(this);'/></td>";
+                        html += "</tr>";
+                    }
+                    $("#tblSavedInvoice tbody").append(html);
+                }
+                else {
+                    $("#tblSavedInvoice tbody").empty();
+                }
+            }
+        });
+    }
+    function GetInvoiceNumberDetailsBySearch() {
+        var invoiceNumber = $('#txtInvNumber').val();
+        var SupplierID = parseFloat($("#ddlSavedInvoiceListSuplier").val());
+        $.ajax({
+            url: "/Pharma/Invoice/GetInvoiceNumberDetailsBySearch?Search=" + invoiceNumber + "&SupplierId=" + SupplierID ,
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                BindTop50Invoice(response);
+            }
+        });
+    }
+</script>
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="panel panel-default DivBox" style="background-color: white;">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <label>Search Invoice Number</label>
+                                  <input type="text" class="form-control" placeholder="Search Invoice Number" id="txtInvNumber" onkeyup="GetInvoiceNumberDetailsBySearch();" />
+                                </div>
+                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <label>Suppiler Name </label>
+                                    <select class="form-control" id="ddlSavedInvoiceListSuplier" onchange="OnChangeSavedInvoiceSupplier();">
+                                        <option value="0">--Select--</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <table class="table table-bordered table-striped dataTable table-reflow tableHB" id="tblSavedInvoice" style="color: black;margin-left: 5px;">
+                                        <thead>
+                                            <tr>
+                                                <th></th>
+                                                <th>S.NO</th>
+                                                <th>Supplier Name</th>
+                                                <th>Invoice Number</th>
+                                                <th>Invoice Date</th>
+                                                <th>Invoice Type</th>
+                                                <th>GST Type</th>
+                                                <th>Amount</th>
+                                                <th>Tax</th>
+                                                <th>Discount</th>
+                                                <th>Net Amount</th>
+                                                <th>Report</th>
+                                                @*<th>Delete</th>*@
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>

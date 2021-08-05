@@ -1,0 +1,205 @@
+﻿
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        GetWarehouseName();
+    });
+    function GetWarehouseName() {
+        $.ajax({
+            url: "/Pharma/Invoice/GetStoreName",
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.length > 0) {
+                    var html = "";
+                    $("#tblWarehouse tbody").empty();
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var HIS_PH_STOREMASTER = response[PCHeader].HIS_PH_STOREMASTER;
+                        var HIS_PH_STORENAME = response[PCHeader].HIS_PH_STORENAME;
+                        html += "<tr style='font-size:13px;font-family:sans-serif'>";
+                        html += "<td>" + HIS_PH_STOREMASTER + "</td>";
+                        html += "<td>" + HIS_PH_STORENAME + "</td>";
+                        html += "<td> <input type='image' src='/images/Edit1.png' style='height:20px;padding-left: 10px;' onclick = 'GetWarehouseSelect(this);'  />";
+                        html += "<tr>";
+                    }
+                    $("#tblWarehouse tbody").append(html);
+                }
+            }
+        });
+    }
+    function GetWarehouseSelect(selectedRow) {
+        var row = selectedRow.parentNode.parentNode;
+        var SeqId = parseFloat(row.cells[0].innerHTML);
+        var Warehousename = row.cells[1].innerHTML;
+        $('#modal-WarehouseMaster').modal({
+            backdrop: 'static',
+            keyboard: false
+        });
+        $('#txtWarSeqId').val(SeqId);
+        $('#txtWarehouseName').val(Warehousename);
+        $('#btnWarehouseSave').prop('hidden', true);
+        $('#btnWarehouseUpdate').prop('hidden', false);
+    }
+    function onclickWarehousePopup() {
+        $('#modal-WarehouseMaster').modal({
+            backdrop: 'static',
+            keyboard: false
+        });
+    }
+    function WarehousePageClear() {
+        $('#txtWarSeqId').val('');
+        $('#txtWarehouseName').val('');
+        $('#btnWarehouseSave').prop("hidden", false);
+        $('#btnWarehouseUpdate').prop("hidden", true);
+        $('#modal-WarehouseMaster').modal('toggle');
+    }
+    function SaveWarehouseDetails() {
+        var storealert = "";
+        var storeName = $('#txtWarehouseName').val();
+        var storeId = 0;
+        if (storeName == "" || storeName == null) {
+            alert("Please Enter the Name")
+        }
+        else {
+            var Gridtable = document.getElementById('tblWarehouse');
+            var GridRowCount = Gridtable.rows.length;
+            if (GridRowCount > 0) {
+                for (var i = 0; i < GridRowCount; i++) {
+                    if (i % 2 != 0 && i > 0) {
+                        var tblWarSeqid = Gridtable.rows[i].cells[0].innerHTML;
+                        var tblWarhousename = Gridtable.rows[i].cells[1].innerHTML;
+                        if (storeName == tblWarhousename) {
+                            alert('Store Name Already Exist');
+                            storealert = 'Store Name Already Exist';
+                            break;
+                        }
+                    }
+                }
+            }
+            if (storealert == "") {
+                var warehouseDetails = {
+                    HIS_PH_STOREMASTER: storeId,
+                    HIS_PH_STORENAME: storeName
+                }
+                $.ajax({
+                    url: rootUrl + "/api/ClientMaster/CreateWarehouseMaster",
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify(warehouseDetails),
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data > 0) {
+                            alert("Saved Sucessfully");
+                            GetWarehouseName();
+                            WarehousePageClear();
+                        }
+                    },
+                    failure: function (response) {
+                        alert(response);
+                    },
+                    error: function (response) {
+                        alert(response);
+                    }
+                });
+            }
+        }
+    }
+    function UpdateWarehouseDetails() {
+        var SeqId = $('#txtWarSeqId').val();
+        var seqID = parseInt(SeqId);
+        var storeName = $('#txtWarehouseName').val();
+        if (storeName == "" || storeName == null) {
+            alert("Please Enter the Name")
+        }
+        else {
+            var warehouseDetails = {
+                HIS_PH_STOREMASTER: seqID,
+                HIS_PH_STORENAME: storeName
+            }
+            $.ajax({
+                url: rootUrl + "/api/ClientMaster/UpdateWarehouseMaster",
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(warehouseDetails),
+                dataType: 'json',
+                success: function (data) {
+                    if (data > 0) {
+                        alert("Updated Sucessfully");
+                        GetWarehouseName();
+                        WarehousePageClear();
+                    }
+                },
+                failure: function (response) {
+                    alert(response);
+                },
+                error: function (response) {
+                    alert(response);
+                }
+            });
+        }
+    }
+</script>
+
+
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div class="panel panel-default DivBox" style="background-color: white;">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-xs-4 col-sm-4 col-md-4">
+                    </div>
+                    <div class="col-xs-4 col-sm-4 col-md-4">
+                    </div>
+                    <div class="col-xs-2 col-sm-2 col-md-2">
+                    </div>
+                    <div class="col-xs-2 col-sm-2 col-md-2">
+                        <button style="margin-top: 4px;margin-right:22px;float:right" class="btn btn-primary" onclick="onclickWarehousePopup();">
+                            <i class="fas fa-plus"></i>Add Warehouse
+                        </button>
+                    </div>
+                </div>
+                <div class="row">
+                    <table class="table table-bordered" id="tblWarehouse" style="margin-top: 10px;">
+                        <thead>
+                            <tr style="font-size:13px;font-weight:700;font-family:sans-serif;">
+                                <th>S.No</th>
+                                <th>Warehouse Name</th>
+                                <th style="width: 20px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal fade" id="modal-WarehouseMaster">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Add Warehouse</h4>
+                            </div>
+                            <div class="modal-body eventForm ">
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <label>Warehouse Name</label>
+                                        <input type="text" class="form-control" id="txtWarehouseName" placeholder="Name" />
+                                        <input type="hidden" id="txtWarSeqId" />
+                                    </div>
+                                </div>
+                                <br />
+                                <div class="row">
+                                    <div class="col">
+                                        <button class="btn btn-primary" id="btnWarehouseSave" onclick="SaveWarehouseDetails();">Save</button>
+                                        <button class="btn btn-primary" id="btnWarehouseUpdate" hidden onclick="UpdateWarehouseDetails();">Update</button>
+                                        <button class="btn btn-primary" onclick="WarehousePageClear();">Cancel</button>
+                                    </div>
+                                </div>
+                                <!-- /.modal-content -->
+                            </div>
+                            <!-- /.modal-dialog -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

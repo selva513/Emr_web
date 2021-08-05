@@ -1,0 +1,370 @@
+﻿
+@*
+    For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
+*@
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#ShowBills").hide();
+        });
+        function GetDuePatientsByHospital() {
+            $.ajax({
+                url: "/api/DueCollection/GetDuePatientsByHospital",
+                type: "GET",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    if (response.length > 0) {
+                        var html = "";
+                        var Sno = 0;
+                        $("#tblDueCollection tbody").empty();
+                        for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                            Sno = PCHeader + 1;
+                            var PH_CSH_PATID = response[PCHeader].PH_CSH_PATID;
+                            var PH_CSH_PATNAME = response[PCHeader].PH_CSH_PATNAME;
+                            var PendingAmount = response[PCHeader].PendingAmount;
+                            var PH_CSH_PAYMENTMODE = response[PCHeader].PH_CSH_PAYMENTMODE;
+
+                            html += "<tr onclick='SelectedPatient(this)'><td>" + Sno + "</td>";//0
+                            html += "<td>" + PH_CSH_PATID + "</td>";//1
+                            html += "<td>" + PH_CSH_PATNAME + "</td>";//2
+                            html += "<td>" + PendingAmount + "</td>";//3
+                            html += "<td>" + PH_CSH_PAYMENTMODE + "</td>";//4
+                            html += "</tr>";
+                        }
+                        $("#tblDueCollection tbody").append(html);
+                        $("#ShowBills").hide();
+                    }
+                    else {
+                        $("#tblDueCollection tbody").empty();
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+            return false;
+        }
+        function GetDueBillByPatinetID(PatientID,PaymentMode) {
+            $.ajax({
+                url: "/api/DueCollection/GetDueBillByPatinetID",
+                type: "GET",
+                data: {
+                    PatientID: PatientID,
+                    PaymentMode: PaymentMode
+                },
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    if (response.length > 0) {
+                        var html = "";
+                        var Sno = 0;
+                        $("#tblDueBills tbody").empty();
+                        for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                            Sno = PCHeader + 1;
+                            var PH_CSH_BILLNO = response[PCHeader].PH_CSH_BILLNO;
+                            var PH_CSH_BILLDT = response[PCHeader].PH_CSH_BILLDT;
+                            var PH_CSH_NETTAMOUNT = response[PCHeader].PH_CSH_NETTAMOUNT;
+                            var PH_CSH_PENDINGTOPAY = response[PCHeader].PH_CSH_PENDINGTOPAY;
+
+                            html += "<tr><td>" + Sno + "</td>";//0
+                            html += "<td>" + PH_CSH_BILLNO + "</td>";//1
+                            html += "<td>" + PH_CSH_BILLDT + "</td>";//2
+                            html += "<td>" + PH_CSH_NETTAMOUNT + "</td>";//3
+                            html += "<td>" + PH_CSH_PENDINGTOPAY + "</td>";//4
+                            html += "</tr>";
+                        }
+                        $("#tblDueBills tbody").append(html);
+                    }
+                    else {
+                        $("#tblDueBills tbody").empty();
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+            return false;
+        }
+        function SelectedPatient(selectedrow) {
+            var myrow = selectedrow.rowIndex;
+            var PatientID = selectedrow.cells[1].innerHTML;
+            var PatName = selectedrow.cells[2].innerHTML;
+            var DueAmount = selectedrow.cells[3].innerHTML;
+            var PaymentMode = selectedrow.cells[4].innerHTML;
+            if (PaymentMode === 'IP Payment') {
+                $("#Payment").hide();
+                $("#Hospital").show();
+            }
+            else {
+                $("#Payment").show();
+                $("#Hospital").hide();
+            }
+            $("#hidPayment").val(PaymentMode);
+            $("#lblDuePatientID").text(PatientID);
+            $("#lblDuePatinetName").text(PatName);
+            $("#lblDueAmount").text(DueAmount + " - " + PaymentMode);
+            $("#ShowBills").show();
+            GetDueBillByPatinetID(PatientID, PaymentMode);
+        }
+        function isNumberAndDecimal(el, evt) {
+            var charCode = (evt.which) ? evt.which : event.keyCode
+            var number = el.value.split('.');
+            if (charCode != 46 && charCode > 32 && (charCode < 48 || charCode > 57) || (charCode == 32))
+
+                return false;
+
+            if (number.length > 1 && charCode == 46) {
+                return false;
+            }
+            return true;
+        }
+        function SaveDueCollection() {
+            var CashReceivedAmt = 0;
+            var DebitCardAmt = 0;
+            var CreditCardAmt = 0;
+            var ThroughBankAmt = 0;
+            var ChequeAmt = 0;
+
+            if ($("#txtCashAmount").val().length > 0)
+                CashReceivedAmt = parseFloat($("#txtCashAmount").val());
+            if ($("#txtDebitCard").val().length > 0)
+                DebitCardAmt = parseFloat($("#txtDebitCard").val());
+            if ($("#txtCreditCard").val().length > 0)
+                CreditCardAmt = parseFloat($("#txtCreditCard").val());
+            if ($("#txtBank").val().length > 0)
+                ThroughBankAmt = parseFloat($("#txtBank").val());
+            if ($("#txtCheque").val().length > 0)
+                ChequeAmt = parseFloat($("#txtCheque").val());
+
+            var PaymentMode = $("#hidPayment").val();
+            var CreditCardNumber = $("#txtDebitCardRef").val();
+            var DebitCardNumber = $("#txtCreditCardRef").val();
+            var ChequeNo = $("#txtChequeRef").val();
+            var BankRefNo = $("#txtBankRef").val();
+            var TotalDueAmt = parseFloat(CashReceivedAmt) + parseFloat(DebitCardAmt) + parseFloat(ThroughBankAmt) + parseFloat(ChequeAmt) + parseFloat(CreditCardAmt);
+            if (PaymentMode === 'IP Payment') {
+                TotalDueAmt = parseFloat($("#txtByHospital").val());
+            }
+            if (TotalDueAmt> 0) {
+                var BillInfo = new Array();
+                BillInfo.length = 0;
+                var tblDrugSales = document.getElementById("tblDueBills");
+                var rowtblDrugSales = tblDrugSales.rows.length;
+                for (M = 1; M < rowtblDrugSales; M++) {
+                    var rowDrug = tblDrugSales.rows[M];
+                    var ObjectDetails = new Object();
+                    ObjectDetails.PH_CSH_BILLNO = parseFloat(rowDrug.cells[1].innerHTML);
+                    ObjectDetails.PH_CSH_BILLDT = "";
+                    ObjectDetails.PH_CSH_NETTAMOUNT = parseFloat(rowDrug.cells[3].innerHTML);
+                    ObjectDetails.PH_CSH_PENDINGTOPAY = parseFloat(rowDrug.cells[4].innerHTML);
+                    BillInfo.push(ObjectDetails);
+                }
+                var sendJsonData = {
+                    DueAmount: parseFloat(TotalDueAmt),
+                    CashReceivedAmt: CashReceivedAmt,
+                    CreditCardAmt: CreditCardAmt,
+                    DebitCardAmt: DebitCardAmt,
+                    ThroughBankAmt: ThroughBankAmt,
+                    ChequeAmt: ChequeAmt,
+                    CreditCardNumber: CreditCardNumber,
+                    DebitCardNumber: DebitCardNumber,
+                    ChequeNo: ChequeNo,
+                    BankRefNo: BankRefNo,
+                    BillArray: BillInfo
+                };
+                $.ajax({
+                    url: "/api/DueCollection/SaveDueCollection",
+                    type: 'post',
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify(sendJsonData),
+                    dataType: "json",
+                    beforeSend: function () { $("#loading").css("display", "block"); },
+                    success: function (data) {
+                        $("#tblDueBills tbody").empty();
+                        $("#lblDuePatientID").text('');
+                        $("#lblDuePatinetName").text('');
+                        $("#lblDueAmount").text('');
+                        $("#txtDueAmount").val('');
+                        $("#txtCashAmount").val('');
+                        $("#txtDebitCard").val('');
+                        $("#txtCreditCard").val('');
+                        $("#txtBank").val('');
+                        $("#txtCheque").val('');
+                        $("#txtDebitCardRef").val('');
+                        $("#txtCreditCardRef").val('');
+                        $("#txtChequeRef").val('');
+                        $("#txtBankRef").val('');
+                        $("#txtByHospital").val('');
+                        $("#ShowBills").hide();
+                        GetDuePatientsByHospital();
+                    },
+                    complete: function () { $("#loading").css("display", "none"); }
+                });
+            }
+            else {
+                $("#txtDueAmount").focus();
+                alert('Please Enter Due Amount');
+            }
+        }
+    </script>
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="panel panel-default DivBox" style="background-color: white;">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                    <table class="table table-bordered table-striped dataTable table-reflow tableHB" id="tblDueCollection" style="color: black;margin-left: 5px;">
+                                        <thead>
+                                            <tr>
+                                                <th>S.No</th>
+                                                <th>PatientID</th>
+                                                <th>Patient Name</th>
+                                                <th>Due Amount</th>
+                                                <th>Payment Mode</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                    <input type="hidden" id="hidPayment" />
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-6" id="ShowBills">
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <h5 style="text-align:center">Detail</h5>
+                                        </div>
+                                    </div>
+                                    <hr />
+                                    <div class="row">
+                                        <div class="col-xs-2 col-sm-2 col-md-2">
+                                            <div>
+                                                <label style="margin-left:10px;">Patient ID</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-2 col-sm-2 col-md-2">
+                                            <div>
+                                                <label id="lblDuePatientID" style="color:blue;"></label>
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-1 col-sm-1 col-md-1">
+                                            <div>
+                                                <label>Name</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-2 col-sm-2 col-md-2">
+                                            <div>
+                                                <label id="lblDuePatinetName" style="color:blue;"></label>
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-1 col-sm-1 col-md-1">
+                                            <div>
+                                                <label>Due</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-3 col-sm-3 col-md-3">
+                                            <div>
+                                                <label id="lblDueAmount" style="color:blue;"></label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <hr />
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <table class="table table-bordered table-striped dataTable table-reflow tableHB" id="tblDueBills" style="color: black;margin-left: 5px;">
+                                                <thead>
+                                                    <tr>
+                                                        <th>S.No</th>
+                                                        <th>Bill No</th>
+                                                        <th>Bill Date</th>
+                                                        <th>Total Amount</th>
+                                                        <th>Due Amount</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="row" id="Payment">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <div class="row">
+                                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                                    <div>
+                                                        <input type="text" id="txtCashAmount" class="form-control" placeholder="Cash Amount" onkeypress='return isNumberAndDecimal(this,event)' style="margin-left: 5px;" autocomplete="off" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                                    <div>
+                                                        <input type="text" id="txtDebitCard" class="form-control" placeholder="Debit Card Amount" onkeypress='return isNumberAndDecimal(this,event)' style="margin-left: 5px;" autocomplete="off" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-3 col-sm-3 col-md-3">
+                                                    <div>
+                                                        <input type="text" id="txtDebitCardRef" class="form-control" placeholder="Last Four Digits" onkeypress='return isNumberAndDecimal(this,event)' style="margin-left: 5px;" autocomplete="off" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                                    <div>
+                                                        <input type="text" id="txtCreditCard" class="form-control" placeholder="Credit Card Amount" onkeypress='return isNumberAndDecimal(this,event)' style="margin-left: 5px;" autocomplete="off" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-3 col-sm-3 col-md-3">
+                                                    <div>
+                                                        <input type="text" id="txtCreditCardRef" class="form-control" placeholder="Last Four Digits" onkeypress='return isNumberAndDecimal(this,event)' style="margin-left: 5px;" autocomplete="off" />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                                    <div>
+                                                        <input type="text" id="txtBank" class="form-control" placeholder="Bank Amount" onkeypress='return isNumberAndDecimal(this,event)' style="margin-left: 5px;" autocomplete="off" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-3 col-sm-3 col-md-3">
+                                                    <div>
+                                                        <input type="text" id="txtBankRef" class="form-control" placeholder="Reference No" onkeypress='return isNumberAndDecimal(this,event)' style="margin-left: 5px;" autocomplete="off" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                                    <div>
+                                                        <input type="text" id="txtCheque" class="form-control" placeholder="Cheque" onkeypress='return isNumberAndDecimal(this,event)' style="margin-left: 5px;" autocomplete="off" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-3 col-sm-3 col-md-3">
+                                                    <div>
+                                                        <input type="text" id="txtChequeRef" class="form-control" placeholder="Cheque No" onkeypress='return isNumberAndDecimal(this,event)' style="margin-left: 5px;" autocomplete="off" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row" id="Hospital" style="display:none;">
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <div class="form-group">
+                                                <label style="margin-left: 5px;">
+                                                    Payment By Hospital
+                                                </label>
+                                                <input type="text" id="txtByHospital" class="form-control" style="margin-left: 5px;" autocomplete="off" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-2 col-sm-2 col-md-2">
+                                            <div class="form-group">
+                                                <button style="margin-left:7px;" class="btn btn-primary" onclick="SaveDueCollection();">Save</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>

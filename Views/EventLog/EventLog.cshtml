@@ -1,0 +1,293 @@
+﻿
+@{
+    ViewData["Title"] = "EventLog";
+}
+@using Syncfusion.EJ2
+@using Newtonsoft.Json
+<script>
+    var windowObjectReference;
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        GetEventLog();
+        DatePicker();
+        
+    });
+    function DatePicker() {
+        var today = new Date();
+        var currentyear = today.getFullYear();
+        var onetwentyyearback = currentyear - 120;
+        var daterange = onetwentyyearback + ':' + currentyear;
+
+        $('#txtFromDate').datepicker({
+            changeMonth: true,
+            changeYear: true,
+            yearRange: daterange,
+            dateFormat: 'dd/mm/yy',
+            endDate: "today",
+            maxDate: today,
+        });
+
+        //var fromdt = $('#txtFromDate').val();
+        //var maximumDate = "";
+        //if (fromdt.length > 0)
+        //    maximumDate = new Date(fromdt);
+        //else
+        //    maximumDate = today;
+
+        $('#txtToDate').datepicker({
+            changeMonth: true,
+            changeYear: true,
+            yearRange: daterange,
+            dateFormat: 'dd/mm/yy',
+            endDate: "today",
+            maxDate: today 
+        });
+
+    }
+    function GetEventLog() {
+        $.ajax({
+            url: "/EventLog/GetEventLogByUserID",
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: OnsuccessDocument,
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+    function OnsuccessDocument(response) {
+        var html = "<table id='tblEvent' class='table table-bordered table-striped dataTable table-reflow'>";
+        html += "<thead><th>User Name</th><th>Event Log</th><th>Date and Time</th></thead> ";
+        var Sno = 0;
+        for (var i = 0; i < response.length; i++) {
+            Sno = i + 1;
+            var EventLog = response[i].EventName;
+            var CreateDatetime = response[i].CreateDatetime;
+            var UserName = response[i].UserName;
+            var Uname = response[i].Uname;
+            html += "<tr>";
+            //html += "<td>" + Uname + "</td>";
+            html += "<td>" + UserName + "</td>";
+            html += "<td>" + EventLog + "</td>";
+            html += "<td>" + CreateDatetime + "</td>";
+            html += "</tr>";
+        }
+        html += "</table>";
+        $("#EventContainer").html(html);
+    }
+    function GetEventBySearch() {
+        var FromDate = "";
+        var ToDate = "";
+        var search = $("#txtSearch").val();
+
+        var fdt = $('#txtFromDate').val();
+        var tdt = $('#txtToDate').val();
+        if (fdt.length <= 0) {
+            FromDate = "01/01/1900 00:00:00"
+        }
+        if (tdt.length <= 0) {
+            var cur_date = new Date();
+            ToDate = cur_date.getMonth()+1 + "/" + cur_date.getDate() + "/" +  cur_date.getFullYear()+" 23:59:59";
+        }
+        else {
+            var date = fdt.substring(0, 2);
+            var month = fdt.substring(3, 5);
+            var year = fdt.substring(6, 10);
+            FromDate = fdt.substring(3, 5) + "/" + fdt.substring(0, 2) + "/" + fdt.substring(6, 10) + " 00:00:00";
+            ToDate = tdt.substring(3, 5) + "/" + tdt.substring(0, 2) + "/" + tdt.substring(6, 10) + " 23:59:59";
+        }
+
+        //if (search.length > 0) {
+            $.ajax({
+                url: "/EventLog/GetEventBySearch?Search=" + search + "&FromDate=" + FromDate + "&ToDate=" + ToDate + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: OnSuccessBind,
+                failure: function (response) { },
+                error: function (response) { },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        //}
+        //else {
+        //    GetEventLog();
+        //}
+    }
+    function OnSuccessBind(response) {
+        var html = "<table id='tblEvent' class='table table-bordered table-striped dataTable table-reflow'>";
+        html += "<thead><th>User Name</th><th>Event Log</th><th>Date and Time</th></thead> ";
+        var Sno = 0;
+        for (var i = 0; i < response.length; i++) {
+            Sno = i + 1;
+            var EventLog = response[i].EventName;
+            var CreateDatetime = response[i].CreateDatetime;
+            var UserName = response[i].UserName;
+            var Uname = response[i].Uname;
+            html += "<tr>";
+            html += "<td>" + UserName + "</td>";
+            html += "<td>" + EventLog + "</td>";
+            html += "<td>" + CreateDatetime + "</td>";
+            html += "</tr>";
+        }
+        html += "</table>";
+        $("#EventContainer").html(html);
+    }
+    //function SearchByDateRange() {
+    //    var fdt = $('#txtFromDate').val();
+    //    var tdt = $('#txtToDate').val();
+    //    if (fdt.length <= 0) {
+    //        alert('Enter Valid Date Range');
+    //        return;
+    //    }
+    //    if (tdt.length <= 0) {
+    //        alert('Enter Valid Date Range');
+    //        return;
+    //    }
+    //    else {
+    //        var date = fdt.substring(0, 2);
+    //        var month = fdt.substring(3, 5);
+    //        var year = fdt.substring(6, 10);
+    //        var FromDate = fdt.substring(3, 5) + "/" + fdt.substring(0, 2) + "/" + fdt.substring(6, 10) + " 00:00:00";
+    //        var ToDate = tdt.substring(3, 5) + "/" + tdt.substring(0, 2) + "/" + tdt.substring(6, 10) + " 23:59:59";
+    //    }
+        
+    //    $.ajax({
+    //        url: "/EventLog/GetEventByDateRange?FromDate=" + FromDate + " &ToDate=" + ToDate + "",
+    //         type: 'GET',
+    //         contentType: "application/json; charset=utf-8",
+    //         dataType: "json",
+    //         beforeSend: function () { $("#loading").css("display", "block"); },
+    //         success: SuccessDateRangeBind,
+    //         failure: function (response) { },
+    //         error: function (response) { },
+    //         complete: function () { $("#loading").css("display", "none"); }
+    //    });
+    //}
+    //function SuccessDateRangeBind(response) {
+    //    var html = "<table id='tblEvent' class='table table-bordered table-striped dataTable table-reflow'>";
+    //    html += "<thead><th>User Name</th><th>Event Log</th><th>Date and Time</th></thead> ";
+    //    var Sno = 0;
+    //    for (var i = 0; i < response.length; i++) {
+    //        Sno = i + 1;
+    //        var EventLog = response[i].EventName;
+    //        var CreateDatetime = response[i].CreateDatetime;
+    //        var UserName = response[i].UserName;
+    //        var Uname = response[i].Uname;
+    //        html += "<tr>";
+    //        html += "<td>" + UserName + "</td>";
+    //        html += "<td>" + EventLog + "</td>";
+    //        html += "<td>" + CreateDatetime + "</td>";
+    //        html += "</tr>";
+    //    }
+    //    html += "</table>";
+    //    $("#EventContainer").html(html);
+    //}
+</script>
+<style>
+     #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loadingcontent {
+        display: table;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loadingspinner {
+        display: table-cell;
+        vertical-align: middle;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+        padding-top: 80px;
+    }
+</style>
+
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div id="loading">
+            <div id="loadingcontent">
+                <div id="loadingspinner">
+                    <img src="~/images/loading.gif" style="width:100px;height:100px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-primary">
+                        <div class="card-header" style="margin-top:15px;">
+                            <h3 class="card-title">Event Log</h3>
+                            <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                        </div>
+                        <form role="form" autocomplete="off" style="border-color: #17a2b8;border-radius: 0px;padding-top:10px;"
+                              method="post" asp-controller="EventLog" asp-action="EventLog">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-xs-8 col-sm-8 col-md-8">
+                                        <div class="panel panel-default">
+                                            <div class="panel-body">
+                                                <div class="row">
+                                                    <div class="col-xs-5 col-sm-5 col-md-5">
+                                                        <div class="form-group">
+                                                            <label>Search</label>
+                                                            <input type="text" class="form-control" id="txtSearch" style="height:31px;"
+                                                                   placeholder="Audit Trail Search" onkeyup="GetEventBySearch();" />
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-xs-3 col-sm-3 col-md-3">
+                                                        <div class="form-group">
+                                                            <label>From</label>
+                                                            <input type="text" id="txtFromDate" style="height:31px;background-color:white;"
+                                                                   class="form-control inputEmr" placeholder="DD/MM/YYYY" />
+                                                                   
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-xs-3 col-sm-3 col-md-3">
+                                                        <div class="form-group">
+                                                            <label>To</label>
+                                                            <input type="text" id="txtToDate" style="height:31px;background-color:white;"
+                                                                   class="form-control inputEmr" placeholder="DD/MM/YYYY" />
+                                                                   
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                                        <div class="form-group">
+                                                            <input type="button" id="btnSearch" value="Search" class="btn btn-primary" 
+                                                                   onclick="GetEventBySearch();" style="margin-top:25px;" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row" id="EventContainer">
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

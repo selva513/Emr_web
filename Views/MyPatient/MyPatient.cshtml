@@ -1,0 +1,623 @@
+﻿
+@{
+    ViewData["Title"] = "MyPatient";
+
+    //List<object> commands = new List<object>();
+    //commands.Add(new { type = "shutdown", buttonOption = new { cssClass = "e-custombtn" } });
+}
+
+
+<style>
+    #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loadingcontent {
+        display: table;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loadingspinner {
+        display: table-cell;
+        vertical-align: middle;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+        padding-top: 80px;
+    }
+
+    .statustemp.e-inactivecolor {
+        background-color: #ffd7cc;
+    }
+
+    .statustemp.e-activecolor {
+        background-color: #ccffcc;
+    }
+
+    .statustxt.e-activecolor {
+        color: #00cc00;
+    }
+
+    .statustxt.e-inactivecolor {
+        color: #e60000;
+    }
+
+    .ejs-HisPatinet {
+        max-height: 500px !important;
+        top: 228px !important;
+        border-color: ThreeDHighlight;
+        border-radius: 0px;
+        background-color: gray;
+        align-content: center;
+    }
+
+    .EmrBtn {
+        background-color: #fdfdfd;
+        border-color: #512bd4;
+        color: black;
+        border-radius: 0px;
+    }
+
+    .DivBox {
+        padding: 10px;
+        border-color: #969a9a;
+        border-radius: 4px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        font-family: 'Times New Roman';
+        font-size: 15px !important;
+    }
+
+    .infoImg {
+        height: 20px;
+        width: 20px;
+    }
+</style>
+<script type="text/x-jsrender" id="statusTemplate">
+    <div id="status" class="statustemp">
+        <span class="statustxt">${Status}</span>
+    </div>
+</script>
+<script type="text/x-jsrender" id="StatusItemTemp">
+    ${statusDetail(data)}
+</script>
+<script type="text/x-jsrender" id="InfoTemplate">
+    <img style="width: 25px; height: 25px" src="../Images/Info.png" title="Patient Info" onclick="OnInfoImageClick();" />
+</script>
+<script>
+    function getValues(url) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+    function postValues(url, jdata) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(jdata),
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+</script>
+<script type="text/javascript">
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+         //GetHISConfig();
+         GetRoleConfig();
+     });
+    function GetHISConfig() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetHISConfig",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    var data = response;
+                    if (data != "" && data != null) {
+                        var HISConnected = data[0].IsConnectedHIS;
+                        if (HISConnected == true)
+                            document.getElementById('btnHisPatient').style.display = "block";
+                        else
+                            document.getElementById('btnHisPatient').style.display = "none";
+                    }
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function GetRoleConfig() {
+        try {
+             $.ajax({
+                    type: "GET",
+                    url: rootUrl + "/api/Patient/GetRoleConfig",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    success: function (response) {
+                        var data = response;
+                        if (data != "" && data != null) {
+                            var MyPatientData = data[0].MyPatientData;
+                            var AllPatientData = data[0].AllPatientData;
+                            var AllDoctorData = data[0].AllDoctorData;
+                            var DocumentUpload = data[0].DocumentUpload;
+                            var switchObj = ej.base.getInstance(document.getElementById("AllPatchecked"), ej.buttons.Switch);
+                            var docswitchObj = ej.base.getInstance(document.getElementById("AllDocchecked"), ej.buttons.Switch);
+                            if (AllPatientData == false)
+                                switchObj.disabled = "true";
+                            else
+                                switchObj.enabled = "true";
+                            if (AllDoctorData == false)
+                                docswitchObj.disabled = "true";
+                            else
+                                docswitchObj.enabled = "true";
+                        }
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+        }
+        catch (e) {
+        }
+    }
+    function queryCellInfo(args) {
+        if (args.column.field === 'Status') {
+            if (args.cell.textContent === "Checked-In") {
+                args.cell.querySelector(".statustxt").classList.add("e-activecolor");
+                args.cell.querySelector(".statustemp").classList.add("e-activecolor");
+            }
+            if (args.cell.textContent === "Checked-Out") {
+                args.cell.querySelector(".statustxt").classList.add("e-inactivecolor");
+                args.cell.querySelector(".statustemp").classList.add("e-inactivecolor");
+            }
+        }
+        //if (args.column.field === 'imagebind') {
+        //    //alert('image bind');
+        //    //alert(args.data.imagebind);
+        //    if (args.data.imagebind === "Disable") {
+        //        //document.getElementById('videoimageid').style.display = "none";
+        //    }
+        //    else if (args.data.imagebind === "Enable") {
+        //        //document.getElementById('videoimageid').style.display = "block";
+        //    }
+        //}
+    }
+    function statusDetail(e) {
+        var grid = document.querySelector(".e-grid").ej2_instances[0]
+        var div = document.createElement('div');
+        var span;
+        span = document.createElement('span');
+        if (e.Status === "Checked-In") {
+            span.className = 'statustxt e-activecolor';
+            span.textContent = "Active"
+            div.className = 'statustemp e-activecolor'
+        }
+        if (e.Status === "Checked-Out") {
+            span = document.createElement('span');
+            span.className = 'statustxt e-inactivecolor';
+            span.textContent = "Inactive"
+            div.className = 'statustemp e-inactivecolor'
+        }
+        div.appendChild(span);
+        return div.outerHTML;
+    }
+    function InfoDetail(e) {
+        var grid = document.querySelector(".e-grid").ej2_instances[0]
+        var div = document.createElement('div');
+        var image;
+        image = document.createElement('img');
+        image.src = "../Images/Info.png";
+        image.className = 'statustxt e-activecolor';
+        div.appendChild(image);
+        return div.outerHTML;
+    }
+    function OnMyPatient(e) {
+        var AllPatient = document.getElementById('AllPatchecked').ej2_instances[0].checked;
+        var AllDoctor = document.getElementById('AllDocchecked').ej2_instances[0].checked;
+        var url = '@Url.Action("Search", "MyPatient")' + "?AllPatient=" + AllPatient + "&AllDoctor=" + AllDoctor;
+        window.location.href = url;
+    }
+    function rowSelected(args) {
+        var selectedrecords = this.getSelectedRecords();  // get the selected records.
+        var Patientid = selectedrecords[0].PatientID;
+        var Patientname = selectedrecords[0].FirstName;
+        var Gender = selectedrecords[0].Gender;
+        var Doctorname = selectedrecords[0].DoctorName;
+        var Visitid = selectedrecords[0].VisitID;
+        var Age = selectedrecords[0].Age;
+        var HISVisitid = selectedrecords[0].HISVisitID;
+        var HISDoctorid = selectedrecords[0].HISDocID;
+        var HISDeptid = selectedrecords[0].HISDeptID;
+        var VisitDate = selectedrecords[0].VisitDate;
+        var Status = selectedrecords[0].Status;
+        var Doctorid = selectedrecords[0].DoctorID;
+        var Speciality_Name = selectedrecords[0].Speciality_Name;
+        var Clinicid = selectedrecords[0].ClinicID;
+
+        sessionStorage.setItem("HISVisitid", HISVisitid);
+        sessionStorage.setItem("HISDoctorid", HISDoctorid);
+        sessionStorage.setItem("HISDeptid", HISDeptid);
+        sessionStorage.setItem("Status", Status);
+
+        var tData = getValues("/MyPatient/GetHISConnected");
+        
+        if (tData != null && tData != '') {
+            var HISConnected = tData;
+            sessionStorage.setItem("HISConnected", HISConnected);
+        }
+
+        var sendJsonData = {
+            PatientID: Patientid,
+            VisitID: Visitid,
+            FirstName: Patientname,
+            Gender: Gender,
+            Age: Age,
+            RefDoctor: Doctorname,
+            HISVisitID: HISVisitid,
+            HISDocID: HISDoctorid,
+            HISDeptID: HISDeptid,
+            VisitDate: VisitDate,
+            Status: Status,
+            DoctorID: Doctorid,
+            Speciality_Name: Speciality_Name,
+            ClinicID: Clinicid
+        };
+        var response = postValues("/MyPatient/StorePatData", sendJsonData);
+        var imageselected = sessionStorage.getItem("ImageSelect");
+        //alert(imageselected);
+        if (imageselected == "true") {
+            var Mobileno = selectedrecords[0].MobileNumber;
+            sessionStorage.setItem("Mobileno", Mobileno);
+            if (response.length > 0) {
+                var DocMobileno = response[0].DoctorMobileno;
+                sessionStorage.setItem("DocMobileno", DocMobileno);
+            }
+            window.location.href = "/ApiRtc/ApiRtc";
+        }
+        else {
+            if (response.length > 0) {
+                window.location.href = "/Emr/EmrView";
+            }
+        }
+    }
+    function GetAllPatientByToday() {
+        $.ajax({
+            url: "/MyPatient/GetAllPatientByToday",
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: OnsuccessDocument,
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+    function OnsuccessDocument(response) {
+        $("#HisPatientContainer").html('');
+        var html = "<table id='tblHisPatinet' style='cursor: pointer;' class='table table-bordered table-striped dataTable table-reflow'>";
+        html += "<thead><th>PatientID</th><th>Name</th><th>Sex</th><th>Age</th><th>Mobile</th><th>Doctor</th>";
+        html += "<th style='display:none;'>Phone</th><th style='display:none;'>Email</th><th style='display:none;'>RelationName</th>";
+        html += "<th style='display:none;'>RelationType</th><th style='display:none;'>PatientAddress1</th><th style='display:none;'>PatientAddress2</th>";
+        html += "<th style='display:none;'>City</th><th style='display:none;'>State</th><th style='display:none;'>Country</th>";
+        html += "<th style='display:none;'>AgeMonth</th><th style='display:none;'>AgeDay</th><th style='display:none;'>Visitid</th>";
+        html += "<th style='display:none;'>DoctorID</th><th style='display:none;'>DeptID</th><th style='display:none;'>SecondName</th><th style='display:none;'>Dob</th>";
+        html += "</thead>";
+        for (var i = 0; i < response.HisPta.length; i++) {
+            var PatientID = response.HisPta[i].PatientID;
+            var Name = response.HisPta[i].Name;
+            var Gender = response.HisPta[i].Gender;
+            var Age = response.HisPta[i].Age;
+            var Phone = response.HisPta[i].Phone;
+            var DoctorName = response.HisPta[i].DoctorName;
+            var Mobile = response.HisPta[i].Mobile;
+            var Email = response.HisPta[i].Email;
+            var RelationName = response.HisPta[i].RelationName;
+            var RelationType = response.HisPta[i].RelationType;
+            var PatientAddress1 = response.HisPta[i].PatientAddress1;
+            var PatientAddress2 = response.HisPta[i].PatientAddress2;
+            var City = response.HisPta[i].City;
+            var State = response.HisPta[i].State;
+            var Country = response.HisPta[i].Country;
+            var AgeMonth = response.HisPta[i].AgeMonth;
+            var AgeDay = response.HisPta[i].AgeDay;
+            var Visitid = response.HisPta[i].Visitid;
+            var DoctorID = response.HisPta[i].DoctorID;
+            var DeptID = response.HisPta[i].DeptID;
+            var SecondName = response.HisPta[i].SecondName;
+            var Dob = response.HisPta[i].Dob;
+
+            html += "<tr style='cursor:pointer;' onclick='onrowselect(this);'>";
+            html += "<td>" + PatientID + "</td>";
+            html += "<td>" + Name + "</td>";
+            html += "<td>" + Gender + "</td>";
+            html += "<td>" + Age + "</td>";
+            html += "<td>" + Mobile + "</td>";
+            html += "<td>" + DoctorName + "</td>";
+            html += "<td style='display:none;'>" + Phone + "</td>";
+            html += "<td style='display:none;'>" + Email + "</td>";
+            html += "<td style='display:none;'>" + RelationName + "</td>";
+            html += "<td style='display:none;'>" + RelationType + "</td>";
+            html += "<td style='display:none;'>" + PatientAddress1 + "</td>";
+            html += "<td style='display:none;'>" + PatientAddress2 + "</td>";
+            html += "<td style='display:none;'>" + City + "</td>";
+            html += "<td style='display:none;'>" + State + "</td>";
+            html += "<td style='display:none;'>" + Country + "</td>";
+            html += "<td style='display:none;'>" + AgeMonth + "</td>";
+            html += "<td style='display:none;'>" + AgeDay + "</td>";
+            html += "<td style='display:none;'>" + Visitid + "</td>";
+            html += "<td style='display:none;'>" + DoctorID + "</td>";
+            html += "<td style='display:none;'>" + DeptID + "</td>";
+            html += "<td style='display:none;'>" + SecondName + "</td>";
+            html += "<td style='display:none;'>" + Dob + "</td>";
+            html += "</tr>";
+        }
+        html += "</table>";
+        $("#HisPatientContainer").html(html);
+    }
+    function onrowselect(SelectedRow) {
+        try {
+            var patientid = SelectedRow.cells[0].innerHTML;
+            var patientname = SelectedRow.cells[1].innerHTML;
+            var Gender = SelectedRow.cells[2].innerHTML;
+            var AgeYear = SelectedRow.cells[3].innerHTML;
+            var Mobile = SelectedRow.cells[4].innerHTML;
+            var DoctorName = SelectedRow.cells[5].innerHTML;
+            var Phone = SelectedRow.cells[6].innerHTML;
+            var Email = SelectedRow.cells[7].innerHTML;
+            var RelationName = SelectedRow.cells[8].innerHTML;
+            var RelationType = SelectedRow.cells[9].innerHTML;
+            var PatientAddress1 = SelectedRow.cells[10].innerHTML;
+            var PatientAddress2 = SelectedRow.cells[11].innerHTML;
+            var City = SelectedRow.cells[12].innerHTML;
+            var State = SelectedRow.cells[13].innerHTML;
+            var Country = SelectedRow.cells[14].innerHTML;
+            var AgeMonth = SelectedRow.cells[15].innerHTML;
+            var AgeDay = SelectedRow.cells[16].innerHTML;
+            var Visitid = SelectedRow.cells[17].innerHTML;
+            var DoctorID = SelectedRow.cells[18].innerHTML;
+            var DeptID = SelectedRow.cells[19].innerHTML;
+            var SecondName = SelectedRow.cells[20].innerHTML;
+            var Dob = SelectedRow.cells[21].innerHTML;
+
+            var objDetails = new Object();
+            objDetails.PatientID = patientid;
+            objDetails.FirstName = patientname;
+            objDetails.SecondName = SecondName;
+            objDetails.Gender = Gender;
+            objDetails.BirthDate = Dob;
+            objDetails.PhoneNumber = Phone;
+            objDetails.MobileNumber = parseInt(Mobile);
+            objDetails.Email = Email;
+            objDetails.RelationName = RelationName;
+            objDetails.RelationType = RelationType;
+            objDetails.PatientAddress1 = PatientAddress1;
+            objDetails.PatientAddress2 = PatientAddress2;
+            objDetails.City = parseInt(City);
+            objDetails.State = parseInt(State);
+            objDetails.Country = parseInt(Country);
+            objDetails.HIS_VisitID = Visitid;
+            objDetails.AgeYear = parseInt(AgeYear);
+            objDetails.AgeMonth = parseInt(AgeMonth);
+            objDetails.AgeDay = parseInt(AgeDay);
+            objDetails.HIS_DocID = parseInt(DoctorID);
+            objDetails.HIS_DeptID = parseInt(DeptID);
+            var response = postValues("/MyPatient/CreateNewHISPatient", objDetails);
+            if (response == true)
+                window.location.href = "/MyPatient/MyPatient";
+            else
+                alert('Patient Already Registered Today.');
+        }
+        catch (e) {
+
+        }
+    }
+    function GetAllPatientByTodaySearch() {
+        var arg = $("#txtHISPatientSearch").val();
+        $.ajax({
+            url: "/MyPatient/GetAllPatientByTodayBySearch?SearchTerm=" + arg + "",
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: OnsuccessDocument,
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+    function OpenHisPatinets() {
+        GetAllPatientByToday();
+        document.getElementById('HisPatinet').ej2_instances[0].show();
+    }
+    function OnInfoImageClick() {
+        alert("Info Clicked");
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+    function record() {
+        sessionStorage.setItem("ImageSelect", true);
+        //alert("image selected");
+        //window.open("/ApiRtc/ApiRtc");
+    }
+
+</script>
+<style>
+    .videoimg img {
+        height: 20px;
+        width: 55px;
+        border-radius: 50px;
+        /*box-shadow: inset 0 0 1px #e0e0e0, inset 0 0 14px rgba(0, 0, 0, 0.2);*/
+    }
+</style>
+<script id="template" type="text/x-jsrender">
+    <div class="videoimg">
+        ${if(imagebind=='Enable')}
+        <img src="https://api.mediviewemr.com:444/images/VIDEOCALL.png" onclick="record();"
+             id="VideoImageid" alt="Videocall_Image" />
+        ${else}
+
+        ${/if}
+    </div>
+</script>
+
+
+
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div id="loading">
+            <div id="loadingcontent">
+                <div id="loadingspinner">
+                    <img src="~/images/loading.gif" style="width:100px;height:100px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-primary">
+                        <div class="card-header" style="margin-top:15px;">
+                            <h3 class="card-title">My Patient</h3>
+                            <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                        </div>
+                        <form asp-controller="MyPatient" asp-action="Search" method="post" onkeydown="return event.key != 'Enter';">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-xs-3 col-sm-3 col-md-3">
+                                        <div class="form-group">
+                                            <label for="checked" style="padding: 10px 70px 10px 0"> All Patient </label>
+                                            <ejs-switch id="AllPatchecked" checked="@ViewBag.AllPatient" name="AllChecked" change="OnMyPatient"></ejs-switch>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-3 col-sm-3 col-md-3">
+                                        <div class="form-group">
+                                            <label for="checked" style="padding: 10px 70px 10px 0"> All Doctor</label>
+                                            <ejs-switch id="AllDocchecked" checked="@ViewBag.AllDoctor" change="OnMyPatient"></ejs-switch>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group" style="float:right;">
+                                            <button type="button" id="btnHisPatient" class="btn EmrBtn" onclick="OpenHisPatinets();">
+                                                HIS Patient
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <ejs-grid id="PatientGrid" allowPaging="true" dataSource="ViewBag.MyPatient"
+                                                  toolbar="@(new List<string>() { "Search"})" allowSelection="true" enableHover="false"
+                                                  queryCellInfo="queryCellInfo" rowSelected="rowSelected"
+                                                  style="cursor:pointer;">
+
+                                            <e-grid-searchsettings fields="@(new string[] { "PatientID","FirstName","Gender","DoctorName"})"
+                                                                   operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                            <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
+                                            <e-grid-pagesettings pageCount="10" pageSizes="10"></e-grid-pagesettings>
+                                            <e-grid-columns>
+                                                <e-grid-column field="PatientID" headerText="Patient ID" textAlign="Left" width="120"></e-grid-column>
+                                                <e-grid-column field="FirstName" headerText="Name" textAlign="Left" width="170"></e-grid-column>
+                                                <e-grid-column field="Gender" headerText="Gender" textAlign="Left" width="100"></e-grid-column>
+                                                <e-grid-column field="DoctorName" headerText="Doctor" textAlign="Left" width="100"></e-grid-column>
+                                                <e-grid-column field="Status" headerText="Status" template="#statusTemplate"
+                                                               filter="@(new { type="CheckBox", itemTemplate="#StatusItemTemp" })"
+                                                               textAlign="Left" width="75"></e-grid-column>
+                                                <e-grid-column field="VisitID" visible="false" headerText="Visitid" textAlign="Left" width="100"></e-grid-column>
+                                                <e-grid-column field="Age" visible="false" headerText="Age" textAlign="Left" width="100"></e-grid-column>
+                                                <e-grid-column field="HISVisitID" visible="false" headerText="His Visitid" textAlign="Left" width="100"></e-grid-column>
+                                                <e-grid-column field="HISDocID" visible="false" headerText="His Docid" textAlign="Left" width="100"></e-grid-column>
+                                                <e-grid-column field="HISDeptID" visible="false" headerText="His Deptid" textAlign="Left" width="100"></e-grid-column>
+                                                <e-grid-column field="VisitDate"  headerText="Visit Date" textAlign="Left" width="100"></e-grid-column>
+                                                <e-grid-column field="DoctorID" visible="false" headerText="Doctor ID" textAlign="Left" width="100"></e-grid-column>
+                                                <e-grid-column field="ClinicID" visible="false" headerText="Clinic ID" textAlign="Left" width="100"></e-grid-column>
+                                                <e-grid-column field="imagebind" headerText="Call" textAlign="Center" template="#template" width="100"></e-grid-column>
+                                                <e-grid-column field="MobileNumber" visible="false" headerText="MobileNumber" textAlign="Left" width="100"></e-grid-column>
+                                            </e-grid-columns>
+                                        </ejs-grid>
+                                    </div>
+                                </div>
+                                @*<div class="row">
+                                        <ejs-grid id="CommonSymGrid" allowPaging="true"
+                                                  toolbar="@(new List<string>() { "Search"})" allowSelection="true" enableHover="false"
+                                                  style="cursor:pointer;">
+                                            <e-data-manager url="https://localhost:44334/api/ControlPanel/GetDoctorforControl" adaptor="WebApiAdaptor"
+                                                            crossdomain="true"></e-data-manager>
+                                            <e-grid-searchsettings fields="@(new string[] { "Doctorname"})"
+                                                                   operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                            <e-grid-selectionSettings persistSelection="true" type="Multiple" checkboxOnly="true"></e-grid-selectionSettings>
+                                            <e-grid-pagesettings pageCount="10" pageSizes="10"></e-grid-pagesettings>
+                                            <e-grid-columns>
+                                                <e-grid-column type="checkbox" width="60"></e-grid-column>
+                                                <e-grid-column field="DoctorSeqID" headerText="Doctor Name" textAlign="Left"></e-grid-column>
+                                                <e-grid-column field="Doctorname" headerText="Registration No" textAlign="Left"></e-grid-column>
+                                            </e-grid-columns>
+                                        </ejs-grid>
+                                    </div>*@
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div>
+                    <ejs-dialog id="HisPatinet" showCloseIcon="true" cssClass="ejs-dialog" header="Patient List" style="max-height:400px" visible="false" width="820px">
+                        <e-content-template>
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                                    <input type="text" class="form-control" placeholder="Search Patients" id="txtHISPatientSearch" onkeyup="GetAllPatientByTodaySearch();" />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;height:500px;border-color: #17a2b8;border-radius: 0px;" id="HisPatientContainer">
+
+                                </div>
+                            </div>
+                        </e-content-template>
+                    </ejs-dialog>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+

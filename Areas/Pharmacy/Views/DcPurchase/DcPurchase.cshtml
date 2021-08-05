@@ -1,0 +1,434 @@
+﻿
+
+<script src="~/DcPurchase/DcPurchase.js"></script>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="panel panel-default DivBox" style="background-color: white;">
+
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div>
+                                    <label>Suppiler Name </label>
+                                    <select class="form-control" id="ddlDCSuplier" onchange="GetDCDeatilsForGst();">
+                                        <option value="0">--Select--</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div class="form-group">
+                                    <label >
+                                        Ware house
+                                    </label>
+                                    <select class="form-control" id="ddlDCWherHouse" style="margin-left: 5px;" onchange="GetDCPurchaseExpiryDays();">
+                                        <option value="0">--Select--</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div class="form-group">
+                                    <label>
+                                        Supplier DC No
+                                    </label>
+                                    <input type="text" id="txtSupplierDCNo" class="form-control" autocomplete="off"/>
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div class="form-group">
+                                    <label>
+                                        DC Date
+                                    </label>
+                                    <input type="text" id="txtSupplierDCDate" class="form-control" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2" style="display:none;">
+                                <div class="form-group">
+                                    <label>
+                                        GST Type
+                                    </label>
+                                    <select class="form-control" id="ddlDcPurchaseGstType">
+                                        <option value="GST purchase">GST purchase</option>
+                                        <option value="IGST purchase">IGST purchase</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <label style="margin-left: 5px;"></label>
+                                <div class="form-group">
+                                    <button style="margin-left:7px;margin-top:7px;" class="btn btn-primary" onclick="OpenReprint();">Purchase List</button>
+                                    <button style="margin-left:7px;margin-top:7px;display:none;" class="btn btn-primary" onclick="OpenDCList();">DC List</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" id="DivDcPurchaseEntry">
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div>
+                                    <label style="margin-left: 5px;">Brand Name </label>
+                                    <input type="text" id="txtDCBrandSearch" class="form-control" style="margin-left: 5px;" onkeyup="return SearchDrug();" autocomplete="off"/>
+                                    <input type="text" id="txtDCDrugCode" class="form-control" style="margin-left: 5px;display:none;" />
+                                    <input type="hidden" id="hidDCSeqID" />
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        Batch
+                                    </label>
+                                    <input type="text" id="txtDCBatch" class="form-control" style="margin-left: 5px;" autocomplete="off"/>
+
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        Expiry Dt
+                                    </label>
+                                    <input type="text" id="txtDCExpiryDt" class="form-control" disabled />
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <label id="lblDCUom" style="margin-left: 5px;">UOM</label>
+                                <input type="text" id="txtDCStripNs" class="form-control" value="1" autocomplete="off"
+                                       onkeypress='return isNumberAndDecimal(this,event)' onchange="DCPackQtyChange();" />
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        Qty
+                                    </label>
+                                    <input type="text" id="txtDCStripQty" class="form-control" autocomplete="off"
+                                           onkeypress='return isNumberKey(event)' onchange="StripDCQtyChange();" />
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        Free
+                                    </label>
+                                    <input type="text" id="txtDCFree"  class="form-control" autocomplete="off"
+                                           onkeypress='return isNumberKey(this,event)' onchange="FreeDCQtyChange();" value="0" />
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <label style="margin-left: 5px;">Total QTY</label>
+                                <div class="form-group">
+                                    <input type="text" id="txtDCTotalQty" autocomplete="off"
+                                           onkeypress='return isNumberKey(this,event)' class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        Rate
+                                    </label>
+                                    <input type="text" id="txtDCstripRate" class="form-control" autocomplete="off"
+                                           onkeypress='return isNumberAndDecimal(this,event)' onchange="return StripDCRateChange();" />
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        Disc %
+                                    </label>
+                                    <input type="text" id="txtDCDiscount" class="form-control" autocomplete="off"
+                                           onkeypress='return isNumberAndDecimal(this,event)' onchange="NewDCDiscountChange();" />
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        GST %
+                                    </label>
+                                    <input type="text" id="txtDCTax" class="form-control" autocomplete="off" onchange="DcGSTChange();" />
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        MRP(Incl Tax)
+                                    </label>
+                                    <input type="text" id="txtDCStripMRP" class="form-control" autocomplete="off"
+                                           onkeypress='return isNumberAndDecimal(this,event)' onchange="MRPDCChange();" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" id="DivDcPurAdd">
+                            <div class="col-xs-11 col-sm-11 col-md-11">
+
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <label></label>
+                                <div class="form-group">
+                                    <button style="margin-left:18px;" class="btn btn-primary" onclick="AddToDCTable();">Add</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" style="display:none;">
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        Tax
+                                    </label>
+                                    <input type="text" id="txtDCTaxAmt" class="form-control" onkeypress='return isNumberAndDecimal(this,event)' />
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        TotalAmt
+                                    </label>
+                                    <input type="text" id="txtDCTotalAmt" class="form-control" onkeypress='return isNumberAndDecimal(this,event)' />
+                                </div>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        Unit Rate
+                                    </label>
+                                    <input type="text" id="txtDCUnitRate" class="form-control" onkeypress='return isNumberAndDecimal(this,event)' />
+
+                                </div>
+                            </div>
+
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <div class="form-group">
+                                    <label style="margin-left: 5px;">
+                                        Unit  MRP
+                                    </label>
+                                    <input type="text" id="txtDCUnitMRP" class="form-control" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12" id="DCDiv" style="font-size:13px;font-family:sans-serif;">
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <table class="table table-bordered table-striped" id="tblDCDrugBind">
+                                            <thead>
+                                                <tr>
+                                                    <th>S.NO</th>
+                                                    <th>Brand Name</th>
+                                                    <th>Batch</th>
+                                                    <th>Expiry Dt</th>
+                                                    <th>Qty / UOM</th>
+                                                    <th>Free</th>
+                                                    <th>Rate / UOM</th>
+                                                    <th>MRP / UOM</th>
+                                                    <th>Amount</th>
+                                                    <th>GST%</th>
+                                                    <th>Tax</th>
+                                                    <th>Discount%</th>
+                                                    <th>Net Amt</th>
+                                                    <th>Delete</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="col-xs-3 col-sm-3 col-md-3" style="display:none;">
+                                        <table class="table table-bordered table-striped" id="tblDCInvoiceSummary">
+                                            <thead>
+                                                <tr>
+                                                    <th>GST %</th>
+                                                    <th>Amount</th>
+                                                    <th>Tax</th>
+                                                    <th>Total Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12" id="DCInvoiceTotal">
+                                <div class="row">
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Total
+                                            </label>
+                                            <input type="text" id="txtDCSummaryAmt" class="form-control" />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Tax
+                                            </label>
+                                            <input type="text" id="txtDCSummaryTax" class="form-control" />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-2 col-sm-2 col-md-2">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Total amount
+                                            </label>
+                                            <input type="text" id="txtDCSummaryNetAmt" class="form-control" />
+
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Discount
+                                            </label>
+                                            <Select id="ddlDCDiscountType" class="form-control" onchange="TotalDiscountCalculation();">
+                                                <option Value='PER'>PER</option>
+                                                <option Value='LS'>LS</option>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Dis Value
+                                            </label>
+                                            <input type="text" id="txtDCRateValue" value="0" class="form-control" onkeypress='return isNumberKey(event)' onchange="TotalDiscountCalculation();" />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Dis Amt
+                                            </label>
+                                            <input type="text" id="txtDCDiscountAmt" value="0" class="form-control" onkeypress='return isNumberKey(event)' />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-2 col-sm-2 col-md-2">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Net Amount
+                                            </label>
+                                            <input type="text" id="txtDCNetTotal" class="form-control" />
+
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-3 col-sm-3 col-md-3">
+                                        <label style="margin-left: 5px;"></label>
+                                        <div class="form-group">
+                                            <button style="margin-left:7px;margin-top:7px;" class="btn btn-primary" onclick="DcPurchaseSave();">DC Save</button>
+                                            <button style="margin-left:7px;margin-top:7px;" class="btn btn-primary" onclick="ClearAll();">Cancel</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="ModelDCList" style="display: none; width: 600px;font-family:'Microsoft Sans Serif'; font-size: small;">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="panel-body">
+                                        <div class="row">
+
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <table class="table table-bordered table-striped dataTable table-reflow tableHB" id="tblDCInvoice" style="color: black;margin-left: 5px;">
+                                                    <thead>
+                                                        <tr>
+                                                            <th></th>
+                                                            <th>S.NO</th>
+                                                            <th>Supplier Name</th>
+                                                            <th>DC Number</th>
+                                                            <th>Dc Date</th>
+                                                            <th>Net Amount</th>
+                                                            <th style="text-align: center;">
+                                                                <input type="checkbox" id="SelectAll" name="select-all" onclick="SelectAll();" />
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="ModelDCPurchaseOrderList" style="display: none; width: 600px;font-family:'Microsoft Sans Serif'; font-size: small;">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="panel-body">
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <table class="table table-bordered table-striped dataTable table-reflow tableHB" id="tblDCPurchaseOrder" style="color: black;margin-left: 5px;">
+                                                    <thead>
+                                                        <tr>
+                                                            <th></th>
+                                                            <th>S.No</th>
+                                                            <th>Purchase Order Number</th>
+                                                            <th>Supplier Name</th>
+                                                            <th>Date</th>
+                                                            <th>Total Item</th>
+                                                            <th>Total Amount</th>
+                                                            <th>Status</th>
+                                                            <th>Select</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal fade" id="modal-DcPurchaseAddGst">
+
+                        <div class="modal-dialog ">
+                            <div class="modal-content">
+                                <div class="modal-header" style="height: 50px;">
+                                    <h4 class="modal-title">UPDATE GST!</h4>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body ">
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <h6>Please Enter the GST For  </h6><h6 id="DclblDrugName"></h6>
+                                        </div>
+                                    </div>
+
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-2 col-sm-2 col-md-2">
+                                        <label style="margin-left: 20px; font-size: 19px;">GST:</label>
+                                    </div>
+                                    <div class="col-xs-2 col-sm-2 col-md-2">
+                                        <input style="margin-top: -2px; width: 365px;" type="number" id="txtDcPopUpGst" class="form-control" placeholder="Gst " />
+                                        <input type="hidden" id="txtDcPopupDrugCode" />
+                                    </div>
+
+                                </div>
+
+                                <div class="modal-footer justify-content-between">
+                                    <button type="button" class="btn btn-primary" style="margin-left: 145px;" onclick="DcUpdateGSTChange();" data-dismiss="modal">Save</button>
+                                    <button type="button" class="btn btn-default" style="margin-right: 160px;" data-dismiss="modal">Cancel</button>
+
+
+                                </div>
+                            </div>
+                            <!-- /.modal-content -->
+                        </div>
+                        <!-- /.modal-dialog -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

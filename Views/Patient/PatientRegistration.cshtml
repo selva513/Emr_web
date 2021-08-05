@@ -1,0 +1,1812 @@
+﻿
+@{
+    ViewData["Title"] = "PatientRegistration";
+}
+@using Syncfusion.EJ2
+@using Newtonsoft.Json
+@using Syncfusion.EJ2.Navigations;
+@model Emr_web.Models.PatientView
+<style>
+    .main-page {
+        background: linear-gradient(-141deg, #FBFAFF 14%, #FBFAFF 100%);
+        margin: 0;
+    }
+
+    body,
+    text {
+        font-family: "Helvetica Neue", "Helvetica", "Arial", sans-serif, "-apple-system", "BlinkMacSystemFont";
+    }
+
+    .form-group.required .control-label:after {
+        content: "*";
+        color: red;
+    }
+</style>
+<link href="~/AutoComplete/jquery-ui_1.11.4.css" rel="stylesheet" />
+<script src="~/AutoComplete/jquery-1.10.2.js"></script>
+<script src="~/AutoComplete/jquery-ui_1.11.4.js"></script>
+<script type="text/javascript">
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+         var tabObj = new ej.navigations.Tab({
+            heightAdjustMode: "Auto"
+         });
+        tabObj.appendTo('#wholetabs');
+        GetDoctorIDByUserid();
+        GetDoctorandDepartment();
+        GetClinicPins();
+
+        var today = new Date();
+        var currentyear = today.getFullYear();
+        var onetwentyyearback = currentyear - 120;
+        var daterange = onetwentyyearback + ':' + currentyear;
+        //$('#txtBirthDate').bind('keydown', function (e) {
+        //    if (e.which == 13)
+        //        e.stopImmediatePropagation();
+        //}).datepicker({
+        //    changeMonth: true,
+        //    changeYear: true,
+        //    yearRange: daterange,
+        //    dateFormat: 'dd/mm/yy',
+        //    endDate: "today",
+        //    maxDate: today,
+        //});
+        $('#txtBirthDate').datepicker({
+            changeMonth: true,
+            changeYear: true,
+            yearRange: daterange,
+            dateFormat: 'dd/mm/yy',
+            endDate: "today",
+            maxDate: today,
+        });
+    });
+    function getAge() {
+        var dateString = document.getElementById('txtBirthDate').value;
+        $.ajax({
+            type: "GET",
+            url: rootUrl + "/api/Patient/GetAge/?BirthDate=" + dateString,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: true,
+            success: function (response) {
+                document.getElementById('AgeYear').ej2_instances[0].value = response.Years;
+                document.getElementById('AgeMonth').ej2_instances[0].value = response.Months;
+                document.getElementById('AgeDay').ej2_instances[0].value = response.Days;
+            },
+            failure: function (response) {
+            },
+            error: function (response) {
+            }
+        });
+        //var now = new Date();
+        //var today = new Date(now.getYear(), now.getMonth(), now.getDate());
+
+        //var yearNow = now.getYear();
+        //var monthNow = now.getMonth();
+        //var dateNow = now.getDate();
+
+        //var dob = new Date(dateString.substring(6, 10),
+        //    dateString.substring(0, 2) - 1,
+        //    dateString.substring(3, 5)
+        //);
+
+        //var yearDob = dob.getYear();
+        //var monthDob = dob.getMonth();
+        //var dateDob = dob.getDate();
+        //var age = {};
+        //var ageString = "";
+        //var yearString = "";
+        //var monthString = "";
+        //var dayString = "";
+
+
+        //yearAge = yearNow - yearDob;
+
+        //if (monthNow >= monthDob)
+        //    var monthAge = monthNow - monthDob;
+        //else {
+        //    yearAge--;
+        //    var monthAge = 12 + monthNow - monthDob;
+        //}
+
+        //if (dateNow >= dateDob)
+        //    var dateAge = dateNow - dateDob;
+        //else {
+        //    monthAge--;
+        //    var dateAge = 31 + dateNow - dateDob;
+
+        //    if (monthAge < 0) {
+        //        monthAge = 11;
+        //        yearAge--;
+        //    }
+        //}
+        //document.getElementById('AgeYear').ej2_instances[0].value = yearAge;
+        //document.getElementById('AgeMonth').ej2_instances[0].value = monthAge;
+        //document.getElementById('AgeDay').ej2_instances[0].value = dateAge;
+    }
+    function GetClinicPins() {
+        try {
+             $.ajax({
+                    type: "GET",
+                    url: rootUrl + "/api/Patient/GetClinicPins",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    success: function (response) {
+                        var data = response;
+                        if (data != "" && data != null) {
+                            var Clinicid = data[0].ClinicID;
+                            var ClinicName = data[0].ClinicName;
+                            if (Clinicid != 0 && Clinicid != null) {
+                                document.getElementById('Clinic').ej2_instances[0].value = Clinicid;
+                                document.getElementById('Clinic').ej2_instances[0].text = ClinicName;
+                            }
+                        }
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+        }
+        catch (e) {
+        }
+    }
+    function GetDoctorIDByUserid() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetDoctorByUserid",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    var Doctorid = response;
+                    var docObj = document.getElementById("Doctor").ej2_instances[0];
+                    var deptcombo = document.getElementById("Deparment").ej2_instances[0];
+                    var genderObj = document.getElementById("Gender").ej2_instances[0];
+                    var citycombo = document.getElementById("City").ej2_instances[0];
+                    var stateObj = document.getElementById("State").ej2_instances[0];
+                    var countrycombo = document.getElementById("Country").ej2_instances[0];
+                    //if (Doctorid == 0) {
+                    //    var alerttxt = "User not mapped to Doctor.Please Map User to Doctor using \n";
+                    //    alerttxt += "Setup -> User -> Modify User";
+                    //    alert(alerttxt);
+                    //    var lbltext = "User not mapped to Doctor.Please Map User to Doctor using Setup -> User -> Modify User";
+                    //    document.getElementById('lblalert').innerText = lbltext;
+                    //    document.getElementById('firstname').disabled = true;
+                    //    document.getElementById('lastName').disabled = true;
+                    //    document.getElementById('txtBirthDate').disabled = true;
+                    //    document.getElementById('AgeYear').disabled = true;
+                    //    document.getElementById('AgeMonth').disabled = true;
+                    //    document.getElementById('AgeDay').disabled = true;
+                    //    genderObj.enabled = false;
+                    //    document.getElementById('MobileNo').disabled = true;
+                    //    docObj.enabled = false;
+                    //    deptcombo.enabled = false;
+                    //    document.getElementById('RelationType').disabled = true;
+                    //    document.getElementById('ReleationName').disabled = true;
+                    //    document.getElementById('PhoneNo').disabled = true;
+                    //    document.getElementById('Email').disabled = true;
+                    //    document.getElementById('Address1').disabled = true;
+                    //    document.getElementById('Address2').disabled = true;
+                    //    citycombo.enabled = false;
+                    //    stateObj.enabled = false;
+                    //    countrycombo.enabled = false;
+                    //    document.getElementById('btnSave').disabled = true;
+
+                    //}
+                    //else {
+                    //    document.getElementById('lblalert').innerText = "";
+                    //    document.getElementById('firstname').disabled = false;
+                    //    document.getElementById('lastName').disabled = false;
+                    //    document.getElementById('txtBirthDate').disabled = false;
+                    //    document.getElementById('AgeYear').disabled = false;
+                    //    document.getElementById('AgeMonth').disabled = false;
+                    //    document.getElementById('AgeDay').disabled = false;
+                    //    document.getElementById('MobileNo').disabled = false;
+                    //    document.getElementById('RelationType').disabled = false;
+                    //    document.getElementById('ReleationName').disabled = false;
+                    //    document.getElementById('PhoneNo').disabled = false;
+                    //    document.getElementById('Email').disabled = false;
+                    //    document.getElementById('Address1').disabled = false;
+                    //    document.getElementById('Address2').disabled = false;
+                    //    document.getElementById('btnSave').disabled = false;
+                    //    genderObj.enabled = true;
+                    //    docObj.enabled = true;
+                    //    deptcombo.enabled = false;
+                    //    citycombo.enabled = true;
+                    //    stateObj.enabled = true;
+                    //    countrycombo.enabled = true;
+                    //}
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+
+        }
+    }
+    function GetDoctorandDepartment() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetDoctorandDept",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    $(response).find("DoctorDepartment").each(function () {
+                        var specialityobj = document.getElementById("Speciality").ej2_instances[0];
+                        var deptobj = document.getElementById("Deparment").ej2_instances[0];
+                        var Doctorname = ($(this).find("DoctorName").text());
+                        var Deptname = ($(this).find("DepartmentName").text());
+                        var DoctorSeqID = ($(this).find("DoctorSeqID").text());
+                        var DeptSeqID = ($(this).find("DeptSeqID").text());
+                        var Specialityid = ($(this).find("SpecialityID").text());
+                        var Specialityname = ($(this).find("Speciality_Name").text());
+                        document.getElementById('Doctor').ej2_instances[0].text = Doctorname;
+                        document.getElementById('Deparment').ej2_instances[0].text = Deptname;
+                        document.getElementById('Speciality').ej2_instances[0].text = Specialityname;
+                        if (Specialityname)
+                            specialityobj.enabled = false;
+                        else
+                            specialityobj.enabled = true;
+                        if (Deptname)
+                            deptobj.enabled = false;
+                        else
+                            deptobj.enabled = true;
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function onfiltering(e) {
+        var query = new ej.data.Query();
+        query = (e.text !== '') ? query.where('DoctorName', 'Contains', e.text, true) : query;
+        e.updateData(@Html.Raw(JsonConvert.SerializeObject(ViewBag.Doctor)), query);
+    }
+    function Deptonfiltering(e) {
+        var query = new ej.data.Query();
+        query = (e.text !== '') ? query.where('DepartmentName', 'Contains', e.text, true) : query;
+        e.updateData(@Html.Raw(JsonConvert.SerializeObject(ViewBag.Department)), query);
+    }
+    function Specialityonfiltering(e) {
+        var query = new ej.data.Query();
+        query = (e.text !== '') ? query.where('Speciality_Name', 'Contains', e.text, true) : query;
+        e.updateData(@Html.Raw(JsonConvert.SerializeObject(ViewBag.Speciality)), query);
+    }
+    function Cityonfiltering(e) {
+        var query = new ej.data.Query();
+        query = (e.text !== '') ? query.where('CityName', 'Contains', e.text, true) : query;
+        e.updateData(@Html.Raw(JsonConvert.SerializeObject(ViewBag.City)), query);
+    }
+    function Stateonfiltering(e) {
+        var query = new ej.data.Query();
+        query = (e.text !== '') ? query.where('StateName', 'Contains', e.text, true) : query;
+        e.updateData(@Html.Raw(JsonConvert.SerializeObject(ViewBag.State)), query);
+    }
+    function Countryonfiltering(e) {
+        var query = new ej.data.Query();
+        query = (e.text !== '') ? query.where('CountryName', 'Contains', e.text, true) : query;
+        e.updateData(@Html.Raw(JsonConvert.SerializeObject(ViewBag.Country)), query);
+    }
+    function Cliniconfiltering(e) {
+        var query = new ej.data.Query();
+        query = (e.text !== '') ? query.where('ClinicName', 'Contains', e.text, true) : query;
+        e.updateData(@Html.Raw(JsonConvert.SerializeObject(ViewBag.Clinic)), query);
+    }
+    function DoctorChange() {
+        var Doctor = document.getElementById('Doctor').ej2_instances[0];
+        var Department = document.getElementById('Deparment').ej2_instances[0];
+        var Speciality = document.getElementById('Speciality').ej2_instances[0];
+        var DocID = document.getElementById('Doctor').ej2_instances[0].value;
+        if (DocID !==null) {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/DepartmentByDocId/?DocID=" + DocID,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                //beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    Department.text = response.DepartmentName;
+                    Department.value = response.DeptSeqID;
+                    Speciality.text = response.Speciality_Name;
+                    Speciality.value = response.SpecialityID;
+                    if (response.DepartmentName)
+                        Department.enabled = false;
+                    else
+                        Department.enabled = true;
+                    if (response.Speciality_Name)
+                        Speciality.enabled = false;
+                    else
+                        Speciality.enabled = true;
+                },
+                //complete: function () { $("#loading").css("display", "none"); },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+    }
+    function BirthDateChange() {
+        //var ar = document.getElementById('txtBirthDate').ej2_instances[0];
+        var ar = document.getElementById('txtBirthDate').value;
+        if (ar.value !== null) {
+            var d = new Date(ar.value);
+            var Month = parseInt(d.getMonth()) + 1;
+            var BDate = d.getDate() + "/" + Month + "/" + d.getFullYear();
+            var today = new Date();
+            var currentyear = today.getFullYear();
+            var yeardifference = currentyear - d.getFullYear();
+            if (ar.value > today) {
+                ar.value = "";
+                alert('Please Enter Valid Date');
+                document.getElementById('AgeYear').ej2_instances[0].value = "";
+                document.getElementById('AgeMonth').ej2_instances[0].value = "";
+                document.getElementById('AgeDay').ej2_instances[0].value = "";
+                $("#txtBirthDate").focusIn();
+            }
+            else if (d.getDate() > 31) {
+                alert('Please Enter Valid Date');
+                document.getElementById('txtBirthDate').ej2_instances[0].value = '';
+            }
+
+            else if (Month > 12) {
+                alert('Please Enter Valid Date');
+                document.getElementById('txtBirthDate').ej2_instances[0].value = '';
+            }
+            else if (yeardifference > 120) {
+                alert('Please Enter Valid Date');
+                document.getElementById('txtBirthDate').ej2_instances[0].value = '';
+            }
+            else {
+                $.ajax({
+                    type: "GET",
+                    url: rootUrl + "/api/Patient/GetAge/?BirthDate=" + BDate,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    success: function (response) {
+                        document.getElementById('AgeYear').ej2_instances[0].value = response.years;
+                        document.getElementById('AgeMonth').ej2_instances[0].value = response.months;
+                        document.getElementById('AgeDay').ej2_instances[0].value = response.days;
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+            }
+        }
+        else {
+            alert('Please Enter valid date');
+            ar.value = "";
+            ar.text = "";
+            document.getElementById('txtBirthDate').focus();
+        }
+    }
+    function HISDialogView() {
+        document.getElementById('dialog').ej2_instances[0].show();
+    }
+    function PatientDialogView() {
+        document.getElementById('Emrdialog').ej2_instances[0].show();
+        GetAllEmrPatinetByHospoital();
+    }
+    function GetPatientByID() {
+        var PatientID = document.getElementById('txtPatientID').ej2_instances[0].value;
+        GetPatientDetailesById(PatientID);
+    }
+    function rowSelected(args) {
+        var selectedrowindex = this.getSelectedRowIndexes();  // get the selected row indexes.
+        var selectedrecords = this.getSelectedRecords();  // get the selected records.
+        var PatientID = selectedrecords[0].PatientID;
+        GetPatientDetailesById(PatientID);
+        document.getElementById('txtPatientID').ej2_instances[0].value = PatientID;
+        document.getElementById('Emrdialog').ej2_instances[0].hide();
+    }
+    function rowSelectedHIS(args) {
+        var selectedrowindex = this.getSelectedRowIndexes();  // get the selected row indexes.
+        var selectedrecords = this.getSelectedRecords();  // get the selected records.
+         var PatientID = selectedrecords[0].PatientID;
+         var HISVisitid = selectedrecords[0].Visitid;
+         var HISDocid = selectedrecords[0].DoctorID;
+         var HISDeptid=selectedrecords[0].DeptID;
+        GetHISPatientDetailesById(PatientID,HISVisitid,HISDocid,HISDeptid);
+        document.getElementById('txtPatientID').ej2_instances[0].value = PatientID;
+        document.getElementById('dialog').ej2_instances[0].hide();
+    }
+    function paging(args) {
+        if (args.requestType === 'paging') {
+            currentPage.value = parseInt(args.currentPage, 10);
+        }
+    }
+    function GetHISPatientDetailesById(PatientID,HISVisitid,HISDocid,HISDeptid) {
+        $.ajax({
+            type: "GET",
+            url: rootUrl + "/api/Patient/GetHISPatientByID/?PatientID=" + PatientID,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: true,
+            success: function (response) {
+                if (response.FirstName !== null) {
+                    document.getElementById('txtPatientID').ej2_instances[0].value = PatientID;
+                    document.getElementById('firstname').ej2_instances[0].value = response.FirstName;
+                    document.getElementById('lastName').ej2_instances[0].value = response.SecondName;
+                    //document.getElementById('Doctor').ej2_instances[0].value = response.DoctorID;
+                    //document.getElementById('Deparment').ej2_instances[0].value = response.DeptID;
+                    if (response.BirthDate !== "" &&response.BirthDate != "01/01/1900") {
+                        //document.getElementById('txtBirthDate').ej2_instances[0].value = response.BirthDate;
+                        document.getElementById('txtBirthDate').value = response.BirthDate;
+                        document.getElementById('AgeYear').ej2_instances[0].value = response.AgeYear;
+                        document.getElementById('AgeMonth').ej2_instances[0].value = response.AgeMonth;
+                        document.getElementById('AgeDay').ej2_instances[0].value = response.AgeDay;
+                    }
+                    else {
+                        //document.getElementById('txtBirthDate').ej2_instances[0].value = "";
+                        document.getElementById('txtBirthDate').value = "";
+                        document.getElementById('AgeYear').ej2_instances[0].value = response.AgeYear;
+                        document.getElementById('AgeMonth').ej2_instances[0].value = response.AgeMonth;
+                        document.getElementById('AgeDay').ej2_instances[0].value = response.AgeDay;
+                    }
+                    document.getElementById('Gender').ej2_instances[0].value = response.Gender;
+                    document.getElementById('MobileNo').ej2_instances[0].value = response.MobileNumber;
+                    document.getElementById('RelationType').ej2_instances[0].value = response.RelationType;
+                    document.getElementById('ReleationName').ej2_instances[0].value = response.RelationName;
+                    document.getElementById('PhoneNo').ej2_instances[0].value = response.PhoneNumber;
+                    document.getElementById('Email').value = response.Email;
+                    document.getElementById('Address1').ej2_instances[0].value = response.PatientAddress1;
+                    document.getElementById('Address2').ej2_instances[0].value = response.PatientAddress2;
+
+                    if (response.City !== 0)
+                        document.getElementById('City').ej2_instances[0].value = response.City;
+                    if (response.State !== 0)
+                        document.getElementById('State').ej2_instances[0].value = response.State;
+                    if (response.Country !== 0)
+                        document.getElementById('Country').ej2_instances[0].value = response.Country;
+
+                    document.getElementById('txthisvistid').ej2_instances[0].value = HISVisitid;
+                    document.getElementById('txthisdocid').ej2_instances[0].value = HISDocid;
+                    document.getElementById('txthisdeptid').ej2_instances[0].value = HISDeptid;
+                }
+            },
+            failure: function (response) {
+            },
+            error: function (response) {
+            }
+        });
+    }
+    function GetPatientDetailesById(PatientID) {
+        $.ajax({
+            type: "GET",
+            url: rootUrl + "/api/Patient/GetPatientByID/?PatientID=" + PatientID,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: true,
+            success: function (response) {
+                if (response.FirstName !== null) {
+                    document.getElementById('txtPatientID').ej2_instances[0].value = PatientID;
+                    document.getElementById('firstname').ej2_instances[0].value = response.FirstName;
+                    document.getElementById('lastName').ej2_instances[0].value = response.SecondName;
+                    document.getElementById('Doctor').ej2_instances[0].value = response.DoctorID;
+                    if (response.SpecialityID != 0)
+                        document.getElementById('Speciality').ej2_instances[0].value = response.SpecialityID;
+                    //document.getElementById('Deparment').ej2_instances[0].value = response.DeptID;
+                    if (response.BirthDate !== "") {
+                        document.getElementById('txtBirthDate').value = response.BirthDate;
+                        document.getElementById('AgeYear').ej2_instances[0].value = response.AgeYear;
+                        document.getElementById('AgeMonth').ej2_instances[0].value = response.AgeMonth;
+                        document.getElementById('AgeDay').ej2_instances[0].value = response.AgeDay;
+                    }
+                    else {
+                        document.getElementById('txtBirthDate').value = "";
+                        document.getElementById('AgeYear').ej2_instances[0].value = response.AgeYear;
+                        document.getElementById('AgeMonth').ej2_instances[0].value = response.AgeMonth;
+                        document.getElementById('AgeDay').ej2_instances[0].value = response.AgeDay;
+                    }
+                    document.getElementById('Gender').ej2_instances[0].value = response.Gender;
+                    document.getElementById('MobileNo').ej2_instances[0].value = response.MobileNumber;
+                    document.getElementById('RelationType').ej2_instances[0].value = response.RelationType;
+                    document.getElementById('ReleationName').ej2_instances[0].value = response.RelationName;
+                    document.getElementById('PhoneNo').ej2_instances[0].value = response.PhoneNumber;
+                    $("#Email").val(response.Email);
+                    document.getElementById('Address1').ej2_instances[0].value = response.PatientAddress1;
+                    document.getElementById('Address2').ej2_instances[0].value = response.PatientAddress2;
+                    document.getElementById('Clinic').ej2_instances[0].value = response.ClinicID;
+                    if (response.City !== 0)
+                        document.getElementById('City').ej2_instances[0].value = response.City;
+                    if (response.State !== 0)
+                        document.getElementById('State').ej2_instances[0].value = response.State;
+                    if (response.Country !== 0)
+                        document.getElementById('Country').ej2_instances[0].value = response.Country;
+                    document.getElementById('txtCountryCode').ej2_instances[0].value = response.CountryCode;
+                    document.getElementById('txtCityCode').ej2_instances[0].value = response.CityCode;
+                    if (response.BloodGroup != 0)
+                    document.getElementById('BloodGroup').ej2_instances[0].value = response.BloodGroup;
+                }
+                DisableButtons();
+            },
+            failure: function (response) {
+            },
+            error: function (response) {
+            }
+        });
+    }
+    function DisableButtons() {
+        try {
+            var deptcombo = document.getElementById("Deparment").ej2_instances[0];
+            deptcombo.enabled = false;
+            //var docObj = document.getElementById("Doctor").ej2_instances[0];
+            //docObj.enabled = false;
+            var genderobj = document.getElementById("Gender").ej2_instances[0];
+            genderobj.enabled = false;
+            //var clinicobj = document.getElementById("Clinic").ej2_instances[0];
+            //clinicobj.enabled = false;
+            var cityobj = document.getElementById("City").ej2_instances[0];
+            cityobj.enabled = false;
+            var stateobj = document.getElementById("State").ej2_instances[0];
+            stateobj.enabled = false;
+            var countryobj = document.getElementById("Country").ej2_instances[0];
+            countryobj.enabled = false;
+            var relobj = document.getElementById("RelationType").ej2_instances[0];
+            relobj.enabled = false;
+            var firstname = document.getElementById("firstname").ej2_instances[0];
+            firstname.enabled = false;
+            var lastname = document.getElementById("lastName").ej2_instances[0];
+            lastname.enabled = false;
+            //var txtBirthDate = document.getElementById("txtBirthDate").ej2_instances[0];
+            //txtBirthDate.enabled = false;
+            //$("#txtBirthDate").attr("disabled", "disabled");
+            //var AgeYear = document.getElementById("AgeYear").ej2_instances[0];
+            //AgeYear.enabled = false;
+            //var AgeMonth = document.getElementById("AgeMonth").ej2_instances[0];
+            //AgeMonth.enabled = false;
+            //var AgeDay = document.getElementById("AgeDay").ej2_instances[0];
+            //AgeDay.enabled = false;
+            var txtCountryCode = document.getElementById("txtCountryCode").ej2_instances[0];
+            txtCountryCode.enabled = false;
+            var MobileNo = document.getElementById("MobileNo").ej2_instances[0];
+            MobileNo.enabled = false;
+            var txtCityCode = document.getElementById("txtCityCode").ej2_instances[0];
+            txtCityCode.enabled = false;
+            var PhoneNo = document.getElementById("PhoneNo").ej2_instances[0];
+            PhoneNo.enabled = false;
+            $("#Email").attr("disabled", "disabled");
+            var ReleationName = document.getElementById("ReleationName").ej2_instances[0];
+            ReleationName.enabled = false;
+            var Address1 = document.getElementById("Address1").ej2_instances[0];
+            Address1.enabled = false;
+            var Address2 = document.getElementById("Address2").ej2_instances[0];
+            Address2.enabled = false;
+            var bloodgroupobj = document.getElementById("BloodGroup").ej2_instances[0];
+            bloodgroupobj.enabled = false;
+
+                document.getElementById("btnedit").style.display = 'block';
+        }
+        catch (e) {
+
+        }
+    }
+    function ShowMessage(message, messagetype) {
+            var cssclass;
+            switch (messagetype) {
+                case 'Success':
+                    cssclass = 'alert-success'
+                    break;
+                case 'Error':
+                    cssclass = 'alert-danger'
+                    break;
+                case 'Warning':
+                    cssclass = 'alert-warning'
+                    break;
+                default:
+                    cssclass = 'alert-info'
+            }
+            $('#alert_container').append('<div id="alert_div"  class="alert fade in ' + cssclass + '"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><strong>' + messagetype + '!</strong> <span>' + message + '</span></div>');
+
+            setTimeout(function () {
+                $("#alert_div").fadeTo(2000, 500).slideUp(500, function () {
+                    $("#alert_div").remove();
+                });
+            }, 5000);
+    }
+    function onlyNumberKey(evt) {
+        var ASCIICode = (evt.which) ? evt.which : evt.keyCode
+        if (ASCIICode > 31 && (ASCIICode < 48 || ASCIICode > 57))
+            return false;
+        return true;
+    }
+    function isNumber(evt) {
+        var theEvent = evt || window.event;
+        var key = theEvent.keyCode || theEvent.which;
+        key = String.fromCharCode(key);
+        if (key.length == 0) return;
+        var regex = /^[0-9/]+$/;
+        if (!regex.test(key)) {
+            theEvent.returnValue = false;
+            if (theEvent.preventDefault) theEvent.preventDefault();
+        }
+    }
+    function CountryChage() {
+        try {
+            var CountryCode = document.getElementById('txtCountryCode').ej2_instances[0].value;
+            if (CountryCode !== null && CountryCode != "") {
+                $.ajax({
+                    type: "GET",
+                    url: rootUrl + "/api/Patient/GetCountryNameByCode/?CountryCode=" + CountryCode,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    success: function (response) {
+                        if (response == null || response == "") {
+                            alert('Country Code Not Exist.Please Add Country code Using Setup -> Country Master');
+                            document.getElementById('txtCountryCode').ej2_instances[0].value = "";
+                        }
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function CancelClick() {
+        try {
+            window.location.href = "/Patient/PatientRegistration";
+        }
+        catch (e) {
+
+        }
+    }
+    function ClinicPinclick() {
+        try {
+            var clinicname = document.getElementById('Clinic').ej2_instances[0].text;
+            var clinicid = document.getElementById('Clinic').ej2_instances[0].value;
+            if (clinicname == "" || clinicname == null) {
+                alert('Please Enter Clinic name to Pin');
+            }
+            else if (clinicid == clinicname)
+            {
+                alert('Please Enter Valid Clinic Name');
+                document.getElementById('Clinic').ej2_instances[0].text = "";
+            }
+            else {
+                $.ajax({
+                    url: rootUrl + "/Patient/UpdateClinicPin/?Cliniccode=" + clinicid + "",
+                    type: 'GET',
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (response) {
+                        var data = response;
+                        if (data == true) {
+                            alert('Clinic Pinned Successfully.');
+                        }
+                    },
+                });
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function GetAllEmrPatinetByHospoital() {
+        $.ajax({
+            url: "/Patient/GetAllEmrPatinetByHospoital",
+            type: 'GET',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: OnSuccessPatientList,
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function GetAllEmrPatinetBySearch() {
+        var arg = $("#txtAdPatientSearch").val();
+        $.ajax({
+            url: "/Patient/GetAllEmrPatinetBySearch/?SearchTerm=" + arg + "",
+            type: 'GET',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: OnSuccessPatientList
+        });
+
+    }
+    function OnSuccessPatientList(response) {
+        var html = "";
+        html += "<table class='table table-bordered table-striped dataTable table-reflow'>";
+        html += "<thead><tr><td>S.no</td><td>PatientID</td><td>Name</td><td>Gender</td>";
+        html += "<td>Mobile</td><td style='display:none;'>Relation Name</td><td style='display:none;'>Address</td><td>City</td>";
+        html += "<td>Doctor</td></tr></thead><tbody>";
+        if (response.length > 0) {
+            for (PCount = 0; PCount < response.length; PCount++) {
+                html += "<tr style='cursor:pointer;' onclick='onrowselect(this);'><td style='display:none;'>" + response[PCount].PatSeqID + "</td>";
+                html += "<td>" + response[PCount].RowNumber + "</td>";
+                html += "<td>" + response[PCount].PatientID + "</td>";
+                html += "<td>" + response[PCount].FirstName + " " + response[PCount].SecondName + "</td>";
+                html += "<td>" + response[PCount].Gender + "</td>";
+                html += "<td>" + response[PCount].MobileNumber + "</td>";
+                html += "<td style='display:none;'>" + response[PCount].RelationName + "</td>";
+                html += "<td style='display:none;'>" + response[PCount].PatientAddress + "</td>";
+                html += "<td>" + response[PCount].CityName + "</td>";
+                html += "<td>" + response[PCount].DoctorName + "</td>";
+                html += "</tr>";
+            }
+            html += "</tbody></table>";
+        }
+        $("#PatientListDiv").html(html);
+    }
+    function onrowselect(SelectedRow) {
+        var patientid = SelectedRow.cells[2].innerHTML;
+        GetPatientDetailesById(patientid);
+        document.getElementById('Emrdialog').ej2_instances[0].hide();
+    }
+    function ClinicChange() {
+        try {
+            var clinicname = document.getElementById('Clinic').ej2_instances[0].text;
+            var clinicid = document.getElementById('Clinic').ej2_instances[0].value;
+            if (clinicid == clinicname) {
+                alert('Please Enter Valid Clinic Name');
+                document.getElementById('Clinic').ej2_instances[0].value = "";
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function CityChange() {
+        try {
+           // alert('call');
+            var cityname = document.getElementById('City').ej2_instances[0].text;
+            var cityid = document.getElementById('City').ej2_instances[0].value;
+            var citycombo = document.getElementById('City').ej2_instances[0];
+            //if (cityname == "" || cityname == null) {
+            //    alert('Please Enter Valid City Name');
+            //    citycombo.value = "";
+            //}
+            if (cityid == cityname) {
+                sessionStorage.setItem("MobileDigits", "");
+                document.getElementById('cityname').ej2_instances[0].value = cityname;
+                document.getElementById('State').ej2_instances[0].value = '';
+                document.getElementById('Country').ej2_instances[0].value = '';
+                document.getElementById('txtCountryCode').ej2_instances[0].value = '';
+                $("#MobileNo").removeAttr('maxlength');
+                //alert('Please Enter Valid City Name');
+                //citycombo.value = "";
+            }
+            else {
+                $.ajax({
+                    type: "GET",
+                    url: rootUrl + "/api/Patient/GetCityChangeDetails/?CityID=" + cityid,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    success: function (response) {
+                        var data = response;
+                        if (data != "" && data != null) {
+                            var State = data[0].State;
+                            var Stateid = data[0].Stateid;
+                            var Country = data[0].Country;
+                            var Countryid = data[0].Countryid;
+                            var CountryCode = data[0].CountryCode;
+                            var Mobiledigits = data[0].MobileDigits;
+                            sessionStorage.setItem("MobileDigits", Mobiledigits);
+                            document.getElementById('txtCountryCode').ej2_instances[0].value = CountryCode;
+                            $("#MobileNo").attr('maxlength', Mobiledigits);
+                            if (State != "" && State != null) {
+                                document.getElementById('State').ej2_instances[0].text = State;
+                                document.getElementById('State').ej2_instances[0].value = Stateid;
+                            }
+                            if (Country != "" && Country != null) {
+                                document.getElementById('Country').ej2_instances[0].text = Country;
+                                document.getElementById('Country').ej2_instances[0].value = Countryid;
+                            }
+                        }
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function StateChange() {
+        try {
+            var statename = document.getElementById('State').ej2_instances[0].text;
+            var stateid = document.getElementById('State').ej2_instances[0].value;
+            //if (statename == "" || statename == null) {
+            //    alert('Please Enter State Name');
+            //}
+            if (stateid == statename) {
+                document.getElementById('statename').ej2_instances[0].value = statename;
+                sessionStorage.setItem("MobileDigits", "");
+                document.getElementById('Country').ej2_instances[0].value = '';
+                document.getElementById('txtCountryCode').ej2_instances[0].value = '';
+                $("#MobileNo").removeAttr('maxlength');
+                //alert('Please Enter Valid State Name');
+                //document.getElementById('State').ej2_instances[0].value = "";
+            }
+            else {
+                $.ajax({
+                    type: "GET",
+                    url: rootUrl + "/api/Patient/GetStateChangeDetails/?StateID=" + stateid,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    success: function (response) {
+                        var data = response;
+                        if (data != "" && data != null) {
+                            var Country = data[0].Country;
+                            var Countryid = data[0].Countryid;
+                            var CountryCode = data[0].CountryCode;
+                            var Mobiledigits = data[0].MobileDigits;
+                            sessionStorage.setItem("MobileDigits", Mobiledigits);
+                            document.getElementById('txtCountryCode').ej2_instances[0].value = CountryCode;
+                            $("#MobileNo").attr('maxlength', Mobiledigits);
+                            if (Country != "" && Country != null) {
+                                document.getElementById('Country').ej2_instances[0].text = Country;
+                                document.getElementById('Country').ej2_instances[0].value = Countryid;
+                            }
+                        }
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function CountryChange() {
+        try {
+            var countryname = document.getElementById('Country').ej2_instances[0].text;
+            var countryid = document.getElementById('Country').ej2_instances[0].value;
+            //if (countryname == "" || countryname == null) {
+            //    alert('Please Enter Country Name');
+            //}
+            if (countryid == countryname) {
+                document.getElementById('countryname').ej2_instances[0].value = countryname;
+                sessionStorage.setItem("MobileDigits", "");
+                document.getElementById('txtCountryCode').ej2_instances[0].value = '';
+                $("#MobileNo").removeAttr('maxlength');
+                //alert('Please Enter Valid Country Name');
+                //document.getElementById('Country').ej2_instances[0].value = "";
+            }
+            else {
+                $.ajax({
+                    type: "GET",
+                    url: rootUrl + "/api/Patient/GetCountryChangeDetails/?CountryID=" + countryid,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    success: function (response) {
+                        var data = response;
+                        if (data != "" && data != null) {
+                            var CountryCode = data[0].CountryCode;
+                            var Mobiledigits = data[0].MobileDigits;
+                            sessionStorage.setItem("MobileDigits", Mobiledigits);
+                            document.getElementById('txtCountryCode').ej2_instances[0].value = CountryCode;
+                            $("#MobileNo").attr('maxlength', Mobiledigits);
+                        }
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+            }
+
+        }
+        catch (e) {
+
+        }
+    }
+    function openPopup() {
+        var multiselectObj = document.getElementById("txtPatientID");
+        multiselectObj.ej2_instances[0].showPopup();
+    }
+    function onCreate() {
+        document.getElementById("txtPatientID").addEventListener("click", openPopup);
+    }
+    function actionComplete(e) {
+        if (this.suggestionCount) {
+            e.result = e.result.slice(0, this.suggestionCount)
+        }
+    }
+    function filtering(args) {
+        var dataSource;
+        new ej.data.DataManager({ url: "/api/Patient/GetPatientIDList/", adaptor: new ej.data.WebApiAdaptor }).executeQuery(new ej.data.Query().where('PatientID', 'Contains', args.text, true)).then((e) => {
+            dataSource = e.result;
+            var dropdown_query = new ej.data.Query();
+            if (args.text !== '') {
+                dropdown_query = dropdown_query.where('PatientID', 'Contains', args.text, true);
+                args.updateData(dataSource, dropdown_query);
+            } else {
+                args.updateData(dataSource);
+            }
+        });
+    }
+    function OnFocusBloodGroup(args) {
+        this.showPopup();
+    }
+    function OnFocusGender(args) {
+        this.showPopup();
+    }
+    function OnFocusClinic(args) {
+        this.showPopup();
+    }
+    function OnFocusCity(args) {
+        this.showPopup();
+    }
+    function OnFocusDoctor(args) {
+        this.showPopup();
+    }
+    function OnFocusSpeciality(args) {
+        this.showPopup();
+    }
+    function OnFocusState(args) {
+        this.showPopup();
+    }
+    function OnFocusCountry(args) {
+        this.showPopup();
+    }
+    function MobileChange() {
+        try {
+            var Mobilenum = document.getElementById('MobileNo').ej2_instances[0].value;
+            var MobileDigits = sessionStorage.getItem("MobileDigits");
+            if (MobileDigits != "") {
+                if (Mobilenum.length != MobileDigits) {
+                    alert('Please Enter Valid ' + MobileDigits + ' Digit Number');
+                    document.getElementById('MobileNo').ej2_instances[0].value = "";
+                }
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+    function onGenderSelect(e) {
+        this.onBlur(e);
+    }
+    function onClinicSelect(e) {
+        this.onBlur(e);
+    }
+    function onCitySelect(e) {
+        this.onBlur(e);
+        var City = e.itemData.CitySeqID;
+        var State = e.itemData.StateSeqID;
+        var Country = e.itemData.CountrySeqID;
+        if (State != "" && State != null) {
+            document.getElementById('State').ej2_instances[0].value = State;
+        }
+        if (Country != "" && Country != null) {
+            document.getElementById('Country').ej2_instances[0].value = Country;
+        }
+        $.ajax({
+            type: "GET",
+            url: rootUrl + "/api/Patient/GetCityChangeDetails/?CityID=" + City,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: true,
+            success: function (response) {
+                var data = response;
+                if (data != "" && data != null) {
+                    var CountryCode = data[0].CountryCode;
+                    var Mobiledigits = data[0].MobileDigits;
+                    var Citycode = data[0].CityCode;
+                    sessionStorage.setItem("MobileDigits", Mobiledigits);
+                    document.getElementById('txtCountryCode').ej2_instances[0].value = CountryCode;
+                    document.getElementById('txtCityCode').ej2_instances[0].value = Citycode;
+                    $("#MobileNo").attr('maxlength', Mobiledigits);
+                }
+            },
+            failure: function (response) {
+            },
+            error: function (response) {
+            }
+        });
+    }
+    function onDoctorSelect(e) {
+        this.onBlur(e);
+        var DocID = e.itemData.DoctorSeqID;
+        var DeptID = e.itemData.DepartmentID;
+        document.getElementById('Deparment').ej2_instances[0].value = DeptID;
+    }
+    function onSpecialitySelect(e) {
+        this.onBlur(e);
+
+    }
+    function onStateSelect(e) {
+        this.onBlur(e);
+        var State = e.itemData.StateSeqID;
+        var Country = e.itemData.CountrySeqID;
+        if (Country != "" && Country != null) {
+            document.getElementById('Country').ej2_instances[0].value = Country;
+        }
+        $.ajax({
+            type: "GET",
+            url: rootUrl + "/api/Patient/GetStateChangeDetails/?StateID=" + State,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: true,
+            success: function (response) {
+                var data = response;
+                if (data != "" && data != null) {
+                    var CountryCode = data[0].CountryCode;
+                    var Mobiledigits = data[0].MobileDigits;
+                    sessionStorage.setItem("MobileDigits", Mobiledigits);
+                    document.getElementById('txtCountryCode').ej2_instances[0].value = CountryCode;
+                    $("#MobileNo").attr('maxlength', Mobiledigits);
+                }
+            },
+            failure: function (response) {
+            },
+            error: function (response) {
+            }
+        });
+    }
+    function onCountrySelect(e) {
+        this.onBlur(e);
+        var Country = e.itemData.CountrySeqId;
+        $.ajax({
+            type: "GET",
+            url: rootUrl + "/api/Patient/GetCountryChangeDetails/?CountryID=" + Country,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: true,
+            success: function (response) {
+                var data = response;
+                if (data != "" && data != null) {
+                    var CountryCode = data[0].CountryCode;
+                    var Mobiledigits = data[0].MobileDigits;
+                    sessionStorage.setItem("MobileDigits", Mobiledigits);
+                    document.getElementById('txtCountryCode').ej2_instances[0].value = CountryCode;
+                    $("#MobileNo").attr('maxlength', Mobiledigits);
+                }
+            },
+            failure: function (response) {
+            },
+            error: function (response) {
+            }
+        });
+    }
+    function EditPatient() {
+        try {
+            document.getElementById("btnupdate").style.display = 'block';
+            document.getElementById("btnedit").style.display = 'none';
+            document.getElementById("btnSave").style.display = 'none';
+            var docObj = document.getElementById("Doctor").ej2_instances[0];
+            docObj.enabled = true;
+            var genderobj = document.getElementById("Gender").ej2_instances[0];
+            genderobj.enabled = true;
+            var clinicobj = document.getElementById("Clinic").ej2_instances[0];
+            clinicobj.enabled = true;
+            var cityobj = document.getElementById("City").ej2_instances[0];
+            cityobj.enabled = true;
+            var stateobj = document.getElementById("State").ej2_instances[0];
+            stateobj.enabled = true;
+            var countryobj = document.getElementById("Country").ej2_instances[0];
+            countryobj.enabled = true;
+            var relobj = document.getElementById("RelationType").ej2_instances[0];
+            relobj.enabled = true;
+            var firstname = document.getElementById("firstname").ej2_instances[0];
+            firstname.enabled = true;
+            var lastname = document.getElementById("lastName").ej2_instances[0];
+            lastname.enabled = true;
+            //var txtBirthDate = document.getElementById("txtBirthDate").ej2_instances[0];
+            //txtBirthDate.enabled = true;
+            $("#txtBirthDate").removeAttr("txtBirthDate");
+            var AgeYear = document.getElementById("AgeYear").ej2_instances[0];
+            AgeYear.enabled = true;
+            var AgeMonth = document.getElementById("AgeMonth").ej2_instances[0];
+            AgeMonth.enabled = true;
+            var AgeDay = document.getElementById("AgeDay").ej2_instances[0];
+            AgeDay.enabled = true;
+            var txtCountryCode = document.getElementById("txtCountryCode").ej2_instances[0];
+            txtCountryCode.enabled = true;
+            var MobileNo = document.getElementById("MobileNo").ej2_instances[0];
+            MobileNo.enabled = true;
+            var txtCityCode = document.getElementById("txtCityCode").ej2_instances[0];
+            txtCityCode.enabled = true;
+            var PhoneNo = document.getElementById("PhoneNo").ej2_instances[0];
+            PhoneNo.enabled = true;
+            $("#Email").removeAttr("disabled");
+            var ReleationName = document.getElementById("ReleationName").ej2_instances[0];
+            ReleationName.enabled = true;
+            var Address1 = document.getElementById("Address1").ej2_instances[0];
+            Address1.enabled = true;
+            var Address2 = document.getElementById("Address2").ej2_instances[0];
+            Address2.enabled = true;
+        }
+        catch (e) {
+
+        }
+    }
+    function UpdatePatient() {
+        try {
+            var PatientID = document.getElementById('txtPatientID').ej2_instances[0].value;
+            var docObj = document.getElementById("Doctor").ej2_instances[0].value;
+            var deptcombo = document.getElementById("Deparment").ej2_instances[0].value;
+            var specialitycombo = document.getElementById("Speciality").ej2_instances[0].value;
+            var genderobj = document.getElementById("Gender").ej2_instances[0].value;
+            var clinicobj = document.getElementById("Clinic").ej2_instances[0].value;
+            var cityobj = document.getElementById("City").ej2_instances[0].value;
+            var citytext = document.getElementById("City").ej2_instances[0].text;
+            if (cityobj == citytext)
+                cityobj = 0;
+            var stateobj = document.getElementById("State").ej2_instances[0].value;
+            var statetext = document.getElementById("State").ej2_instances[0].text;
+            if (stateobj == statetext)
+                stateobj = 0;
+            var countryobj = document.getElementById("Country").ej2_instances[0].value;
+            var countrytext = document.getElementById("Country").ej2_instances[0].text;
+            if (countryobj == countrytext)
+                countryobj = 0;
+            var relobj = document.getElementById("RelationType").ej2_instances[0].value;
+            var firstname = document.getElementById("firstname").ej2_instances[0].value;
+            var lastname = document.getElementById("lastName").ej2_instances[0].value;
+            var txtBirthDate = document.getElementById("txtBirthDate").value;
+            var AgeYear = document.getElementById("AgeYear").ej2_instances[0].value;
+            var AgeMonth = document.getElementById("AgeMonth").ej2_instances[0].value;
+            var AgeDay = document.getElementById("AgeDay").ej2_instances[0].value;
+            var txtCountryCode = document.getElementById("txtCountryCode").ej2_instances[0].value;
+            var MobileNo = document.getElementById("MobileNo").ej2_instances[0].value;
+            var txtCityCode = document.getElementById("txtCityCode").ej2_instances[0].value;
+            var PhoneNo = document.getElementById("PhoneNo").ej2_instances[0].value;
+            var Email = document.getElementById('Email').value;
+            var ReleationName = document.getElementById("ReleationName").ej2_instances[0].value;
+            var Address1 = document.getElementById("Address1").ej2_instances[0].value;
+            var Address2 = document.getElementById("Address2").ej2_instances[0].value;
+            var BloodGroup = document.getElementById("BloodGroup").ej2_instances[0].value;
+            if (BloodGroup == null || BloodGroup == "")
+                BloodGroup = 0;
+
+            var sendJsonData = {
+                PatSeqID: 0,
+                PatientID: PatientID,
+                FirstName: firstname,
+                SecondName: lastname,
+                Gender: genderobj,
+                BirthDate: txtBirthDate,
+                CityCode: txtCityCode,
+                PhoneNumber: PhoneNo,
+                CountryCode: txtCountryCode,
+                MobileNumber: MobileNo,
+                Email: Email,
+                RelationName: ReleationName,
+                RelationType: relobj,
+                PatientAddress1: Address1,
+                PatientAddress2: Address2,
+                City: cityobj,
+                State: stateobj,
+                Country: countryobj,
+                AgeYear: AgeYear,
+                AgeMonth: AgeMonth,
+                AgeDay: AgeDay,
+                DoctorID: docObj,
+                DeptID: deptcombo,
+                ClinicID: clinicobj,
+                CityName: citytext,
+                StateName: statetext,
+                CountryName: countrytext,
+                SpecialityID: specialitycombo,
+                BloodGroup: BloodGroup
+            };
+            $.ajax({
+                url: "/Patient/UpdatePatientMaster",
+                type: 'post',
+                contentType: "application/json",
+                data: JSON.stringify(sendJsonData),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    document.getElementById("btnupdate").style.display = 'none';
+                    document.getElementById("btnSave").style.display = 'block';
+                    DisableButtons();
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        catch (e) {
+
+        }
+    }
+    function GenderChange() {
+        try {
+            let genderobj = document.getElementById("Gender").ej2_instances[0].value;
+            if (genderobj != null && genderobj != '') {
+                if (genderobj != 'Male' && genderobj != 'Female' && genderobj != 'Others') {
+                    alert('Please Enter valid Gender');
+                    document.getElementById("Gender").ej2_instances[0].value = "";
+                }
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function BloodGroupChange() {
+        try {
+            var bloodgroup = document.getElementById('BloodGroup').ej2_instances[0].text;
+            var bloodgroup_id = document.getElementById('BloodGroup').ej2_instances[0].value;
+            if (bloodgroup_id == bloodgroup && bloodgroup_id != null) {
+                alert('Please Enter Valid BloodGroup');
+                document.getElementById('BloodGroup').ej2_instances[0].value = "";
+            }
+        }
+        catch (e) {
+
+        }
+    }
+</script>
+<style>
+    #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loadingcontent {
+        display: table;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loadingspinner {
+        display: table-cell;
+        vertical-align: middle;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+        padding-top: 80px;
+    }
+
+    .ejs-dialog {
+        max-height: 450px !important;
+        top: 228px !important;
+        border: 1px solid #17a2b8;
+        border-radius: 0px;
+        box-shadow: 0 0 20px #888 !important;
+    }
+
+    .EmrBtn {
+        background-color: #fdfdfd;
+        border-color: #512bd4;
+        color: black;
+        border-radius: 0px;
+    }
+
+    .DivBox {
+        padding: 10px;
+        border-color: #969a9a;
+        border-radius: 4px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        font-family: 'Times New Roman';
+        font-size: 15px !important;
+    }
+
+    .inputEmr {
+        border: 1px solid #646767 !important;
+        font-size: 15px !important;
+        font-family: 'Times New Roman' !important;
+    }
+
+    .aLink {
+        color: #512bd4;
+        font-family: 'Times New Roman' !important;
+        font-size: 17px !important;
+    }
+
+    .tableHB {
+        border-color: #646767 !important;
+    }
+
+    .EmrbtnPrimary {
+        background: #007bff !important;
+        color: #fff !important;
+        border-color: #fff;
+        border-radius: 0px;
+    }
+</style>
+
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div id="loading">
+            <div id="loadingcontent">
+                <div id="loadingspinner">
+                    <img src="~/images/loading.gif" style="width:100px;height:100px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-primary">
+                        <div class="card-header" style="margin-top:15px;">
+                            <h3 class="card-title">Patient Registration</h3>
+                            <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                        </div>
+                        <form role="form" autocomplete="off" method="post" asp-controller="Patient" asp-action="PatientRegistration" 
+                              data-toggle="validator" onkeydown="return event.key != 'Enter';">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group">
+                                            <ejs-autocomplete ejs-for="PatientID" placeholder="Search Patient ID" id="txtPatientID" cssClass="inputEmr" filterType="Contains" highlight="true"
+                                                              suggestionCount="10" change="GetPatientByID" filtering="filtering" actionComplete="actionComplete" created="onCreate">
+                                                <e-data-manager url="/api/Patient/GetPatientIDList/" adaptor="WebApiAdaptor" crossDomain="true"></e-data-manager>
+                                                <e-autocomplete-fields value="PatientID"></e-autocomplete-fields>
+                                            </ejs-autocomplete>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-2 col-sm-2 col-md-2">
+                                        <div class="form-group">
+                                            <img src="~/images/search_icon.png" id="btnPatientSerach" title="Patient Search" onclick="PatientDialogView();"
+                                                 style="cursor:pointer;height:28px;" />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <label id="lblalert" class="control-label" style="color:red;font-family:'Times New Roman';font-size:16px;"></label>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                        <div class="form-group">
+                                            <button type="button" id="btnEmr" class="btn btn-info Save" style="float:right;background-color:blue;" onclick="EMRDialogView();">
+                                                EMR Patient
+                                            </button>
+                                            <button type="button" id="btnHis" class="btn btn-info Save" style="float:right;margin-right:10px;background-color:blue;" onclick="HISDialogView();">
+                                                HIS Patient
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                        <div class="form-group">
+                                            <ejs-textbox id="cityname" cssClass="inputEmr" ejs-for="CityName" placeholder="Mobile No"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                        <div class="form-group">
+                                            <ejs-textbox id="statename" cssClass="inputEmr" ejs-for="StateName" placeholder="Mobile No"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                        <div class="form-group">
+                                            <ejs-textbox id="countryname" cssClass="inputEmr" ejs-for="CountryName" placeholder="Mobile No"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="wholetabs">
+                                    <div class="e-tab-header">
+                                        <div>Basic Details </div>
+                                        <div>Other Details </div>
+                                    </div>
+                                    <div class="e-content DivBox">
+                                        <div id="basic">
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            First Name
+                                                        </label>
+                                                        <ejs-textbox id="firstname" cssClass="inputEmr" placeholder="First Name"
+                                                                     ejs-for="FirstName" autofocus required></ejs-textbox>
+                                                        <div class="help-block with-errors"></div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Last Name
+                                                        </label>
+                                                        <ejs-textbox id="lastName" cssClass="inputEmr" placeholder="Last Name" ejs-for="SecondName"></ejs-textbox>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            DOB
+                                                        </label>
+                                                        <input type="text" asp-for="BirthDate" id="txtBirthDate" style="height:31px;background-color:white;"
+                                                               class="form-control inputEmr"
+                                                               onchange="getAge();" placeholder="dd/mm/yyyy" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            Age Year
+                                                        </label>
+                                                        <ejs-textbox id="AgeYear" cssClass="inputEmr" ejs-for="AgeYear" placeholder="Year"
+                                                                     onkeypress="return onlyNumberKey(event)" required></ejs-textbox>
+                                                        <div class="help-block with-errors"></div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Age Month
+                                                        </label>
+                                                        <ejs-textbox id="AgeMonth" cssClass="inputEmr" ejs-for="AgeMonth" placeholder="Month"
+                                                                     onkeypress="return onlyNumberKey(event)"></ejs-textbox>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Age Day
+                                                        </label>
+                                                        <ejs-textbox id="AgeDay" cssClass="inputEmr" placeholder="Day" ejs-for="AgeDay"
+                                                                     onkeypress="return onlyNumberKey(event)"></ejs-textbox>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-3 col-sm-3 col-md-3">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            Gender
+                                                        </label>
+                                                        <ejs-combobox id="Gender" cssClass="inputEmr" allowFiltering="true" focus="OnFocusGender"
+                                                                      dataSource="@ViewBag.Gender" ejs-for="Gender" placeholder="Gender" popupHeight="230px"
+                                                                      select="onGenderSelect" blur="GenderChange" required>
+                                                        </ejs-combobox>
+                                                        <div class="help-block with-errors"></div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-3 col-sm-3 col-md-3">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Blood Group
+                                                        </label>
+                                                        <ejs-combobox id="BloodGroup" cssClass="inputEmr" allowFiltering="true"
+                                                                      dataSource="@ViewBag.BloodGroup" ejs-for="BloodGroup"
+                                                                      placeholder="Blood Group" focus="OnFocusBloodGroup"
+                                                                      popupHeight="230px" blur="BloodGroupChange">
+                                                            <e-combobox-fields text="BloodGroup" value="SeqId"></e-combobox-fields>
+                                                        </ejs-combobox>
+                                                        <div class="help-block with-errors"></div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-5 col-sm-5 col-md-5">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            Clinic Name
+                                                        </label>
+                                                        <ejs-combobox id="Clinic" cssClass="inputEmr" ejs-for="ClinicID" allowFiltering="true"
+                                                                      filtering="Cliniconfiltering" change="ClinicChange" focus="OnFocusClinic"
+                                                                      dataSource="@ViewBag.Clinic" placeholder="Clinic Name" popupHeight="230px"
+                                                                      select="onClinicSelect" required>
+                                                            <e-combobox-fields text="ClinicName" value="ClinicID"></e-combobox-fields>
+                                                        </ejs-combobox>
+                                                        <div class="help-block with-errors"></div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-1 col-sm-1 col-md-1">
+                                                    <div class="form-group">
+                                                        <img src="../images/pinlightred.png" title="Pin" width="30" height="30" onclick="ClinicPinclick()"
+                                                             style="cursor:pointer;margin-top:33px;" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            Consulting Doctor
+                                                        </label>  @*change="DoctorChange"*@
+                                                        <ejs-combobox id="Doctor" cssClass="inputEmr" ejs-for="DoctorID" allowFiltering="true" filtering="onfiltering"
+                                                                      focus="OnFocusDoctor" select="onDoctorSelect" change="DoctorChange"
+                                                                      dataSource="@ViewBag.Doctor" placeholder="Consult Doctor" popupHeight="230px"
+                                                                      required>
+                                                            <e-combobox-fields text="DoctorName" value="DoctorSeqID"></e-combobox-fields>
+                                                        </ejs-combobox>
+                                                        <div class="help-block with-errors"></div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-3 col-sm-3 col-md-3">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Speciality
+                                                        </label>
+                                                        <ejs-combobox id="Speciality" cssClass="inputEmr" ejs-for="SpecialityID" allowFiltering="true"
+                                                                      filtering="Specialityonfiltering" focus="OnFocusSpeciality" select="onSpecialitySelect"
+                                                                      dataSource="@ViewBag.Speciality" placeholder="Select Speciality" popupHeight="230px">
+                                                            <e-combobox-fields text="Speciality_Name" value="SpecialityID"></e-combobox-fields>
+                                                        </ejs-combobox>
+                                                        @*<div class="help-block with-errors"></div>*@
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-3 col-sm-3 col-md-3">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Department
+                                                        </label>
+                                                        <ejs-combobox id="Deparment" cssClass="inputEmr" ejs-for="DeptID" allowFiltering="true" filtering="Deptonfiltering"
+                                                                      dataSource="@ViewBag.Department" placeholder="Select Department" popupHeight="230px">
+                                                            <e-combobox-fields text="DepartmentName" value="DeptSeqID"></e-combobox-fields>
+                                                        </ejs-combobox>
+                                                        @*<div class="help-block with-errors"></div>*@
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            City
+                                                        </label>
+                                                        <ejs-combobox id="City" cssClass="inputEmr" ejs-for="City" allowFiltering="true"
+                                                                      filtering="Cityonfiltering" focus="OnFocusCity" change="CityChange"
+                                                                      dataSource="@ViewBag.City" placeholder="City" popupHeight="230px"
+                                                                      select="onCitySelect" required>
+                                                            <e-combobox-fields text="CityName" value="CitySeqID"></e-combobox-fields>
+                                                        </ejs-combobox>
+                                                        <div class="help-block with-errors"></div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            State
+                                                        </label>
+                                                        <ejs-combobox id="State" cssClass="inputEmr" ejs-for="State" allowFiltering="true"
+                                                                      filtering="Stateonfiltering" change="StateChange"
+                                                                      focus="OnFocusState" select="onStateSelect"
+                                                                      dataSource="@ViewBag.State" placeholder="State" popupHeight="230px" required>
+                                                            <e-combobox-fields text="StateName" value="StateSeqID"></e-combobox-fields>
+                                                        </ejs-combobox>
+                                                    </div>
+                                                    <div class="help-block with-errors"></div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            Country
+                                                        </label>
+                                                        <ejs-combobox id="Country" cssClass="inputEmr" ejs-for="Country"
+                                                                      allowFiltering="true" filtering="Countryonfiltering"
+                                                                      focus="OnFocusCountry" select="onCountrySelect" change="CountryChange"
+                                                                      dataSource="@ViewBag.Country" placeholder="Country" popupHeight="230px" required>
+                                                            <e-combobox-fields text="CountryName" value="CountrySeqId"></e-combobox-fields>
+                                                        </ejs-combobox>
+                                                    </div>
+                                                    <div class="help-block with-errors"></div>
+                                                </div>
+                                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Country Code
+                                                        </label>
+                                                        <ejs-autocomplete id="txtCountryCode" cssClass="inputEmr" ejs-for="CountryCode"
+                                                                          filterType="Contains" highlight="true"
+                                                                          placeholder="Country Code" suggestionCount="10" autofill="true">
+                                                            <e-data-manager url="/api/Patient/GetCountryCodelist/" adaptor="WebApiAdaptor"></e-data-manager>
+                                                        </ejs-autocomplete>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                                    <div class="form-group required">
+                                                        <label class="control-label" style="color: black;">
+                                                            Mobile
+                                                        </label>
+                                                        <ejs-textbox id="MobileNo" cssClass="inputEmr" ejs-for="MobileNumber"
+                                                                     onkeypress="return onlyNumberKey(event)" blur="MobileChange"
+                                                                     placeholder="Mobile No" required></ejs-textbox>
+                                                        <div class="help-block with-errors"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="others">
+                                            <div class="row">
+                                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            City Code
+                                                        </label>
+                                                        <ejs-autocomplete id="txtCityCode" cssClass="inputEmr" ejs-for="CityCode" filterType="Contains" highlight="true"
+                                                                          placeholder="City Code" suggestionCount="10" autofill="true">
+                                                            <e-data-manager url="/api/Patient/GetCityCodelist/" adaptor="WebApiAdaptor"></e-data-manager>
+                                                        </ejs-autocomplete>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Phone
+                                                        </label>
+                                                        <ejs-textbox id="PhoneNo" cssClass="inputEmr" ejs-for="PhoneNumber"
+                                                                     placeholder="Phone Number"></ejs-textbox>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Email
+                                                        </label>
+                                                        <input type="email" asp-for="Email" id="Email" class="form-control inputEmr" placeholder="eg: youremail@gmail.com"
+                                                               oninvalid="this.setCustomValidity('Please Enter valid email')" oninput="setCustomValidity('')" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Next of Kin
+                                                        </label>
+                                                        <ejs-textbox id="ReleationName" cssClass="inputEmr" ejs-for="RelationName" placeholder="Next of Kin"></ejs-textbox>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Relation Type
+                                                        </label>
+                                                        <ejs-combobox id="RelationType" allowFiltering="true" cssClass="inputEmr"
+                                                                      dataSource="@ViewBag.RelType" ejs-for="RelationType" placeholder="Type" popupHeight="230px">
+                                                        </ejs-combobox>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Address 1
+                                                        </label>
+                                                        <ejs-textbox id="Address1" ejs-for="PatientAddress1" cssClass="inputEmr" placeholder="Address1"></ejs-textbox>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="control-label" style="color: black;">
+                                                            Address 2
+                                                        </label>
+                                                        <ejs-textbox id="Address2" ejs-for="PatientAddress2" cssClass="inputEmr" placeholder="Address2"></ejs-textbox>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row" style="display:none;">
+                                                <div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                                    <div class="form-group">
+                                                        <ejs-textbox id="txthisvistid" cssClass="inputEmr" ejs-for="HIS_VisitID" placeholder="Year"></ejs-textbox>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <ejs-textbox id="txthisdocid" cssClass="inputEmr" ejs-for="HIS_DocID" placeholder="Year"></ejs-textbox>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                                    <div class="form-group">
+                                                        <ejs-textbox id="txthisdeptid" cssClass="inputEmr" ejs-for="HIS_DeptID" placeholder="Year"></ejs-textbox>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="padding:15px;">
+                                        <button type="button" id="btnedit" class="btn EmrbtnPrimary" onclick="EditPatient();" style="display:none;">
+                                            Edit
+                                        </button>
+                                        <button type="button" id="btnupdate" class="btn EmrbtnPrimary" onclick="UpdatePatient();" style="display:none;">
+                                            Update
+                                        </button>
+                                        <button type="submit" id="btnSave" class="btn EmrbtnPrimary">
+                                            Register
+                                        </button>
+                                        <button type="button" id="btnCancel" onclick="CancelClick();" class="btn EmrbtnPrimary">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <ejs-dialog id="dialog" showCloseIcon="true" header="HIS Patients" cssClass="ejs-invdialog"
+                            style="max-height:1000px;margin-left:100px;background-color:lightgray;" visible="false" width="1000px">
+                    <e-content-template>
+                        <div class="row">
+                            <div id="HISGrid" class="col-xs-12 col-sm-12 col-md-12 ">
+                                <div class="form-group">
+                                    <ejs-grid id="Grid" style="cursor:pointer;" allowPaging="true"
+                                              toolbar="@(new List<string>() { "Search"})" rowSelected="rowSelectedHIS">
+                                        <e-grid-searchsettings fields="@(new string[] { "PatientID","Name","Phone"})"
+                                                               operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                        <e-data-manager url="@Url.Action("UrlDatasource", "Patient")" adaptor="UrlAdaptor"></e-data-manager>
+                                        <e-grid-selectionsettings type="Single"></e-grid-selectionsettings>
+                                        <e-grid-pagesettings pageSize="10" pageCount="10"></e-grid-pagesettings>
+                                        <e-grid-columns>
+                                            <e-grid-column field="PatientID" headerText="Patient Id"></e-grid-column>
+                                            <e-grid-column field="Name" headerText="Name"></e-grid-column>
+                                            <e-grid-column field="Gender" headerText="Gender"></e-grid-column>
+                                            <e-grid-column field="Age" headerText="Age"></e-grid-column>
+                                            <e-grid-column field="Phone" headerText="Phone"></e-grid-column>
+                                            <e-grid-column field="Visitid" headerText="Visitid" visible="false"></e-grid-column>
+                                            <e-grid-column field="DoctorID" headerText="DoctorID" visible="false"></e-grid-column>
+                                            <e-grid-column field="DeptID" headerText="DeptID" visible="false"></e-grid-column>
+                                        </e-grid-columns>
+                                    </ejs-grid>
+                                </div>
+                            </div>
+                        </div>
+                    </e-content-template>
+                </ejs-dialog>
+                <ejs-dialog id='Emrdialog' header='Patients' showCloseIcon="true" visible="false" width='1000px'>
+                    <e-dialog-position X="center" Y="top">
+                        <e-content-template>
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                                    <div class="form-group">
+                                        <input type="text" id="txtAdPatientSearch" class="form-control inputEmr" placeholder="Search" onkeyup="GetAllEmrPatinetBySearch();" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div id="PatientListDiv" class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;height:400px;">
+                                </div>
+                            </div>
+                        </e-content-template>
+                    </e-dialog-position>
+                </ejs-dialog>
+                @if (TempData["Register"] != null)
+                {
+                    // <p class="alert alert-success">@TempData["Register"]</p>
+                }
+            </div>
+        </div>
+    </section>
+</div>
+
+
+
+
+

@@ -1,0 +1,429 @@
+﻿
+@{
+    ViewData["Title"] = "DrugMaster";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+
+@using Syncfusion.EJ2
+@using Newtonsoft.Json
+@model Emr_web.Models.DrugMaster
+<style>
+    #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loadingcontent {
+        display: table;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loadingspinner {
+        display: table-cell;
+        vertical-align: middle;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+        padding-top: 80px;
+    }
+</style>
+<script>
+    $(document).ready(function () {
+        GetDrug();
+        $("#btnUpdateDrug").hide();
+    });
+    function GetDrugBySearch() {
+        var arg = $("#txtDrugSearch").val();
+        if (arg.length > 0) {
+            $.ajax({
+                url: rootUrl + "/Drug/GetDrugSearch?Search=" + arg + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    var html = "";
+                    html += "<table Class='table table-bordered table-striped dataTable table-reflow'>";
+                    html += "<thead><td>Drug Name</td><td>HSN Code</td><td>Compamy</td></thead><tbody>";
+                    for (DrugCount = 0; DrugCount < response.Drug.length; DrugCount++) {
+                        var DrugName = response.Drug[DrugCount].DrugName;
+                        var HSnCode = response.Drug[DrugCount].HSnCode;
+                        var Company = response.Drug[DrugCount].Company;
+                        var Uom = response.Drug[DrugCount].Uom;
+                        var Category = response.Drug[DrugCount].Category;
+                        var Gst = response.Drug[DrugCount].Gst;
+                        var ScheduleType = response.Drug[DrugCount].ScheduleType;
+                        var Type = response.Drug[DrugCount].Type;
+                        var SeqID = response.Drug[DrugCount].SeqID;
+                        if (HSnCode == null)
+                            HSnCode = "";
+                        if (Company == null)
+                            Company = "";
+
+                        html += "<tr onclick='SelectedDrugRow(this)'><td>" + DrugName + "</td>";
+                        html += "<td>" + HSnCode + "</td>";
+                        html += "<td>" + Company + "</td>";
+                        html += "<td style='display:none;'>" + Category + "</td>";
+                        html += "<td style='display:none;'>" + Uom + "</td>";
+                        html += "<td style='display:none;'>" + Gst + "</td>";
+                        html += "<td style='display:none;'>" + ScheduleType + "</td>";
+                        html += "<td style='display:none;'>" + Type + "</td>";
+                        html += "<td style='display:none;'>" + SeqID + "</td></tr>";
+                    }
+                    html += "</tbody></table>";
+                    $("#DrugContainer").html(html);
+                }
+            });
+        }
+        else {
+            GetDrug();
+        }
+    }
+    function GetDrug() {
+        try {
+            $.ajax({
+                url: rootUrl + "/Drug/GetDrugTop100",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    var html = "";
+                    html += "<table Class='table table-bordered table-striped dataTable table-reflow'>";
+                    html += "<thead><td>Drug Name</td><td>HSN Code</td><td>Compamy</td></thead><tbody>";
+                    for (DrugCount = 0; DrugCount < response.Drug.length; DrugCount++) {
+                        var DrugName = response.Drug[DrugCount].DrugName;
+                        var HSnCode = response.Drug[DrugCount].HSnCode;
+                        var Company = response.Drug[DrugCount].Company;
+                        var Uom = response.Drug[DrugCount].Uom;
+                        var Category = response.Drug[DrugCount].Category;
+                        var Gst = response.Drug[DrugCount].Gst;
+                        var ScheduleType = response.Drug[DrugCount].ScheduleType;
+                        var Type = response.Drug[DrugCount].Type;
+                        var SeqID = response.Drug[DrugCount].SeqID;
+                        if (HSnCode == null)
+                            HSnCode = "";
+                        if (Company == null)
+                            Company = "";
+                        html += "<tr onclick='SelectedDrugRow(this)'><td>" + DrugName + "</td>";
+                        html += "<td>" + HSnCode + "</td>";
+                        html += "<td>" + Company + "</td>";
+                        html += "<td style='display:none;'>" + Category + "</td>";
+                        html += "<td style='display:none;'>" + Uom + "</td>";
+                        html += "<td style='display:none;'>" + Gst + "</td>";
+                        html += "<td style='display:none;'>" + ScheduleType + "</td>";
+                        html += "<td style='display:none;'>" + Type + "</td>";
+                        html += "<td style='display:none;'>" + SeqID + "</td></tr>";
+                    }
+                    html += "</tbody></table>";
+                    $("#DrugContainer").html(html);
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function isNumber(evt) {
+        var iKeyCode = (evt.which) ? evt.which : evt.keyCode
+        if (iKeyCode != 46 && iKeyCode > 31 && (iKeyCode < 48 || iKeyCode > 57))
+            return false;
+        return true;
+    }
+    function SaveDrugMaster() {
+        var DrugName = $("#txtDrugName").val();
+        var Gst = $("#txtGST").val();
+        if (Gst !== "")
+            Gst = parseFloat(Gst);
+        else
+            Gst = 0;
+        if (DrugName !== "") {
+            var sendJsonData = {
+                SeqID: 0,
+                DrugName: DrugName,
+                Category: document.getElementById('txtCategory').ej2_instances[0].value,
+                Uom: document.getElementById('txtUom').ej2_instances[0].value,
+                Gst: Gst,
+                ScheduleType: document.getElementById('txtScheduleType').ej2_instances[0].value,
+                HSnCode: $("#txtHsnCode").val(),
+                Company: document.getElementById('txtCompanyName').ej2_instances[0].value,
+                Type: document.getElementById('txtDrugType').ej2_instances[0].value
+            };
+            $.ajax({
+                url: "/Drug/CreateNewDrugMaster",
+                type: 'post',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(sendJsonData),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    //alert(data);
+                    ClearAll();
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+            GetDrug();
+        }
+        else {
+            alert("Please Enter Drug Name");
+        }
+    }
+
+    function ClearAll() {
+        $("#txtDrugName").val("");
+        $("#txtGST").val("");
+        $("#txtHsnCode").val("");
+        document.getElementById('txtCategory').ej2_instances[0].value = "";
+        document.getElementById('txtUom').ej2_instances[0].value = "";
+        document.getElementById('txtScheduleType').ej2_instances[0].value = "";
+        document.getElementById('txtCompanyName').ej2_instances[0].value = "";
+        document.getElementById('txtDrugType').ej2_instances[0].value = "";
+        $("#hidDrugCode").val("");
+    }
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    function SelectedDrugRow(SelectedRow) {
+        var DrugName = SelectedRow.cells[0].innerHTML;
+        DrugName = DrugName.split('.')[1];
+        $("#txtDrugName").val(DrugName);
+        $("#txtGST").val(SelectedRow.cells[5].innerHTML);
+        $("#txtHsnCode").val(SelectedRow.cells[1].innerHTML);
+        document.getElementById('txtCategory').ej2_instances[0].value = SelectedRow.cells[3].innerHTML;
+        document.getElementById('txtUom').ej2_instances[0].value = SelectedRow.cells[4].innerHTML;
+        document.getElementById('txtScheduleType').ej2_instances[0].value = SelectedRow.cells[6].innerHTML;
+        document.getElementById('txtCompanyName').ej2_instances[0].value = SelectedRow.cells[2].innerHTML;
+        document.getElementById('txtDrugType').ej2_instances[0].value = SelectedRow.cells[7].innerHTML;
+        $("#hidDrugCode").val(SelectedRow.cells[8].innerHTML);
+        $("#btnUpdateDrug").show();
+    }
+    function UpdateDrugMaster() {
+        var DrugName = $("#txtDrugName").val();
+        var Gst = $("#txtGST").val();
+        if (Gst !== "")
+            Gst = parseFloat(Gst);
+        else
+            Gst = 0;
+
+        var HidDrugCode = $("#hidDrugCode").val();
+        var DrugCode = 0;
+        if (HidDrugCode !== "")
+            DrugCode = parseFloat($("#hidDrugCode").val());
+        if (DrugName !== "") {
+            var sendJsonData = {
+                SeqID: DrugCode,
+                DrugName: DrugName,
+                Category: document.getElementById('txtCategory').ej2_instances[0].value,
+                Uom: document.getElementById('txtUom').ej2_instances[0].value,
+                Gst: Gst,
+                ScheduleType: document.getElementById('txtScheduleType').ej2_instances[0].value,
+                HSnCode: $("#txtHsnCode").val(),
+                Company: document.getElementById('txtCompanyName').ej2_instances[0].value,
+                Type: document.getElementById('txtDrugType').ej2_instances[0].value,
+                SeqID: parseFloat($("#hidDrugCode").val())
+            };
+            $.ajax({
+                url: "/Drug/UpdateDrugMaster",
+                type: 'post',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(sendJsonData),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    //alert(data);
+                    ClearAll();
+                    if (data === "Drug Updated Successful")
+                        $("#btnUpdateDrug").hide();
+                    else
+                        $("#btnUpdateDrug").show();
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+            GetDrug();
+        }
+        else {
+            alert("Please Enter Drug Name");
+        }
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div id="loading">
+            <div id="loadingcontent">
+                @*<p id="loadingspinner">
+                        Please Wait...
+                    </p>*@
+                <div id="loadingspinner">
+                    <img src="~/images/loading.gif" style="width:100px;height:100px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-primary">
+                        <div class="card-header" style="margin-top:15px;">
+                            <h3 class="card-title">Drug Master</h3>
+                            <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                    <form role="form" style="border-color: #17a2b8;border-radius: 0px;padding-top:10px;">
+                                        <div class="row">
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <div class="form-group required">
+                                                    <input type="text" class="form-control" id="txtDrugName" placeholder="Drug Name" />
+                                                    <input type="hidden" class="form-control" id="hidDrugCode" />
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <div class="form-group required">
+                                                    <ejs-autocomplete id="txtCategory" filterType="Contains" highlight="true"
+                                                                      placeholder="Category" suggestionCount="10" autofill="true">
+                                                        <e-data-manager url="/api/EmrApi/SearchCategoryByText/" adaptor="WebApiAdaptor"></e-data-manager>
+                                                    </ejs-autocomplete>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <div class="form-group required">
+                                                    <ejs-autocomplete id="txtUom" filterType="Contains" highlight="true"
+                                                                      placeholder="Uom" suggestionCount="10" autofill="true">
+                                                        <e-data-manager url="/api/EmrApi/SearchUomByText/" adaptor="WebApiAdaptor"></e-data-manager>
+                                                    </ejs-autocomplete>
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <div class="form-group">
+                                                    <input type="text" class="form-control" id="txtGST" placeholder="GST" onkeypress='javascript:return isNumber(event)' />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <div class="form-group">
+                                                    <ejs-autocomplete id="txtScheduleType" filterType="Contains" highlight="true"
+                                                                      placeholder="Schedule Type" suggestionCount="10" autofill="true">
+                                                        <e-data-manager url="/api/EmrApi/ScheduleTypeByText/" adaptor="WebApiAdaptor"></e-data-manager>
+                                                    </ejs-autocomplete>
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <div class="form-group">
+                                                    <input type="text" class="form-control" id="txtHsnCode" placeholder="HSN Code" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <div class="form-group">
+                                                    <ejs-autocomplete id="txtCompanyName" filterType="Contains" highlight="true"
+                                                                      placeholder="Company" suggestionCount="10" autofill="true">
+                                                        <e-data-manager url="/api/EmrApi/CompanyByText/" adaptor="WebApiAdaptor"></e-data-manager>
+                                                    </ejs-autocomplete>
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <div class="form-group">
+                                                    <ejs-autocomplete id="txtDrugType" filterType="Contains" highlight="true"
+                                                                      placeholder="Drug Type" suggestionCount="10" autofill="true">
+                                                        <e-data-manager url="/api/EmrApi/TypeByText/" adaptor="WebApiAdaptor"></e-data-manager>
+                                                    </ejs-autocomplete>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-lg-12">
+                                                <button type="button" id="btnSaveDrug" class="btn btn-info" style="background-color:blue;" onclick="SaveDrugMaster();">
+                                                    <span class="glyphicon glyphicon-floppy-disk"></span> Save
+                                                </button>
+                                                <button type="button" id="btnCelarPickList" class="btn btn-info" style="background-color:blue;" onclick="ClearAll();">
+                                                    <span class="glyphicon glyphicon-remove-circle"></span> Clear
+                                                </button>
+                                                <button type="button" id="btnUpdateDrug" class="btn btn-info" style="background-color:blue;" onclick="UpdateDrugMaster();">
+                                                    UpDate
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <div class="form-group">
+                                                <input type="text" class="form-control" id="txtDrugSearch" placeholder="Drug Search" onkeyup="GetDrugBySearch();" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12" id="DrugContainer" style="height:300px;overflow:scroll;">
+
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                    <form role="form" style="border-color: #17a2b8;border-radius: 0px;padding-top:10px;"
+                                          method="post" asp-controller="Drug" asp-action="DrugMastreSaveAsync" enctype="multipart/form-data">
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <div class="form-group">
+                                                    <div id="Imghospdiv" style="display:none;">
+                                                        <div class="form-group">
+                                                            <image id="Imghosp" style="width:40%;"></image>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label class="control-label" style="color: black;">
+                                                            File Upload
+                                                        </label>
+                                                    </div>
+                                                    <ejs-uploader id="FilePatientDocment" multiple="false" maxFileSize="209715200"
+                                                                  autoUpload="true" allowedExtensions=".csv"></ejs-uploader>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <div class="form-group">
+                                                        <button type="submit" id="btnhospital" style="background-color:blue;" class="btn btn-info Save">
+                                                            Upload
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+

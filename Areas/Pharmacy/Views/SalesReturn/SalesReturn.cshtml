@@ -1,0 +1,805 @@
+﻿
+
+<style>
+    label {
+        font-size: 14px;
+        font-weight: 600;
+        font-style: serif;
+    }
+
+    .table-wrap {
+        height: 350px;
+        overflow-y: auto;
+    }
+
+    #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loadingcontent {
+        display: table;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loadingspinner {
+        display: table-cell;
+        vertical-align: middle;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+        padding-top: 80px;
+    }
+</style>
+<script type="text/javascript">
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    var AmountArry = new Array();
+    var TaxArry = new Array();
+    var TotalAmtArry = new Array();
+    $(document).ready(function () {
+        GetReturnStoreName();
+        GetSaledGstDetails();
+    });
+    function GetBillDetailsByBillNo() {
+        var BillNO = $('#txtReturnBillNo').val();
+        if (BillNO !== "") {
+            BillNO = parseFloat($('#txtReturnBillNo').val());
+        }
+        $.ajax({
+            url: "/Pharma/SalesReturn/GetRetBillDetailByBillNo",
+            type: "GET",
+            data: {
+                BillNo: BillNO
+            },
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                if (response.length > 0) {
+                    alert("BillNo has Already Returned")
+                    $('#txtReturnBillNo').val('');
+                }
+                else {
+                    var BillNO = $('#txtReturnBillNo').val();
+                    if (BillNO !== "") {
+                        BillNO = parseFloat($('#txtReturnBillNo').val());
+                    }
+                    $.ajax({
+                        url: "/Pharma/SalesReturn/GetRetBillDrugDetailByBillNo",
+                        type: "GET",
+                        data: {
+                            BillNo: BillNO
+                        },
+                        dataType: "json",
+                        beforeSend: function () { $("#loading").css("display", "block"); },
+                        success: function (response) {
+                            if (response.PrintHeader.length > 0) {
+                                for (PCHeader = 0; PCHeader < response.PrintHeader.length; PCHeader++) {
+                                    var PH_CSH_BILLNO = response.PrintHeader[PCHeader].PH_CSH_BILLNO;
+                                    var PH_CSH_BILLDT = response.PrintHeader[PCHeader].PH_CSH_BILLDT;
+                                    var PH_CSH_PATNAME = response.PrintHeader[PCHeader].PH_CSH_PATNAME;
+                                    var PH_CSH_Relation = response.PrintHeader[PCHeader].PH_CSH_Relation;
+                                    var PH_CSH_PATSEX = response.PrintHeader[PCHeader].PH_CSH_PATSEX;
+                                    var PH_CSH_TOTAMOUNT = response.PrintHeader[PCHeader].PH_CSH_TOTAMOUNT;
+                                    var PH_CSH_TAXAMOUNT = parseFloat(response.PrintHeader[PCHeader].PH_CSH_TAXAMOUNT);
+                                    var TotalTaxDived = parseFloat(PH_CSH_TAXAMOUNT).toFixed(2) / 2;
+                                    TotalTaxDived = TotalTaxDived.toFixed(2);
+                                    var PH_CSH_CASHRECIVEDAMT = response.PrintHeader[PCHeader].PH_CSH_CASHRECIVEDAMT;
+                                    var PH_CSH_PATID = response.PrintHeader[PCHeader].PH_CSH_PATID;
+                                    var StoreName = response.PrintHeader[PCHeader].StoreName;
+                                    $('#txtPatientId').html(PH_CSH_PATID);
+                                    $('#txtpatientName').html(PH_CSH_PATNAME);
+                                    $('#txtBillOrderdate').html(PH_CSH_BILLDT);
+                                    $('#lblPharmacyName').html(StoreName);
+                                }
+                                var Sno = 0;
+                                $("#tblReturnBil tbody").empty();
+                                var table = document.getElementById("tblReturnBil");
+                                var html = "";
+                                for (PCDetails = 0; PCDetails < response.PrintDeatils.length; PCDetails++) {
+                                    Sno = Sno + 1;
+                                    var PH_CUR_DRUGBRANDNAME = response.PrintDeatils[PCDetails].PH_CUR_DRUGBRANDNAME;
+                                    var PH_CSHDTL_DRUGBATCHNO = response.PrintDeatils[PCDetails].PH_CSHDTL_DRUGBATCHNO;
+                                    var PH_CSHDTL_DRUGEXPIRYDT = response.PrintDeatils[PCDetails].PH_CSHDTL_DRUGEXPIRYDT;
+                                    var PH_CSHDTL_DRUG_QTY = response.PrintDeatils[PCDetails].PH_CSHDTL_DRUG_QTY;
+                                    var PH_CSHDTL_DRUG_AMTEACH = response.PrintDeatils[PCDetails].PH_CSHDTL_DRUG_AMTEACH;
+                                    var PH_CSHDTL_DRUG_ROWTOTALAMT = response.PrintDeatils[PCDetails].PH_CSHDTL_DRUG_ROWTOTALAMT;
+                                    var PHCSHDTL_DRUG_TAXVALUE = response.PrintDeatils[PCDetails].PHCSHDTL_DRUG_TAXVALUE;
+                                    var PH_CSHDTL_DRUG_NETTAMT = response.PrintDeatils[PCDetails].PH_CSHDTL_DRUG_NETTAMT;
+                                    var Uom = response.PrintDeatils[PCDetails].Uom;
+                                    var PH_CSHDTL_DRUG_TAXPERCENT = response.PrintDeatils[PCDetails].PH_CSHDTL_DRUG_TAXPERCENT;
+                                    var PH_ITEM_HSNCODE = response.PrintDeatils[PCDetails].PH_ITEM_HSNCODE;
+                                    var TaxDivied = parseFloat(PHCSHDTL_DRUG_TAXVALUE).toFixed(2) / 2;
+                                    TaxDivied = TaxDivied.toFixed(2);
+                                    var PH_CSHDTL_DRUGCODE = response.PrintDeatils[PCDetails].PH_CSHDTL_DRUGCODE;
+                                    var PH_CUR_STOCK_PURCHCOST = response.PrintDeatils[PCDetails].PH_CUR_STOCK_PURCHCOST;
+                                    html += "<tr style='font-size:13px;font-family:sans-serif;'>";
+                                    html += "<td style='display:none'>" + PH_CSHDTL_DRUGCODE + "</td>";//0
+                                    html += "<td >" + Sno + "</td>";//1
+                                    html += "<td >" + PH_CUR_DRUGBRANDNAME + "</td>";//2
+                                    html += "<td>" + PH_CSHDTL_DRUGBATCHNO + "</td>";//3
+                                    html += "<td>" + PH_CSHDTL_DRUGEXPIRYDT + "</td>";//4
+                                    html += "<td>" + PH_CSHDTL_DRUG_AMTEACH + "</td>";//5 Cost
+                                    html += "<td>" + PH_CSHDTL_DRUG_QTY + "</td>";//6
+                                    html += "<td>" + PH_CSHDTL_DRUG_ROWTOTALAMT + "</td>";//7
+                                    html += "<td>" + PHCSHDTL_DRUG_TAXVALUE + "</td>";//8
+                                    html += "<td>" + PH_CSHDTL_DRUG_NETTAMT + "</td>";//9
+                                    html += "<td style='display:none'>" + PH_CSHDTL_DRUG_TAXPERCENT + "</td>";//10 TaxPre
+                                    html += "<td> <input type='text' name='txtReturnQty' onchange='RetQty(this)' onkeypress='return isNumberKey(event)' class='form-control' style='width: 90px;'/></td>";//11
+                                    html += "<td style='display:none'>" + PH_CUR_STOCK_PURCHCOST + "</td>";//12 TaxPre
+                                    html += "</tr>";
+                                }
+                                $("#tblReturnBil tbody").append(html);
+                                AmountArry.length = 0;
+                                TaxArry.length = 0;
+                                TotalAmtArry.length = 0;
+                                ReturnTotalCalculation();
+                            }
+                        },
+                        complete: function () { $("#loading").css("display", "none"); }
+                    });
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+
+       
+    }
+    function GetReturnStoreName() {
+        $.ajax({
+            url: "/Pharma/Invoice/GetStoreName",
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.length > 0) {
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var HIS_PH_STOREMASTER = response[PCHeader].HIS_PH_STOREMASTER;
+                        var HIS_PH_STORENAME = response[PCHeader].HIS_PH_STORENAME;
+                        $('#ddlReturnStoreName')
+                            .append($("<option></option>").val(HIS_PH_STOREMASTER).html(HIS_PH_STORENAME));
+                    }
+                }
+            }
+        });
+    }
+    function GetSaledGstDetails() {
+        $.ajax({
+            url: rootUrl + "/api/ClientMaster/GetClientDetailsByHospitalId",
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                var GST = response[0].GstRequired;
+                $('#lblSalesGst').html(GST);
+
+
+            }
+        })
+    }
+    function RetQty(SelectedRow) {
+        // var DrugName = $("#txtSearchDrugType").val();
+        var dateObj = new Date();
+        var table = document.getElementById("tblReturnBil");
+        var row = SelectedRow.parentNode.parentNode;
+        var ExpiryDate = row.cells[4].innerHTML;
+        var splitDate = ExpiryDate.split("/") //0 - Month  1- Year
+        var ExpiryMonth = splitDate[0]
+        var ExpiryYear = splitDate[1]
+        var Expirydt = new Date(ExpiryYear, ExpiryMonth - 1, 1);
+
+
+        if (Expirydt <= dateObj) {
+            alert("Date has Expired");
+            row.cells[11].getElementsByTagName("input")[0].value = '';
+            row.cells[11].getElementsByTagName("input")[0].readOnly = true;
+            return false;
+        }
+        var DrugCodeisExits = row.cells[0].innerHTML;
+        var qtyValue = row.cells[11].getElementsByTagName("input")[0].value;
+        if (qtyValue.length > 0) {
+            var RetQty = parseInt(row.cells[11].getElementsByTagName("input")[0].value);
+            var CurrentQty = parseInt(row.cells[6].innerHTML);
+            var table = document.getElementById("tblReturnBil");
+            var Gst = $('#lblSalesGst').html();
+            if (RetQty <= CurrentQty) {
+                var DrugCode = row.cells[0].innerHTML;
+                var Itemname = row.cells[1].innerHTML;
+                var Batchno = row.cells[3].innerHTML;
+                if (Gst == "Registered") {
+                    var Cost = parseFloat(row.cells[5].innerHTML).toFixed(2);
+                    var Tax = parseFloat(row.cells[10].innerHTML).toFixed(2);
+                    var amt = parseFloat(Cost * RetQty).toFixed(2);
+                    var vatamt = parseFloat((amt * Tax) / 100).toFixed(2);
+                    var total = parseFloat(amt) + parseFloat(vatamt);
+                    total = total.toFixed(2);
+
+                    var AmountExists = AmountArry.findIndex(user => user.DrugCode === DrugCode);
+                    if (AmountExists !== -1) AmountArry.splice(AmountExists, 1);
+
+                    row.cells[7].innerHTML = amt;
+                    var ObjectAmtDetails = new Object();
+                    ObjectAmtDetails.DrugCode = DrugCode;
+                    ObjectAmtDetails.Amount = amt;
+                    AmountArry.push(ObjectAmtDetails);
+
+                    var TaxExists = TaxArry.findIndex(user => user.DrugCode === DrugCode);
+                    if (TaxExists !== -1) TaxArry.splice(TaxExists, 1);
+
+                    row.cells[8].innerHTML = vatamt;
+                    var ObjectTaxDetails = new Object();
+                    ObjectTaxDetails.DrugCode = DrugCode;
+                    ObjectTaxDetails.Tax = vatamt;
+                    TaxArry.push(ObjectTaxDetails);
+
+                    var TotalExists = TotalAmtArry.findIndex(user => user.DrugCode === DrugCode);
+                    if (TotalExists !== -1) TotalAmtArry.splice(TotalExists, 1);
+
+                    row.cells[9].innerHTML = total;
+                    var ObjectTotalDetails = new Object();
+                    ObjectTotalDetails.DrugCode = DrugCode;
+                    ObjectTotalDetails.total = total;
+                    TotalAmtArry.push(ObjectTotalDetails);
+                }
+                else {
+                    var Cost = parseFloat(row.cells[5].innerHTML).toFixed(2);
+                    var Tax = parseFloat(row.cells[10].innerHTML).toFixed(2);
+                    var amt = parseFloat(Cost * RetQty).toFixed(2);
+                /* var vatamt =  *//* parseFloat((amt * Tax) / 100).toFixed(2)*//*;*/
+                    var vatamt = 0;
+                    var total = parseFloat(amt) + parseFloat(vatamt);
+                    total = total.toFixed(2);
+
+                    var AmountExists = AmountArry.findIndex(user => user.DrugCode === DrugCode);
+                    if (AmountExists !== -1) AmountArry.splice(AmountExists, 1);
+
+                    row.cells[7].innerHTML = amt;
+                    var ObjectAmtDetails = new Object();
+                    ObjectAmtDetails.DrugCode = DrugCode;
+                    ObjectAmtDetails.Amount = amt;
+                    AmountArry.push(ObjectAmtDetails);
+
+                    var TaxExists = TaxArry.findIndex(user => user.DrugCode === DrugCode);
+                    if (TaxExists !== -1) TaxArry.splice(TaxExists, 1);
+
+                    row.cells[8].innerHTML = vatamt;
+                    var ObjectTaxDetails = new Object();
+                    ObjectTaxDetails.DrugCode = DrugCode;
+                    ObjectTaxDetails.Tax = vatamt;
+                    TaxArry.push(ObjectTaxDetails);
+
+                    var TotalExists = TotalAmtArry.findIndex(user => user.DrugCode === DrugCode);
+                    if (TotalExists !== -1) TotalAmtArry.splice(TotalExists, 1);
+
+                    row.cells[9].innerHTML = total;
+                    var ObjectTotalDetails = new Object();
+                    ObjectTotalDetails.DrugCode = DrugCode;
+                    ObjectTotalDetails.total = total;
+                    TotalAmtArry.push(ObjectTotalDetails);
+                }
+
+                ReturnTotalCalculation();
+            }
+            else {
+                alert("Please Enter value less than Dispense Qty ")
+                row.cells[11].getElementsByTagName("input")[0].focus();
+            }
+        }
+        else {
+            var AmountExists = AmountArry.findIndex(user => user.DrugCode === DrugCodeisExits);
+            if (AmountExists !== 'undefined') AmountArry.splice(AmountExists, 1);
+
+            var TaxExists = TaxArry.findIndex(user => user.DrugCode === DrugCodeisExits);
+            if (TaxExists !== 'undefined') TaxArry.splice(TaxExists, 1);
+
+            var TotalExists = TotalAmtArry.findIndex(user => user.DrugCode === DrugCodeisExits);
+            if (TotalExists !== 'undefined') TotalAmtArry.splice(TotalExists, 1);
+        }
+
+    }
+    function ReturnTotalCalculation() {
+        var AmountCells = AmountArry; //returns a list with all the elements that have class 'priceCell'
+        var Amount = 0;
+        //loop over the cells array and add to total price
+        if (AmountCells.length > 0) {
+            for (var i = 0; i < AmountCells.length; i++) {
+                var thisPrice = parseFloat(AmountCells[i].Amount); //get inner text of this cell in number format
+                Amount = Amount + thisPrice;
+            };
+            Amount = Amount.toFixed(2);
+            $("#txtRetTotalamt").val(Amount);
+        }
+        else {
+            $("#txtRetTotalamt").val("0");
+        }
+        var TaxCells = TaxArry; //returns a list with all the elements that have class 'priceCell'
+        var Tax = 0;
+        //loop over the cells array and add to total price
+        if (TaxCells.length > 0) {
+            for (var i = 0; i < TaxCells.length; i++) {
+                var thisPrice = parseFloat(TaxCells[i].Tax); //get inner text of this cell in number format
+                Tax = Tax + thisPrice;
+            };
+            Tax = Tax.toFixed(2);
+            $("#txtRetTotalVat").val(Tax);
+        }
+        else {
+            $("#txtRetTotalVat").val("0");
+        }
+        var TotalAmountCells = TotalAmtArry; //returns a list with all the elements that have class 'priceCell'
+        var TotalAmount = 0;
+        if (TotalAmountCells.length > 0) {
+            for (var i = 0; i < TotalAmountCells.length; i++) {
+                var thisPrice = parseFloat(TotalAmountCells[i].total); //get inner text of this cell in number format
+                TotalAmount = TotalAmount + thisPrice;
+            };
+            TotalAmount = TotalAmount.toFixed(2);
+            $("#txtRetGrandTotal").val(TotalAmount);
+        }
+        else {
+            $("#txtRetGrandTotal").val("0");
+        }
+        var SubTot = $("#txtRetTotalamt").val();
+        if (SubTot.length > 0) {
+            var NetTotal = parseFloat(SubTot) + parseFloat(Tax);
+            NetTotal = Math.round(NetTotal);
+            var Roundoff = parseFloat(SubTot) + parseFloat(Tax);
+            Roundoff = NetTotal - Roundoff;
+            $("#txtRetRoundTotal").val(Roundoff.toFixed(2));
+            $("#txtRetRoundGrandtotal").val(NetTotal.toFixed(2));
+        }
+    }
+    function isNumberKey(evt) {
+        var charCode = (evt.which) ? evt.which : event.keyCode
+        if (charCode > 32 && (charCode < 48 || charCode > 57) || (charCode == 32))
+
+            return false;
+
+        return true;
+    }
+    function SaveSalesReturn() {
+        var DrugInfo = new Array();
+        var tblDrugSales = document.getElementById("tblReturnBil");
+        var rowtblDrugSales = tblDrugSales.rows.length;
+        for (M = 1; M < rowtblDrugSales; M++) {
+
+            var rowDrug = tblDrugSales.rows[M];
+            var ObjectDetails = new Object();
+            var RetQtyValue = rowDrug.cells[11].getElementsByTagName("input")[0].value;
+            if (RetQtyValue.length > 0) {
+                ObjectDetails.DrugCode = parseInt(rowDrug.cells[0].innerHTML);
+                ObjectDetails.DrugName = rowDrug.cells[2].innerHTML;
+                ObjectDetails.Batch = rowDrug.cells[3].innerHTML;
+                ObjectDetails.ExpiryDate = rowDrug.cells[4].innerHTML;
+                ObjectDetails.MRP = parseFloat(rowDrug.cells[5].innerHTML);
+                ObjectDetails.Qty = parseInt(rowDrug.cells[6].innerHTML);
+                ObjectDetails.Amount = parseFloat(rowDrug.cells[7].innerHTML);
+                ObjectDetails.Tax = parseFloat(rowDrug.cells[8].innerHTML);
+                ObjectDetails.NetAmount = parseFloat(rowDrug.cells[9].innerHTML);
+                ObjectDetails.TaxPrecentage = parseFloat(rowDrug.cells[10].innerHTML);
+                ObjectDetails.ReturnQty = parseInt(rowDrug.cells[11].getElementsByTagName("input")[0].value);
+                ObjectDetails.Rate = parseFloat(rowDrug.cells[12].innerHTML);
+                DrugInfo.push(ObjectDetails);
+            }
+        }
+        var Amount = $("#txtRetTotalamt").val();
+        if (Amount == "" || Amount == null || Amount == '')
+            Amount = 0;
+        else
+            Amount = parseFloat(Amount);
+
+        var Tax = $("#txtRetTotalVat").val();
+        if (Tax == "" || Tax == null || Tax == '')
+            Tax = 0;
+        else
+            Tax = parseFloat(Tax);
+
+        var TotalAmount = $("#txtRetGrandTotal").val();
+        if (TotalAmount == "" || TotalAmount == null || TotalAmount == '')
+            TotalAmount = 0;
+        else
+            TotalAmount = parseFloat(TotalAmount);
+
+        var RoundAmount = $("#txtRetRoundTotal").val();
+        if (RoundAmount == "" || RoundAmount == null || RoundAmount == '')
+            RoundAmount = 0;
+        else
+            RoundAmount = parseFloat(RoundAmount);
+
+        var NetAmount = $("#txtRetRoundGrandtotal").val();
+        if (NetAmount == "" || NetAmount == null || NetAmount == '')
+            NetAmount = 0;
+        else
+            NetAmount = parseFloat(NetAmount);
+
+        var sendJsonData = {
+            BillNo: parseFloat($("#txtReturnBillNo").val()),
+            StoreName: $("#ddlReturnStoreName option:selected").text(),
+            Amount: Amount,
+            Tax: Tax,
+            TotalAmount: TotalAmount,
+            RoundAmount: RoundAmount,
+            DisCount: 0,
+            NetAmount: NetAmount,
+            returnDrugInfos: DrugInfo
+        };
+        $.ajax({
+            url: "/Pharma/SalesReturn/RetBillSave",
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(sendJsonData),
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                RetrunBillPrint(response);
+                ReturnCancel();
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    
+    function RetrunBillPrint(response) {
+        if (response.PrintHeader.length > 0) {
+            var html = "";
+            for (PCHeader = 0; PCHeader < response.PrintHeader.length; PCHeader++) {
+                var PH_RET_BILLNO = response.PrintHeader[PCHeader].PH_RET_BILLNO;
+                var PH_RET_BILLDT = response.PrintHeader[PCHeader].PH_RET_BILLDT;
+                var PH_RET_PATNAME = response.PrintHeader[PCHeader].PH_RET_PATNAME;
+                var PH_RET_PATSEX = response.PrintHeader[PCHeader].PH_RET_PATSEX;
+                var PH_RET_TOTAMOUNT = response.PrintHeader[PCHeader].PH_RET_TOTAMOUNT;
+                var gsT = $('#lblSalesGst').html();
+                var PH_RET_TAXAMOUNT = parseFloat(response.PrintHeader[PCHeader].PH_RET_TAXAMOUNT);
+                var TotalTaxDived = parseFloat(PH_RET_TAXAMOUNT).toFixed(2) / 2;
+                TotalTaxDived = TotalTaxDived.toFixed(2);
+                var PH_RET_CASHRECIVEDAMT = response.PrintHeader[PCHeader].PH_RET_CASHRECIVEDAMT;
+                //Header
+                html += "<table style='font-family:sans-serif;font-size: 12px;font-weight: 500;'>";
+                html += "<tr><td style='width:196px !important;'>Bill number</td><td>:</td><td style='width:341px !important;'>" + PH_RET_BILLNO + "</td>";
+                html += "<td style='width:196px !important;'>Date</td><td>:</td><td style='width:341px !important;'>" + PH_RET_BILLDT + "</td></tr>";
+                html += "<tr><td>Patient name</td><td>:</td><td style='width:341px !important;'>" + PH_RET_PATNAME + "</td>";
+                html += "<td></td><td>:</td><td style='width:341px !important;'></td></tr>";
+                html += "<tr><td>Sex/Age</td><td>:</td><td style='width:341px !important;'>" + PH_RET_PATSEX + "</td>";
+                html += "<td>Bill type</td><td>:</td><td style='width:341px !important;'>OP</td></tr>";
+                html += "<tr><td>GST NO</td><td>:</td><td style='width:341px !important;'></td><td>ARN NO</td><td>:</td><td style='width:341px !important;'></td></tr></table>";
+                //Deatils
+                html += "<table border='1' style='font-family:sans-serif;font-size: 12px;font-weight: 500;border-collapse:collapse;width: 100%;'><tr>";
+                html += "<td style='width: 53px !important;'>S.no</td>";
+                html += "<td style='width: 109px !important;'>Hsn Code</td>";
+                html += "<td style='width: 275px !important;'>Particular</td>";
+                html += "<td style='width: 140px !important;'>Batch No</td>";
+                html += "<td style='width: 53px !important;'>ExpiryDt</td>";
+                html += " <td align='right' style='width: 53px !important;'>Qty</td>";
+                html += "<td align='right' style='width: 53px !important;'>Rate</td>";
+                html += "<td align='right' style='width: 63px !important;'>Amount</td>";
+                if (gsT == "Registered") {
+                    html += "<td colspan='3' align='center' style='width: 130px !important;'>Tax<table border='1' style='border-collapse:collapse;width: 100%;'>";
+                    html += "<tbody><tr><td align='right'>SGST</td><td align='right'>CGST</td><td align='right'>%</td></tr></tbody></table></td>";
+                }
+               
+                html += "<td align='right' style='width: 63px !important;'>Total</td></tr>";
+                var Sno = 0;
+                for (PCDetails = 0; PCDetails < response.PrintDeatils.length; PCDetails++) {
+                    Sno = Sno + 1;
+                    var PH_ITEM_DRUGNAME_BRAND = response.PrintDeatils[PCDetails].PH_ITEM_DRUGNAME_BRAND;
+                    var PH_RETDTL_DRUGBATCHNO = response.PrintDeatils[PCDetails].PH_RETDTL_DRUGBATCHNO;
+                    var PH_RETDTL_DRUGEXPIRYDT = response.PrintDeatils[PCDetails].PH_RETDTL_DRUGEXPIRYDT;
+                    var PH_RETDTL_DRUG_QTY = response.PrintDeatils[PCDetails].PH_RETDTL_DRUG_QTY;
+                    var PH_RETDTL_DRUG_AMTEACH = response.PrintDeatils[PCDetails].PH_RETDTL_DRUG_AMTEACH;
+                    var PH_RETDTL_DRUG_ROWTOTALAMT = response.PrintDeatils[PCDetails].PH_RETDTL_DRUG_ROWTOTALAMT;
+                    var PHRETDTL_DRUG_TAXVALUE = response.PrintDeatils[PCDetails].PHRETDTL_DRUG_TAXVALUE;
+                    var PH_RETDTL_DRUG_NETTAMT = response.PrintDeatils[PCDetails].PH_RETDTL_DRUG_NETTAMT;
+                    // var Uom = response.PrintDeatils[PCDetails].Uom;
+                   
+                    if (gsT == "Registered") {
+                        var PH_RETDTL_DRUG_TAXPERCENT = response.PrintDeatils[PCDetails].PH_RETDTL_DRUG_TAXPERCENT;
+                    }
+                    else {
+                        var PH_RETDTL_DRUG_TAXPERCENT = "";
+                    }
+                    
+                    var PH_ITEM_HSNCODE = response.PrintDeatils[PCDetails].PH_ITEM_HSNCODE;
+                    var TaxDivied = parseFloat(PHRETDTL_DRUG_TAXVALUE).toFixed(2) / 2;
+                    TaxDivied = TaxDivied.toFixed(2);
+                    html += "<tr><td style='width: 53px !important;'>" + Sno + "</td>";
+                    html += "<td style='width: 109px !important;'>" + PH_ITEM_HSNCODE + "</td>";
+                    html += "<td style='width: 275px !important;'>" + PH_ITEM_DRUGNAME_BRAND + "</td>";
+                    html += "<td style='width: 140px !important;'>" + PH_RETDTL_DRUGBATCHNO + "</td>";
+                    html += "<td style='width: 53px !important;'>" + PH_RETDTL_DRUGEXPIRYDT + "</td>";
+                    html += "<td align='right' style='width: 53px !important;'>" + PH_RETDTL_DRUG_QTY + "</td>";
+                    html += "<td align='right' style='width: 53px !important;'>" + PH_RETDTL_DRUG_AMTEACH + "</td>";
+                    if (gsT == "Registered") {
+                        html += "<td align='right' style='width: 63px !important;'>" + PH_RETDTL_DRUG_ROWTOTALAMT + "</td>";
+                        html += "<td colspan='3'><table border='1' style='border-collapse:collapse;width: 100%;'><tbody><tr><td align='right'>" + TaxDivied + "</td><td align='right'>" + TaxDivied + "</td><td align='right'>" + PH_RETDTL_DRUG_TAXPERCENT + "%</td></tr></tbody></table></td>";
+                    }
+                    html += "<td align='right' style='width: 63px !important;'>" + PH_RETDTL_DRUG_NETTAMT + "</td></tr>";
+                }
+                html += "</table>";
+                //Amount Details
+                html += "<table style='font-family:sans-serif;font-weight: 500;font-size: 12px;'><tr>";
+                html += "<td style='width: 53px !important;'></td><td style='width: 109px !important;'></td><td style='width: 275px !important;'></td><td style='width: 100px !important;'></td>";
+                html += "<td style='width: 53px !important;'></td><td style='width: 53px !important;'></td><td style='width: 63px !important;'></td>";
+                html += "<td style='width: 53px !important;'></td><td>Total:</td><td align='right' style='width: 53px !important;'>" + PH_RET_TOTAMOUNT + "</td></tr>";
+                if (gsT == "Registered") {
+                    html += "<tr><td colspan='8' style='width: 90px !important;'></td><td style='width: 90px !important;'>SGST:</td><td align='right' style='width: 90px !important;'>" + TotalTaxDived + "</td>";
+                    html += "<tr><td colspan='8' style='width: 53px !important;'></td><td>CGST:</td><td align='right' style='width: 53px !important;'>" + TotalTaxDived + "</td></tr>";
+                }
+                html += "<tr style='font-size:16px !important;'><td colspan='8' style='width: 53px !important;'></td><td>Net Total:</td><td align='right' style='width: 53px !important;'>" + PH_RET_CASHRECIVEDAMT + "</td></tr>";
+                html += "<tr></tr><tr></tr><tr><td colspan='6'></td><td colspan='3'>PHARMACIST SIGNATURE</td></tr></table>";
+            }
+            sessionStorage.setItem("PrintDetails", html);
+            openReturnRequestedPopup();
+        }
+    }
+    function openReturnRequestedPopup() {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        var url = rootUrl + '/Pharmacy/Dispense/print';
+        window.open(url, '_blank');
+        sessionStorage.setItem("PrintDetails", "");
+    }
+    function ReturnSelectedReprint(selectedrow) {
+        var myrow = selectedrow.rowIndex;
+        var BillNo = parseFloat(selectedrow.cells[1].innerHTML);
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        $.ajax({
+            url: "/Pharma/SalesReturn/GetSelectedReturnBill",
+            type: "GET",
+            data: {
+                BillNo: BillNo
+            },
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                RetrunBillPrint(response);
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+        //  $('#modal-default').modal().hide();
+        $("#ModelReturnReprint").dialog("close");
+    }
+    function OpenReturnReprint() {
+        GetLastReturn100BillHeader();
+        $("#ModelReturnReprint").dialog(
+            {
+                title: "RePrint",
+                width: 806,
+                height: 500,
+                modal: true,
+                buttons: {
+                    "Cancel": function () {
+                        $("#ModelReturnReprint").dialog("close");
+                    }
+                }
+            });
+    }
+    function GetLastReturn100BillHeader() {
+        $.ajax({
+            url: "/Pharma/SalesReturn/GetRetBillHeaderTop100",
+            type: "GET",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                if (response.length > 0) {
+                    var html = "";
+                    var Sno = 0;
+                    $("#tblRetBillReprint tbody").empty();
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        Sno = PCHeader + 1;
+                        var PH_RET_BILLNO = response[PCHeader].PH_RET_BILLNO;
+                        var PH_RET_BILLDT = response[PCHeader].PH_RET_BILLDT;
+                        var PH_RET_PATNAME = response[PCHeader].PH_RET_PATNAME;
+                        var PH_RET_PATSEX = response[PCHeader].PH_RET_PATSEX;
+                        var PH_RET_PATID = response[PCHeader].PH_RET_PATID;
+                        var PH_RET_NETTAMOUNT = response[PCHeader].PH_RET_NETTAMOUNT;
+                        html += "<tr onclick='ReturnSelectedReprint(this)'><td>" + Sno + "</td>";
+                        html += "<td>" + PH_RET_BILLNO + "</td>";
+                        html += "<td>" + PH_RET_BILLDT + "</td>";
+                        html += "<td>" + PH_RET_PATID + "</td>";
+                        html += "<td>" + PH_RET_PATNAME + "</td>";
+                        html += "<td>" + PH_RET_NETTAMOUNT + "</td>";
+                        html += "</tr>";
+                    }
+                    $("#tblRetBillReprint tbody").append(html);
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+    function ReturnCancel() {
+        $("#tblReturnBil tbody").empty();
+        $("#txtRetCashRecived").val('');
+        $("#txtRetCashRecived").val('');
+        $("#txtRetCashRecived").val('');
+        $("#txtReturnBillNo").val('');
+        $("#txtRetTotalamt").val('');
+        $("#txtRetTotalVat").val('');
+        $("#txtRetGrandTotal").val('');
+        $("#txtRetRoundTotal").val('');
+        $("#txtPatientId").html('');
+        $("#txtpatientName").html('');
+        $("#lblPharmacyName").html('');
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="panel panel-default DivBox" style="background-color: white;">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <h3 class="card-title" style="padding-top: 11px;padding-left: 7px;">Sales Return</h3>
+                        </div>
+                        <div class="col-xs-1 col-sm-1 col-md-1">
+                            <h6 style="padding-top: 11px;padding-left: 25px;" hidden id="lblBillDate">Bill Date:</h6>
+                        </div>
+                        <div class="col-xs-2 col-sm-2 col-md-2">
+                            <h6 style="padding-top: 11px;margin-left:-13px;" id="txtBilldate"></h6>
+                            <label hidden id="txtBillOrderdate"></label>
+                            <label hidden id="txtsendBilldate"></label>
+                        </div>
+                        <div class="col-xs-1 col-sm-1 col-md-1" hidden>
+                            <h6 style="padding-top: 11px;padding-left: 7px;" hidden id="lblPatientId">Patient ID:</h6>
+
+                        </div>
+                        <div class="col-xs-2 col-sm-2 col-md-2">
+                            <h6 style="padding-top: 11px;margin-left: -22px;" id="txtPatientId"></h6>
+                        </div>
+                        <div class="col-xs-2 col-sm-2 col-md-2" hidden>
+                            <h6 style="padding-top: 11px;padding-left: 7px;" id="lblPatientName" hidden>Patient Name:</h6>
+
+                        </div>
+                        <div class="col-xs-2 col-sm-2 col-md-2">
+                            <h6 style="padding-top: 11px; margin-left: -100px" id="txtpatientName"></h6>
+
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                @*<label>Bill No</label>*@
+                                <input type="text" id="txtReturnBillNo" onchange="GetBillDetailsByBillNo();" class="form-control" placeholder=" Enter Bill No" />
+                                <label hidden id="lblBillNo"></label>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <h6 style=" margin-top: 8px; font-weight: 700; color: #190ec3;" hidden id="lblPharmacy">PHARMACY:</h6>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <h6 style=" margin-top: 8px; font-weight: 700;color: #190ec3;" id="lblPharmacyName"></h6>
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <button class="btn btn-primary" onclick="OpenReturnReprint();">RePrint</button>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <label style="margin-top:9px">PHARMACY:</label>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <select class="form-control" id="ddlReturnStoreName">
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-9 col-sm-9 col-md-9">
+                                <div class="table-wrap ">
+                                    <table class="table table-bordered" id="tblReturnBil">
+                                        <thead>
+                                            <tr style="font-size:13px;font-weight:700;font-family:sans-serif;">
+                                                <th>S.No</th>
+                                                <th>Item Name</th>
+                                                @*<th>Available Batch</th>*@
+                                                <th>Batch</th>
+                                                <th>Expiry date</th>
+                                                <th>Rate</th>
+                                                <th>Qty</th>
+                                                <th>Amount</th>
+                                                <th>Tax</th>
+                                                <th>Total</th>
+                                                <th>Return Qty</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <label style="margin-top:9px;">
+                                    Amount
+                                </label>
+                                <br />
+                                <label style="margin-top:14px;">Vat</label>
+                                <br />
+                                <label style="margin-top:14px;">Total Amount</label>
+                                <br />
+                                <label style="margin-top:14px;">Round Amount</label>
+                                <br />
+                                <label style="margin-top:14px;display:none;">Concession</label>
+                                <label style="margin-top:14px;">Grand Total Amount</label>
+                                <label style="margin-top:14px;" id="lblSalesGst" hidden></label>
+
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <input style="height: 33px;text-align: right;" disabled value="0.00" id="txtRetTotalamt" type="text" class="form-control" />
+                                <input style="height: 33px;text-align: right;" disabled value="0.00" id="txtRetTotalVat" type="text" class="form-control" />
+                                <input style="height: 33px;text-align: right;" disabled value="0.00" id="txtRetGrandTotal" type="text" class="form-control" />
+                                <input style="height: 33px;text-align: right;" disabled value="0.00" id="txtRetRoundTotal" type="text" class="form-control" />
+                                <input style="height: 33px;text-align: right;display:none;" disabled value="0.00" id="txtRetConcession" type="text" class="form-control" />
+                                <input style="height: 33px;text-align: right;" disabled value="0.00" id="txtRetRoundGrandtotal" type="text" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="row" hidden>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <label style="margin-top: 20px;">Cash</label>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <input style="margin-top: 10px;" type="text" class="form-control" id="txtRetCashRecived" />
+                            </div>
+                        </div>
+                        <br />
+                        <div class="row">
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <button class="btn btn-primary" onclick="SaveSalesReturn();">Save</button>
+                                <button class="btn btn-primary" onclick="ReturnCancel();">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="ModelReturnReprint" style="display: none; width: 600px;font-family:'Microsoft Sans Serif'; font-size: small;">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <div class="form-group">
+                                    <input type="text" id="txtModalReturnBillNo" placeholder="Bill No" class="form-control" style="margin-left: 5px;" onchange="GetCashBillHeaderByBillNo();" />
+                                </div>
+                            </div>
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <input type="text" id="txtSReturnBillSearch" placeholder="Search" class="form-control" style="margin-left: 5px;" onkeyup="GetReturnCashBillBySearch();" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <table class="table table-bordered table-striped dataTable table-reflow tableHB" id="tblRetBillReprint" style="color: black;margin-left: 5px;">
+                                    <thead>
+                                        <tr>
+                                            <th>S.No</th>
+                                            <th>Bill No</th>
+                                            <th>Bill Dt</th>
+                                            <th>Patient ID</th>
+                                            <th>Patient Name</th>
+                                            <th>Total Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

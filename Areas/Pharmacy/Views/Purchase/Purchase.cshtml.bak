@@ -1,0 +1,451 @@
+﻿
+<style>
+    label {
+        font-size: 14px;
+        font-weight: 600;
+        font-style: serif;
+    }
+    .table td, .table th {
+        vertical-align: middle !important;
+    }
+    hr {
+        margin: 20px 0;
+        border: 0;
+        border-top: 1px solid #E0DFDF;
+        border-bottom: 1px solid #FEFEFE;
+    }
+
+    .modal-lg {
+        width: 1000px;
+        margin: auto;
+    }
+
+    .table-wrap {
+        height: 350px;
+        overflow-y: auto;
+    }
+
+   
+</style>
+<script src="~/Purchase/Purchase.js"></script>
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="panel panel-default DivBox" style="background-color: white;">
+                    <div class="panel-heading" style="background-color: #007bff;color: white;margin-top: 6px;height:50px;display:none;">
+                        <div class="row">
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <h3 class="card-title" style="padding-top: 11px;padding-left: 7px;">Purchase Order</h3>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <h6 font-size: 15px; color: #1616d6;" id="lblSupplierName" style="margin-top: 13px;"></h6>
+
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <img src="~/images/ShutdownWhite.png" style="padding-top:11px;padding-right:7px;float:right;cursor:pointer;" onclick="GotoLogin();" />
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <div class="form-group">
+                                    <label>
+                                        Search Supplier
+                                    </label>
+                                    <input type="text" id="txtSearchPoList" onclick="SearchSupplierDetailsClick();" style=" " class="form-control" />
+                                    <input type="hidden" id="hidSupplierID" />
+                                    <input type="hidden" id="hidPoNumber" />
+                                    <input type="hidden" id="hidHeadSeqID" />
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div class="form-group">
+                                    <label>
+                                        Brand Name
+                                    </label>
+                                    <input type="text" id="txtPurchaseBrandSearch" onkeypress="return GetPurchaseDrugBySearch();" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div class="form-group">
+                                    <label>
+                                        Quotation No
+                                    </label>
+                                    <input type="text" id="txtQuotationNo" class="form-control" />
+                                </div>
+                            </div>
+                            @*<div class="col-xs-2 col-sm-2 col-md-2">
+                                
+                            </div>*@
+                            <div class="col-xs-5 col-sm-5 col-md-5">
+                                <div class="row">
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group">
+                                            <label>
+                                                Delivery Date
+                                            </label>
+                                            <input type="text" id="txtDeliveryDate" class="form-control" />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-5 col-sm-5 col-md-5">
+                                        <label>Warehouse</label>
+                                        <select id="ddlPOWarehouse" class="form-control"></select>
+                                    </div>
+                                    <div class="col-xs-3 col-sm-3 col-md-3">
+                                        <label style="margin-left: 5px;margin-top: 14px;"></label>
+                                        <div class="form-group">
+                                            @*<button style="margin-left:7px;margin-top:7px;" class="btn btn-primary">Cancel</button>*@
+                                            <button class="btn btn-primary" onclick="OpenPurchase();">Draft PO</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <br />
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12" style="font-size:13px;font-family:sans-serif;margin-top:-19px">
+                                <div class="table-wrap">
+                                    <table class="table table-bordered table-striped" id="tblPurchaseDrugBind">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th style="display:none;">Generic Name</th>
+                                                <th>Stock</th>
+                                                <th>HSN</th>
+                                                <th>GST</th>
+                                                <th>AVG Purchase Cost</th>
+                                                <th>Pack Type / QTY</th>
+                                                <th>Order Qty</th>
+                                                <th>Total Qty</th>
+                                                <th>Rate</th>
+                                                <th>Tax</th>
+                                                <th>Total Price</th>
+                                                <th>Delete</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody style="line-height:5px">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <br />
+
+
+                        <div class="row">
+                            <div class="col-md-5">
+                                <button class="btn btn-primary" id="btnSave" onclick="SavePurchaseOrder(false);">Save</button>
+                                <button class="btn btn-primary" id="btnApproveSave" onclick="SavePurchaseOrder(true);">Save & Approve </button>
+                                <button class="btn btn-primary" onclick="PurchaseViewCancel();">Cancel</button>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1" style="display:none;">
+                                <label>Total Items:</label>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1" style="display:none;">
+                                <input type="text" id="txtTotalItems" class="form-control" />
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <label style="margin-left: 34px;">Estimated Total Value:</label>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <input type="text" id="txtTotalamt" class="form-control" />
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <div class="modal fade" id="modal-default">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Add Drug</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="card-body ">
+                                <div class="row">
+                                    <div class="col-xs-5 col-sm-5 col-md-5">
+                                        <input type="text" id="txtdrugSearch" class="form-control" onkeyup="SearchDrugDetails();" placeholder="Search" />
+                                    </div>
+                                    <div class="col-xs-5 col-sm-5 col-md-5">
+
+                                    </div>
+                                    <div class="col-xs-2 col-sm-2 col-md-2">
+                                        <button class="btn btn-primary" onclick="CategoryUOMPopup();">Add New</button>
+                                    </div>
+                                </div>
+                                <div class="table-wrap">
+                                    <table class="table table-bordered table-striped dataTable table-reflow" id="tblDrug">
+                                        <thead>
+                                            <tr style="font-size:13px;font-weight:700;font-family:sans-serif">
+                                                <th>Drug Name</th>
+                                                <th>Generic Name</th>
+                                                <th>Drug Form</th>
+                                                <th>Schedule Type</th>
+                                                <th>Strength</th>
+                                                <th>
+                                                    @*<input type="checkbox" id="selectall" style="text-align:center" onclick="SelectAll();" />*@
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="modal-footer justify-content-between">
+                                <button type="button" class="btn btn-primary" onclick="GetDrugDeatilsForpurchaseOrder();" data-dismiss="modal">Save</button>
+                                <button data-target="#myModal" data-toggle="modal" data-backdrop="static" type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                            </div>
+                            @*<div class="modal-footer justify-content-between">
+                                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                                    <button type="button" id="btndocverify" onclick="SaveSampleNotes();" class="btn btn-primary">Save</button>
+                                </div>*@
+                        </div>
+                        <!-- /.modal-content -->
+                    </div>
+                    <!-- /.modal-dialog -->
+                </div>
+
+                <div class="modal fade" id="modal-CategoryUOM">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Add Drug</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body eventInsForm ">
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <label>Drug Name</label>
+                                            <input type="text" id="txtDrugName" placeholder="Drug Name" class="form-control" />
+                                            <input type="hidden" id="txtDrugCode" />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <label>
+                                                Generic Name
+                                            </label>
+                                            <div>
+                                                <input type="text" id="txtGenericName" class="form-control GenericName" onclick="GenericNameClick();" placeholder="Generic Name" />
+                                                <input type="hidden" id="txtPH_DRUG_GENERICSEQID" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <label>
+                                                Drug Form
+                                            </label>
+                                            <input type="text" id="txtDrugForm" class="form-control DrugForm" onclick="OnDrugFormClick();" placeholder="Drug Form" />
+                                            <input type="hidden" id="txtPH_UOMID" />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="row">
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <label>
+                                                    Package
+                                                </label>
+                                                <input type="text" id="txtPackage" class="form-control" placeholder="Package" />
+                                            </div>
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <label>
+                                                    Qty
+                                                </label>
+                                                <input type="text" id="txtDrugQty" class="form-control" placeholder="Qty" />
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="row">
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <div class="form-group">
+                                                    <label>
+                                                        HSN Code
+                                                    </label>
+                                                    <input type="text" id="txtHSN" placeholder=" HSN Code" class="form-control" />
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <div class="form-group">
+                                                    <label>
+                                                        GST
+                                                    </label>
+                                                    <input type="text" id="txtGST" placeholder="GST" class="form-control" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-3 col-sm-3 col-md-3">
+                                        <div class="form-group">
+                                            <label>
+                                                Manufacture
+                                            </label>
+                                            <input type="text" id="txtManufacture" placeholder="Manufacture" onclick="ManufactureMasterClick();" class="form-control addresspicker" />
+                                            <input type="hidden" id="txtManufactureId" />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-3 col-sm-3 col-md-3">
+                                        <div class="form-group">
+                                            <label>
+                                                Root
+                                            </label>
+                                            <input type="text" id="txtroot" placeholder="Root" class="form-control" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="row">
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <div class="form-group">
+                                                    <label>
+                                                        Schedule Type
+                                                    </label>
+                                                    <input type="text" id="txtScheduleType" placeholder="Schedule Type" class="form-control" />
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <div class="form-group">
+                                                    <label>
+                                                        Rack
+                                                    </label>
+                                                    <input type="text" id="txtRack" placeholder="Rack" class="form-control" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <label>
+                                                Strength
+                                            </label>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <input type="text" id="txtStrength" placeholder="Strength" class="form-control" />
+
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <select class="form-control" id="DrugValue">
+                                                        <option>Mg</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div class="row">
+
+
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <label>
+                                                Substance(Formula)
+                                            </label>
+                                            <div class="row">
+                                                <div class="col-xs-10 col-sm-10 col-md-10">
+                                                    <select id="txtSubstanceName" class="form-control SubstanceName " multiple></select>
+                                                </div>
+                                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                                    <img src="~/images/ADD ITEM.png" style=" height: 40px;" onclick="GenricPopup();" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+
+                                </div>
+                                <div class="row">
+                                    <div class="col">
+                                        <button class="btn btn-primary" id="btnSave" onclick="SaveDrugMaster();">Save</button>
+                                        <button class="btn btn-primary" id="btnEdit" hidden onclick="EditDrugs();">Edit</button>
+                                        <button class="btn btn-primary" id="btnUpdate" hidden onclick="UpdateDrugMaster();">Update</button>
+                                        <button class="btn btn-primary" onclick="Cancel();">Cancel</button>
+                                    </div>
+                                </div>
+                            </div>
+                            @*<div class="modal-footer justify-content-between">
+                                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                                    <button type="button" id="btndocverify" onclick="SaveSampleNotes();" class="btn btn-primary">Save</button>
+                                </div>*@
+                        </div>
+                        <!-- /.modal-content -->
+                    </div>
+                    <!-- /.modal-dialog -->
+                </div>
+                <div id="ModelPurchaseOrder" style="display: none; width: 600px;font-family:'Microsoft Sans Serif'; font-size: small;">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <div class="panel-body">
+                                    <div class="row">
+                                        <div class="col-xs-3 col-sm-3 col-md-3">
+                                            <div class="form-group">
+                                                <input type="text" id="txtBillNo" placeholder="Bill No" class="form-control" style="margin-left: 5px;" onchange="GetCashBillHeaderByBillNo();" />
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <div class="form-group">
+                                                <input type="text" id="txtBillSearch" placeholder="Search" class="form-control" style="margin-left: 5px;" onkeyup="GetCashBillBySearch();" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <table class="table table-bordered table-striped dataTable table-reflow tableHB" id="tblPurchaseOrderBind" style="color: black;margin-left: 5px;">
+                                                <thead>
+                                                    <tr>
+                                                        <th>S.No</th>
+                                                        <th>Purchase Order Number</th>
+                                                        <th>Supplier Name</th>
+                                                        <th>Date</th>
+                                                        <th>Total Item</th>
+                                                        <th>Total Amount</th>
+                                                        <th>Status</th>
+                                                        <th>Select</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

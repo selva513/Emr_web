@@ -1,0 +1,368 @@
+﻿@{
+    ViewData["Title"] = "Stock Statement";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+
+    $(document).ready(function () {
+        GetItemCategoryList();
+    });
+
+    function GetItemCategoryList() {
+        try {
+            var Urlpath = rootUrl + "/api/DrugMastersApi/GetItemCategoryList";
+
+            $.ajax({
+                url: Urlpath,
+                type: "GET",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    if (response.length > 0) {
+                        for (var i = 0; i < response.length; i++) {
+                            var ItemSeqId = response[i].ItemSeqId;
+                            var ItemName = response[i].ItemName;
+                            $('#drpItemCat').append($("<option></option>").val(ItemSeqId).html(ItemName));
+                        }
+                        GetWareHouseList();
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        catch (e) { console.log(e); }
+    }
+    function GetWareHouseList() {
+        try {
+            var Urlpath = rootUrl + "/api/SalesReturnApi/GetStoreDeatailsByHospitalId";
+            $.ajax({
+                url: Urlpath,
+                type: "GET",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    if (response.length > 0) {
+                        $("#ddlWarehouse").empty();
+                        for (var i = 0; i < response.length; i++) {
+                            var SeqId = response[i].HIS_PH_STOREMASTER;
+                            var Name = response[i].HIS_PH_STORENAME;
+                            $('#drpWarehouse').append($("<option></option>").val(SeqId).html(Name));
+                        }
+                        GetProductList();
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+
+        }
+        catch (e) { console.log(e); }
+    }
+
+    function GetProductList() {
+        try {
+            var ItemCatId = $("#drpItemCat").val();
+            var StoreId = $("#drpWarehouse").val();
+            var StoreName = $("#drpWarehouse option:selected").text();
+            var Search = $("#txtSearch").val();
+            if (isNumeric(ItemCatId)) {
+                ItemCatId = parseInt(ItemCatId);
+            }
+            if (isNumeric(StoreId)) {
+                StoreId = parseInt(StoreId);
+            }
+
+            var Urlpath = rootUrl + "/api/CurrentStockApi/GetStockStatementProductList?ItemCatId=" + ItemCatId + "&Search=" + Search + "&StoreName=" + StoreName;
+            $.ajax({
+                url: Urlpath,
+                type: "GET",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: BindProductOnSuccess,
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        catch (e) { console.log(e); }
+    }
+
+    function BindProductOnSuccess(response) {
+        try {
+            var ItemCatId = $("#drpItemCat").val();
+            var ItemCatName = $("#drpItemCat option:selected").text();
+
+            var html = "";
+            var NetTotalValue = 0;
+            var NetTotalQty = 0;
+            $("#tblMedicines tbody").empty();
+            $("#tblSurDisposable tbody").empty();
+            $("#tblSurInstruments tbody").empty();
+            $("#tblOthers tbody").empty();
+            if (response.length > 0) {
+                NetTotalQty = response[0].GrandQty;
+                NetTotalValue = response[0].GrandValue;
+                switch (ItemCatName) {
+                    case "Medicines":
+                        $("#tblMedicines").prop('hidden', false);
+                        $("#tblSurDisposable").prop('hidden', true);
+                        $("#tblSurInstruments").prop('hidden', true);
+                        $("#tblOthers").prop('hidden', true);
+
+                        for (var med = 0; med < response.length; med++) {
+                            var sno = med + 1;
+                            var DrugCode = response[med].PH_CUR_DRUGCODE;
+                            var DrugName = response[med].PH_CUR_DRUGBRANDNAME;
+                            var AvgPurCost = response[med].AvgPurchaseCost;
+                            var TotalQty = response[med].TotalQty;
+                            var AvgValue = 0;
+
+                            if (isNumeric(AvgPurCost) && isNumeric(TotalQty)) {
+                                TotalQty = parseFloat(TotalQty);
+                                AvgPurCost = parseFloat(AvgPurCost);
+
+                                //if (TotalQty != 0 && AvgPurCost != 0) {
+                                var Value = TotalQty * AvgPurCost;
+                                AvgValue = Math.round((Value + Number.EPSILON) * 100) / 100
+                                //}
+                            }
+                            //NetTotalValue = NetTotalValue + AvgValue;
+                            //NetTotalQty = NetTotalQty + TotalQty;
+                            html += "<tr>";
+                            html += "<td style='display:none;'>" + DrugCode + "</td>";
+                            html += "<td>" + sno + "</td>";
+                            html += "<td>" + DrugName + "</td>";
+                            html += "<td>" + TotalQty + "</td>";
+                            html += "<td>" + AvgPurCost + "</td>";
+                            html += "<td>" + AvgValue + "</td>";
+                            //html += "<td></td>";
+                            html += "</tr>";
+                        }
+
+                        $("#tblMedicines tbody").append(html);
+
+                        break;
+                    case "Surgical Disposable":
+                        $("#tblMedicines").prop('hidden', true);
+                        $("#tblSurDisposable").prop('hidden', false);
+                        $("#tblSurInstruments").prop('hidden', true);
+                        $("#tblOthers").prop('hidden', true);
+                        break;
+                    case 'Surgical Instruments':
+                        $("#tblMedicines").prop('hidden', true);
+                        $("#tblSurDisposable").prop('hidden', true);
+                        $("#tblSurInstruments").prop('hidden', false);
+                        $("#tblOthers").prop('hidden', true);
+                        break;
+                    case 'Others':
+                        $("#tblMedicines").prop('hidden', true);
+                        $("#tblSurDisposable").prop('hidden', true);
+                        $("#tblSurInstruments").prop('hidden', true);
+                        $("#tblOthers").prop('hidden', false);
+                        break;
+                }
+                $("#divTotal").prop('hidden', false);
+            }
+            else {
+                $("#divTotal").prop('hidden', true);
+            }
+
+            //NetTotalValue = Math.round((NetTotalValue + Number.EPSILON) * 100) / 100
+            $("#txtTotalQty").val(NetTotalQty);
+            $("#txtTotalValue").val(NetTotalValue);
+        }
+        catch (e) { console.log(e); }
+    }
+</script>
+
+<script>
+    function isNumeric(n) {
+        return !isNaN(parseFloat(n)) && isFinite(n);
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+<style type="text/css">
+
+    #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loading1 {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loadingcontent {
+        display: table;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loadingspinner {
+        display: table-cell;
+        vertical-align: middle;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+        padding-top: 80px;
+    }
+</style>
+
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div id="loading">
+            <div id="loadingcontent">
+                @*<p id="loadingspinner">
+                        Please Wait...
+                    </p>*@
+                <div id="loadingspinner">
+                    <img src="~/images/loading.gif" style="width: 100px; height: 100px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-wrapper" style=" font-family: arial, sans-serif;">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="panel panel-default DivBox" style="background-color: white;">
+                        @*<div class="panel-heading" style="background-color: #4d90fe;color: white;margin-top: 6px;height:50px;">*@
+                        <div class="panel-heading" style="background-color: #007bff;color: white;margin-top: 6px;height: 50px;">
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <h3 class="card-title" style="padding-top: 11px;padding-left: 7px;">Stock Statement</h3>
+                                    <img src="~/images/ShutdownWhite.png" style="padding-top:11px;padding-right:7px;float:right;cursor:pointer;" onclick="GotoLogin();" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <input type="text" id="txtSearch" class="form-control" placeholder="Search" onkeyup="GetProductList();" />
+                                </div>
+                                <div class="col-xs-3 col-sm-3 col-md-3">
+                                    <select id="drpItemCat" class="form-control" onchange="GetProductList();"></select>
+                                </div>
+                                <div class="col-xs-3 col-sm-3 col-md-3">
+                                    <select id="drpWarehouse" class="form-control" onchange="GetProductList();"></select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <table class="table table-bordered table-striped" id="tblMedicines" style="font-size:13px;overflow:auto;" hidden>
+                                        <thead style="line-height: 13px;">
+                                            <tr>
+                                                <th>S.No</th>
+                                                <th>Item Name</th>
+                                                <th>Stock Qty</th>
+                                                <th>Average Price</th>
+                                                <th>Stock Value</th>
+                                                @*<th>Action</th>*@
+                                            </tr>
+                                        </thead>
+                                        <tbody style="line-height: 14px;"></tbody>
+                                    </table>
+                                    <table class="table table-bordered table-striped" id="tblSurDisposable" style="font-size:13px;overflow:auto;" hidden>
+                                        <thead style="line-height: 13px;">
+                                            <tr>
+                                                <th>S.No</th>
+                                                <th>Item Name</th>
+                                                <th>Brand Name</th>
+                                                <th>Spec</th>
+                                                <th>Stock Qty</th>
+                                                <th>Average Cost</th>
+                                                <th>Average Value</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody style="line-height: 14px;"></tbody>
+                                    </table>
+                                    <table class="table table-bordered table-striped" id="tblSurInstruments" style="font-size:13px;overflow:auto;" hidden>
+                                        <thead style="line-height: 13px;">
+                                            <tr>
+                                                <th>S.No</th>
+                                                <th>Item Name</th>
+                                                <th>Brand Name</th>
+                                                <th>Model</th>
+                                                <th>Model No</th>
+                                                <th>Stock Qty</th>
+                                                <th>Average Cost</th>
+                                                <th>Average Value</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody style="line-height: 14px;"></tbody>
+                                    </table>
+                                    <table class="table table-bordered table-striped" id="tblOthers" style="font-size:13px;overflow:auto;" hidden>
+                                        <thead style="line-height: 13px;">
+                                            <tr>
+                                                <th>S.No</th>
+                                                <th>Item Name</th>
+                                                <th>Brand Name</th>
+                                                <th>Stock Qty</th>
+                                                <th>Average Cost</th>
+                                                <th>Average Value</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody style="line-height: 14px;"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="row" id="divTotal">
+                                <div class="col-xs-5 col-sm-5 col-md-5"></div>
+                                <div class="col-xs-3 col-sm-3 col-md-3">
+                                    <div class="row">
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <label style="float:right;">Total Qty:</label>
+                                        </div>
+                                        <div class="col-xs-8 col-sm-8 col-md-8">
+                                            <input type="text" id="txtTotalQty" class="form-control" disabled />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                    <div class="row">
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <label style="float:right;">Total Value:</label>
+                                        </div>
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <input type="text" id="txtTotalValue" class="form-control" disabled />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

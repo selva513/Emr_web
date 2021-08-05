@@ -1,0 +1,734 @@
+﻿
+<style>
+    label {
+        font-size: 15px;
+        font-weight: 600;
+        font-style: serif;
+    }
+
+    .table-wrap {
+        height: 320px;
+        overflow-y: auto;
+    }
+</style>
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        DateFunction();
+        BindStoreNameDetails();
+    });
+    $(document).ready(function () {
+        $('#drpFromStoreName').on('change', function (event) {
+            var drpFromStoreName = $(this).data('previous');
+            $('#drpToStoreName option').show();
+            var drpFromStoreName = $(this).val();
+            $(this).data('previous', drpFromStoreName);
+            $('#drpToStoreName').not(this).find('option[value="' + drpFromStoreName + '"]').hide();
+            $('#drpToStoreName').each(function (e) {
+                if (e + 1 != parseInt(drpFromStoreName)) {
+                    $('#drpToStoreName').val((e + 1).toString());
+                }
+            })
+
+        });
+    });
+    function DateFunction() {
+        var currentdate = new Date();
+
+        var datetime = " " + currentdate.getDate() + "/"
+            + (currentdate.getMonth() + 1) + "/"
+            + currentdate.getFullYear();
+
+        $('#lblTodayDate').html(datetime);
+
+
+    }
+    function BindStoreNameDetails() {
+        $.ajax({
+            type: "GET",
+            url: rootUrl + "/api/SalesReturnApi/GetStoreDeatailsByHospitalId",
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (data) {
+                $("#drpFromStoreName").empty();
+                $.each(data, function (key, value) {
+                    $("#drpFromStoreName").append($("<option></option>").val(value.HIS_PH_STOREMASTER).html(value.HIS_PH_STORENAME));
+                });
+                $("#drpToStoreName").empty();
+                $.each(data, function (key, value) {
+                    $("#drpToStoreName").append($("<option></option>").val(value.HIS_PH_STOREMASTER).html(value.HIS_PH_STORENAME));
+                });
+
+                $('#drpToStoreName').find('option[value="1"]').hide();
+                $('#drpToStoreName').val('2');
+            },
+            failure: function (response) {
+                alert(response);
+            },
+            error: function (response) {
+            }
+        });
+    }
+    function SearchDrug() {
+        var StoreName = document.getElementById("drpFromStoreName").options[document.getElementById('drpFromStoreName').selectedIndex].text;
+        $("#txtDrugSearch").autocomplete({
+            source: function (request, response) {
+                $.ajax({
+                    url: "/Pharma/Dispense/GetDrugSearchByFreeText",
+                    type: "GET",
+                    data: {
+                        SearchTearm: request.term,
+                        StoreName: StoreName
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_CUR_DRUGBRANDNAME,
+                                value: el.PH_CUR_DRUGCODE
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                $("#txtDrugSearch").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                // $("#txtDrugSearch").prop('disabled', true);
+                $("#txtDrugSearch").val(ui.item.label);
+                var DrugCode = parseInt(ui.item.value);
+                GetCurretntStockByDrugCode(DrugCode, StoreName);
+                return false;
+            },
+            minLength: 0
+        });
+    }
+    function GetCurretntStockByDrugCode(DrugCode, StoreName) {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        $.ajax({
+            url: "/Pharma/Dispense/GetCurrentStockByDrugCode",
+            type: "GET",
+            data: {
+                DrugCode: DrugCode,
+                StoreName: StoreName
+            },
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                if (response.length > 0) {
+                    var html = "";
+                    var table = document.getElementById("tblDrugSales");
+                    var tbodyRowCount = table.tBodies[0].rows.length;
+                    if (response.length <= 1) {
+                        for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                            var PH_CUR_DRUGCODE = response[PCHeader].PH_CUR_DRUGCODE;
+                            var $tr = $('#tblDrugSales tr[data-id="' + PH_CUR_DRUGCODE + '"]');
+                            if ($tr.length === 0) {
+                                var PH_CUR_DRUGBRANDNAME = response[PCHeader].PH_CUR_DRUGBRANDNAME;
+                                var PH_CUR_STOCK_EXPIRYDT = response[PCHeader].PH_CUR_STOCK_EXPIRYDT;
+                                var PH_CUR_STOCK_BILLINGPRICE = response[PCHeader].PH_CUR_STOCK_BILLINGPRICE;
+                                var PH_CUR_STOCK_BATCHNO = response[PCHeader].PH_CUR_STOCK_BATCHNO;
+                                var PH_CUR_STOCK = response[PCHeader].PH_CUR_STOCK;
+
+                                var PH_ITEM_DRUG_VAT = response[PCHeader].PH_ITEM_DRUG_VAT;
+                                var PH_CUR_STOCKUOM = response[PCHeader].PH_CUR_STOCKUOM;
+                                var PH_ITEM_HSNCODE = response[PCHeader].PH_ITEM_HSNCODE;
+                                var PH_CUR_STOCK_PURCHCOST = response[PCHeader].PH_CUR_STOCK_PURCHCOST;
+                                var ExpiryDt = response[PCHeader].ExpiryDt;
+                                var Sno = tbodyRowCount + 1;
+                                html += "<tr data-id=\"" + PH_CUR_DRUGCODE + "\"><td>" + Sno + "</td>";//0
+                                html += "<td style='display:none;'>" + PH_CUR_DRUGCODE + "</td>";//1
+                                html += "<td>" + PH_CUR_DRUGBRANDNAME + "</td>";//2
+                                html += "<td>" + PH_CUR_STOCK_BATCHNO + "</td>";//3
+                                html += "<td>" + PH_CUR_STOCK_EXPIRYDT + "</td>";//4
+                                html += "<td>" + PH_CUR_STOCK_PURCHCOST + "</td>";//5
+                                html += "<td>" + PH_CUR_STOCK + "</td></td>";//6
+                                html += "<td><input value=''style='height:28px;width:50px;text-align: right;margin-top:5px;' type=\"Text\" onchange='QtyValu(this)' onkeypress='return isNumberKey(event)'></td>";//7
+                                html += "<td></td>";//8
+                                html += "<td class='TotalAmountCell'></td>";//9
+                                html += "<td style='display:none;'>" + PH_CUR_DRUGCODE + "</td>";//10
+                                html += "<td style='display:none;'>" + ExpiryDt + "</td>";//11
+                                html += "<td style='display:none;'>" + PH_CUR_STOCK_BILLINGPRICE + "</td>";//12
+                                html += "<td style='text-align: center;'>";
+                                html += "<img src='" + rootUrl + "/Images/DELETE-32.png'  onclick='return DeleteOrdersRow(this)' style='cursor:pointer;width: 30px !important;height:30px !important;'></td>";//13
+                                html += "</tr>";
+                                $("#tblDrugSales tbody").append(html);
+                                $("#tblDrugSales").find("input[type='text']").last().focus();
+                                $("#txtDrugSearch").val('');
+                                html = "";
+                            }
+                            else {
+                                alert('Drug Already Exists');
+                                $("#txtDrugSearch").val('');
+                                $("#txtDrugSearch").focus();
+                            }
+                        }
+                    }
+                    else {
+                        $("#tblSelectBatch tbody").empty();
+                        for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                            var PH_CUR_DRUGCODE = response[PCHeader].PH_CUR_DRUGCODE;
+                            var PH_CUR_DRUGBRANDNAME = response[PCHeader].PH_CUR_DRUGBRANDNAME;
+                            var PH_CUR_STOCK_EXPIRYDT = response[PCHeader].PH_CUR_STOCK_EXPIRYDT;
+                            var PH_CUR_STOCK_BILLINGPRICE = response[PCHeader].PH_CUR_STOCK_BILLINGPRICE;
+                            var PH_CUR_STOCK_BATCHNO = response[PCHeader].PH_CUR_STOCK_BATCHNO;
+                            var PH_CUR_STOCK = response[PCHeader].PH_CUR_STOCK;
+
+                            var PH_ITEM_DRUG_VAT = response[PCHeader].PH_ITEM_DRUG_VAT;
+                            // var PH_CUR_STOCKUOM = response[PCHeader].PH_CUR_STOCKUOM;
+                            //var PH_ITEM_HSNCODE = response[PCHeader].PH_ITEM_HSNCODE;
+                            // var PH_CUR_STOCK_PURCHCOST = response[PCHeader].PH_CUR_STOCK_PURCHCOST;
+                            html += "<tr  onclick='SelectedBatchChange(this)' data-id=\"" + PH_CUR_DRUGCODE + "\">";
+                            html += "<td style='display:none;'>" + PH_CUR_DRUGCODE + "</td>";
+                            html += "<td>" + PH_CUR_DRUGBRANDNAME + "</td>";
+                            html += "<td>" + PH_CUR_STOCK_BATCHNO + "</td>";
+                            html += "<td>" + PH_CUR_STOCK_EXPIRYDT + "</td>";
+                            html += "<td>" + PH_CUR_STOCK + "</td>";
+                            html += "<td>" + PH_CUR_STOCK_BILLINGPRICE + "</td></tr>";
+                            $("#tblSelectBatch tbody").append(html);
+                            html = "";
+                        }
+                        $("#ModalAdd").dialog(
+                            {
+                                title: "Select Batch",
+                                width: 806,
+                                height: 300,
+                                modal: true,
+                                buttons: {
+                                    "Cancel": function () {
+                                        $("#ModalAdd").dialog("close");
+                                    }
+                                }
+                            });
+                    }
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+    function GetCurrentStockByDrugCodeAndBatch(DrugCode, StoreName, Btach) {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        $.ajax({
+            url: "/Pharma/Dispense/GetCurrentStockByDrugCodeAndBatch",
+            type: "GET",
+            data: {
+                DrugCode: DrugCode,
+                StoreName: StoreName,
+                Batch: Btach
+            },
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                if (response.length > 0) {
+                    var html = "";
+                    var table = document.getElementById("tblDrugSales");
+                    var tbodyRowCount = table.tBodies[0].rows.length;
+                    if (response.length <= 1) {
+                        for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                            var PH_CUR_DRUGCODE = response[PCHeader].PH_CUR_DRUGCODE;
+                            var $tr = $('#tblDrugSales tr[data-id="' + PH_CUR_DRUGCODE + '"]');
+                            if ($tr.length === 0) {
+                                var PH_CUR_DRUGBRANDNAME = response[PCHeader].PH_CUR_DRUGBRANDNAME;
+                                var PH_CUR_STOCK_EXPIRYDT = response[PCHeader].PH_CUR_STOCK_EXPIRYDT;
+                                var PH_CUR_STOCK_BILLINGPRICE = response[PCHeader].PH_CUR_STOCK_BILLINGPRICE;
+                                var PH_CUR_STOCK_BATCHNO = response[PCHeader].PH_CUR_STOCK_BATCHNO;
+                                var PH_CUR_STOCK = response[PCHeader].PH_CUR_STOCK;
+                                var PH_ITEM_DRUG_VAT = response[PCHeader].PH_ITEM_DRUG_VAT;
+                                var PH_CUR_STOCKUOM = response[PCHeader].PH_CUR_STOCKUOM;
+                                var PH_ITEM_HSNCODE = response[PCHeader].PH_ITEM_HSNCODE;
+                                var PH_CUR_STOCK_PURCHCOST = response[PCHeader].PH_CUR_STOCK_PURCHCOST;
+                                var ExpiryDt = response[PCHeader].ExpiryDt;
+                                var Sno = tbodyRowCount + 1;
+                                html += "<tr data-id=\"" + PH_CUR_DRUGCODE + "\"><td>" + Sno + "</td>";//0
+                                html += "<td style='display:none;'>" + PH_CUR_DRUGCODE + "</td>";//1
+                                html += "<td>" + PH_CUR_DRUGBRANDNAME + "</td>";//2
+                                html += "<td>" + PH_CUR_STOCK_BATCHNO + "</td>";//3
+                                html += "<td>" + PH_CUR_STOCK_EXPIRYDT + "</td>";//4
+                                html += "<td>" + PH_CUR_STOCK_PURCHCOST + "</td>";//5
+                                html += "<td>" + PH_CUR_STOCK + "</td></td>";//6
+                                html += "<td><input value=''style='height:28px;width:50px;text-align: right;margin-top:5px;' type=\"Text\" onchange='QtyValu(this)' onkeypress='return isNumberKey(event)'></td>";//7
+                                html += "<td></td>";//8
+                                html += "<td class='TotalAmountCell'></td>";//9
+                                html += "<td style='display:none;'>" + PH_CUR_DRUGCODE + "</td>";//10
+                                html += "<td style='display:none;'>" + ExpiryDt + "</td>";//11
+                                html += "<td style='display:none;'>" + PH_CUR_STOCK_BILLINGPRICE + "</td>";//12
+                                html += "<td style='text-align: center;'>";
+                                html += "<img src='" + rootUrl + "/Images/DELETE-32.png'  onclick='return DeleteOrdersRow(this)' style='cursor:pointer;width: 30px !important;height:30px !important;'></td>";//13
+                                html += "</tr>";
+                                $("#tblDrugSales tbody").append(html);
+                                $("#tblDrugSales").find("input[type='text']").last().focus();
+                                $("#txtDrugSearch").val('');
+                                html = "";
+                            }
+                            else {
+                                alert('Drug Already Exists');
+                            }
+                        }
+                    }
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+    function SelectedBatchChange(selectedrow) {
+        var myrow = selectedrow.rowIndex;
+        var DrugCode = selectedrow.cells[0].innerHTML;
+        var Batch = selectedrow.cells[2].innerHTML;
+        var StoreName = document.getElementById("drpFromStoreName").options[document.getElementById('drpFromStoreName').selectedIndex].text;
+        GetCurrentStockByDrugCodeAndBatch(DrugCode, StoreName, Batch);
+        //  $('#modal-default').modal().hide();
+        $("#ModalAdd").dialog("close");
+    }
+    function isNumeric(n) {
+        return !isNaN(parseFloat(n)) && isFinite(n);
+    }
+    function isNumberKey(evt) {
+        var charCode = (evt.which) ? evt.which : event.keyCode
+        if (charCode > 32 && (charCode < 48 || charCode > 57) || (charCode == 32))
+
+            return false;
+
+        return true;
+    }
+    function QtyValu(SelectedRow) {
+        // var DrugName = $("#txtSearchDrugType").val();
+        var row = SelectedRow.parentNode.parentNode;
+        var rowIndex = SelectedRow.rowIndex;
+        var Qty = parseInt(row.cells[7].getElementsByTagName("input")[0].value);
+        var CurrentQty = parseInt(row.cells[6].innerHTML);
+        if (Qty <= CurrentQty) {
+            var BalQty = CurrentQty - Qty;
+            var Cost = parseFloat(row.cells[5].innerHTML).toFixed(2);
+            var amt = parseFloat(Cost * Qty).toFixed(2);
+            var total = parseFloat(amt);
+            total = total.toFixed(2);
+            row.cells[8].innerHTML = BalQty;
+            row.cells[9].innerHTML = total;
+            TotalCalculation();
+            $("#txtDrugSearch").focus();
+        }
+        else {
+            alert("Stock Limit Exceeded");
+            row.cells[7].getElementsByTagName("input")[0].focus();
+        }
+    }
+    function TotalCalculation() {
+        var TotalAmountCells = document.getElementsByClassName("TotalAmountCell"); //returns a list with all the elements that have class 'priceCell'
+        var TotalAmount = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < TotalAmountCells.length; i++) {
+            var thisPrice = parseFloat(TotalAmountCells[i].innerHTML); //get inner text of this cell in number format
+            TotalAmount = TotalAmount + thisPrice;
+        };
+        TotalAmount = TotalAmount.toFixed(2);
+        $("#txtGrandTotal").val(TotalAmount);
+    }
+    function DeleteOrdersRow(selectedrow) {
+        var myrow = selectedrow.parentNode.parentNode;
+        var rowIndex = myrow.rowIndex;
+        document.getElementById("tblDrugSales").deleteRow(myrow.rowIndex);
+        var table = document.getElementById("tblDrugSales");
+        var rowCount = table.rows.length;
+        var i = myrow.rowIndex;
+        regroup(i, rowCount, "tblDrugSales");
+        $("#txtRateValue").val('');
+        $("#txtDiscountAmt").val('');
+        $("#txtCurrentDue").val('');
+        $("#txtCashAmt").val('');
+        $("#txtBankAmt").val();
+        $("#txtBankRefNum").val('');
+        $("#txtChequeAmt").val('');
+        $("#txtChequeNumber").val('');
+        TotalCalculation();
+        TotalDiscountCalculation();
+    }
+    function regroup(i, rc, ti) {
+        for (j = (i + 1); j < rc; j++) {
+            if (j > 0) {
+                document.getElementById(ti).rows[j].cells[0].innerHTML = j;
+            }
+        }
+    }
+    function SaveStockTransfer() {
+        var DrugInfo = new Array();
+        var tblDrugSales = document.getElementById("tblDrugSales");
+        var rowtblDrugSales = tblDrugSales.rows.length;
+        var ErrorMsg = "";
+        for (M = 1; M < rowtblDrugSales; M++) {
+            var rowDrug = tblDrugSales.rows[M];
+            var ObjectDetails = new Object();
+            ObjectDetails.BrandName = rowDrug.cells[2].innerHTML;
+            ObjectDetails.Batch = rowDrug.cells[3].innerHTML;
+            ObjectDetails.Expiry = rowDrug.cells[11].innerHTML;
+            ObjectDetails.StockTransferTo = parseInt(rowDrug.cells[6].innerHTML);
+            var Qty = rowDrug.cells[7].getElementsByTagName("input")[0].value;
+            if (Qty !== "" && Qty != 0) {
+                ObjectDetails.StockTransfer = parseInt(rowDrug.cells[7].getElementsByTagName("input")[0].value);
+            }
+            else {
+                ErrorMsg += "\n - Please Enter Qty for:" + ObjectDetails.BrandName + "";
+            }
+            ObjectDetails.StockBalance = parseInt(rowDrug.cells[8].innerHTML);
+            ObjectDetails.DrugCode = parseInt(rowDrug.cells[10].innerHTML);
+            ObjectDetails.MRP = parseFloat(rowDrug.cells[12].innerHTML);
+            ObjectDetails.Cost = parseFloat(rowDrug.cells[5].innerHTML);
+            DrugInfo.push(ObjectDetails);
+        }
+        if (ErrorMsg === "") {
+            var sendJsonData = {
+                FromStoreName: document.getElementById("drpFromStoreName").options[document.getElementById('drpFromStoreName').selectedIndex].text,
+                ToStoreName: document.getElementById("drpToStoreName").options[document.getElementById('drpToStoreName').selectedIndex].text,
+                TransferDeatils: DrugInfo
+            };
+            $.ajax({
+                url: "/api/StockTransfer/SaveStockTransfer",
+                type: 'post',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(sendJsonData),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    BillPrint(data);
+                    $("#tblDrugSales tbody").empty();
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        else {
+            alert(ErrorMsg);
+        }
+    }
+    function OpenStockReceive() {
+        GetStockTransferDeatils();
+        $("#ModelInvoice").dialog(
+            {
+                title: "Draft",
+                width: 1103,
+                height: 500,
+                modal: true,
+                buttons: {
+                    "Cancel": function () {
+                        $("#ModelInvoice").dialog("close");
+                    }
+                }
+            });
+    }
+    function GetStockTransferDeatils() {
+        $.ajax({
+            url: "/api/StockTransfer/GetStockTransferHeader",
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.length > 0) {
+                    var html = "";
+                    var Sno = 0;
+                    $("#tblInvoice tbody").empty();
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        Sno = PCHeader + 1;
+                        var PH_TRANSFERID = response[PCHeader].PH_TRANSFERID;
+                        var PH_TRAN_FROMSTORENAME = response[PCHeader].PH_TRAN_FROMSTORENAME;
+                        var PH_TRAN_TOSTORENAME = response[PCHeader].PH_TRAN_TOSTORENAME;
+                        var PH_TRAN_PROCESSCOMPLETED = response[PCHeader].PH_TRAN_PROCESSCOMPLETED;
+                        var PH_TRAN_TRANSFERDATE = response[PCHeader].PH_TRAN_TRANSFERDATE;
+
+                        html += "<tr>";
+                        html += "<td><input type='image' style='width:21px;height:21px;' src='" + rootUrl + "/Images/details_open.png' onclick='javascript:return CheckSelect(this)'></td>";//0
+                        html += "<td>" + Sno + "</td>";//1
+                        html += "<td>" + PH_TRANSFERID + "</td>";//2
+                        html += "<td>" + PH_TRAN_FROMSTORENAME + "</td>";//3
+                        html += "<td>" + PH_TRAN_TOSTORENAME + "</td>";//4
+                        html += "<td>" + PH_TRAN_TRANSFERDATE + "</td>";//5
+                        html += "<td>" + PH_TRAN_PROCESSCOMPLETED + "</td>";//6
+                        html += "<td><input type='button' value='Receive' class='btn btn-primary' onclick='PrintInvoiceBySeqID(this);'/></td>";//7
+                        html += "</tr>";
+                    }
+                    $("#tblInvoice tbody").append(html);
+                }
+            }
+        });
+    }
+    function CheckSelect(SelectedRow) {
+        var row = SelectedRow.parentNode.parentNode;
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = row.rowIndex - 1;
+        var PSeqID = row.cells[2].innerHTML;
+
+        var className = myrow.cells[0].getElementsByTagName("input")[0].className;
+        if (className === "shown") {
+            var imgUrl = rootUrl + "/Images/details_open.png";
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', imgUrl);
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'abc');
+            $('#tblInvoice > tbody > tr').eq(rowIndex).next().remove();
+        }
+        else {
+            var imgUrl = rootUrl + "/Images/details_close.png";
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', imgUrl);
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'shown');
+
+            var arg = parseInt(PSeqID);
+            $.ajax({
+                url: "/api/StockTransfer/GetStockTransferDetailsBySeqID/?SeqID=" + arg + "",
+                type: 'Get',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    var html = "<table id='myTable1' class='table table-striped table-bordered table-hover table-full-width dataTable no-footer'>";
+                    html += "<tr>";
+                    html += "<thead><th>Brand Name</th><th>Batch</th><th>Expiry DT</th>";
+                    html += "<th>Before QTY</th><th>Transfer Qty</th>";
+                    html += "<th>Balance QTY</th>";
+                    html += "</thead>";
+                    html += "</tr>";
+                    for (SymCount = 0; SymCount < response.Deatils.length; SymCount++) {
+                        html += "<tr>";
+                        html += "<td>" + response.Deatils[SymCount].PH_TRAN_BRANDNAME + "</td>";
+                        html += "<td>" + response.Deatils[SymCount].PH_TRAN_BATCH + "</td>";
+                        html += "<td>" + response.Deatils[SymCount].PH_TRAN_EXPIRYDATE + "</td>";
+                        html += "<td>" + response.Deatils[SymCount].PH_TRAN_STOCKTOTRANSFER + "</td>";
+                        html += "<td>" + response.Deatils[SymCount].PH_TRAN_STOCKTRANSFER + "</td>";
+                        html += "<td>" + response.Deatils[SymCount].PH_TRAN_STOCKBALANCE + "</td>";
+                        html += "</tr>";
+                    }
+                    html += "</table></br>";
+                    var newRow = $('<tr><td></td><td colspan="11">' + html + '</td></tr>');
+                    $('#tblInvoice > tbody > tr').eq(rowIndex).after(newRow);
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        return false;
+    }
+    function PrintInvoiceBySeqID(SelectedRow) {
+        var row = SelectedRow.parentNode.parentNode;
+        var SeqID = parseInt(row.cells[2].innerHTML);
+        var StoreName = row.cells[4].innerHTML;
+        $.ajax({
+            url: "/api/StockTransfer/StockReceive",
+            type: "GET",
+            data: {
+                SeqID: SeqID,
+                StoreName: StoreName
+            },
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                $("#ModelInvoice").dialog("close");
+                BillPrint(response);
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+    function BillPrint(response) {
+        if (response.PrintHeader.length > 0) {
+            var html = "";
+            for (PCHeader = 0; PCHeader < response.PrintHeader.length; PCHeader++) {
+                var PH_TRANSFERID = response.PrintHeader[PCHeader].PH_TRANSFERID;
+                var PH_TRAN_PROCESSIDKEY = response.PrintHeader[PCHeader].PH_TRAN_PROCESSIDKEY;
+                var PH_TRAN_FROMSTORENAME = response.PrintHeader[PCHeader].PH_TRAN_FROMSTORENAME;
+                var PH_TRAN_TOSTORENAME = response.PrintHeader[PCHeader].PH_TRAN_TOSTORENAME;
+                var PH_TRAN_PROCESSCOMPLETED = response.PrintHeader[PCHeader].PH_TRAN_PROCESSCOMPLETED;
+                var PH_TRAN_TRANSFERDATE = response.PrintHeader[PCHeader].PH_TRAN_TRANSFERDATE;
+
+                //Header
+                html += "<table style='font-family:sans-serif;font-size: 12px;font-weight: 500;'>";
+                html += "<tr><td style='width:196px !important;'>Transfer ID</td><td>:</td><td style='width:341px !important;'>" + PH_TRANSFERID + "</td>";
+                html += "<td style='width:196px !important;'>Date</td><td>:</td><td style='width:341px !important;'>" + PH_TRAN_TRANSFERDATE + "</td></tr>";
+                html += "<tr><td>From Warehouse</td><td>:</td><td style='width:341px !important;'>" + PH_TRAN_FROMSTORENAME + "</td>";
+                html += "<td>To Warehouse:</td><td>:</td><td style='width:341px !important;'>" + PH_TRAN_TOSTORENAME + "</td></tr>";
+                html += "</table>";
+                //Deatils
+                html += "<table border='1' style='font-family:sans-serif;font-size: 12px;font-weight: 500;border-collapse:collapse;width: 100%;'><tr>";
+                html += "<td style='width: 53px !important;'>S.no</td>";
+                html += "<td style='width: 275px !important;'>Particular</td>";
+                html += "<td style='width: 140px !important;'>Batch No</td>";
+                html += "<td style='width: 53px !important;'>ExpiryDt</td>";
+                html += " <td align='right' style='width: 53px !important;'>Stock</td>";
+                html += "<td align='right' style='width: 53px !important;'>Trasfer QTY</td>";
+                html += "<td align='right' style='width: 63px !important;'>Balance QTY</td>";
+                html += "<td align='right' style='width: 63px !important;'>Status</td></tr>";
+                var Sno = 0;
+                for (PCDetails = 0; PCDetails < response.PrintDeatils.length; PCDetails++) {
+                    Sno = Sno + 1;
+                    var PH_TRAN_BRANDNAME = response.PrintDeatils[PCDetails].PH_TRAN_BRANDNAME;
+                    var PH_TRAN_EXPIRYDATE = response.PrintDeatils[PCDetails].PH_TRAN_EXPIRYDATE;
+                    var PH_TRAN_BATCH = response.PrintDeatils[PCDetails].PH_TRAN_BATCH;
+                    var PH_TRAN_STOCKTOTRANSFER = response.PrintDeatils[PCDetails].PH_TRAN_STOCKTOTRANSFER;
+                    var PH_TRAN_STOCKTRANSFER = response.PrintDeatils[PCDetails].PH_TRAN_STOCKTRANSFER;
+                    var PH_TRAN_STOCKBALANCE = response.PrintDeatils[PCDetails].PH_TRAN_STOCKBALANCE;
+
+                    html += "<tr><td style='width: 53px !important;'>" + Sno + "</td>";
+                    html += "<td style='width: 275px !important;'>" + PH_TRAN_BRANDNAME + "</td>";
+                    html += "<td style='width: 140px !important;'>" + PH_TRAN_BATCH + "</td>";
+                    html += "<td style='width: 53px !important;'>" + PH_TRAN_EXPIRYDATE + "</td>";
+                    html += "<td align='right' style='width: 53px !important;'>" + PH_TRAN_STOCKTOTRANSFER + "</td>";
+                    html += "<td align='right' style='width: 53px !important;'>" + PH_TRAN_STOCKTRANSFER + "</td>";
+                    html += "<td align='right' style='width: 63px !important;'>" + PH_TRAN_STOCKBALANCE + "</td>";
+                    html += "<td align='right' style='width: 63px !important;'>" + PH_TRAN_PROCESSCOMPLETED + "</td></tr>";
+                }
+                html += "</table>";
+                //Amount Details
+            }
+            sessionStorage.setItem("PrintDetails", html);
+            openRequestedPopup();
+        }
+    }
+    function openRequestedPopup() {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        var url = rootUrl + '/Pharmacy/Dispense/print';
+        window.open(url, '_blank');
+        sessionStorage.setItem("PrintDetails", "");
+    }
+    function SalesCancel() {
+        $("#tblDrugSales tbody").empty();
+        $('#txtDrugSearch').val('');
+        $('#txtGrandTotal').val('');
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="panel panel-default DivBox" style="background-color: white;">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <label style="margin-top:6px">Stock From</label>
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <select style="font-size: 14px;font-weight:600;height: 35px;" class="form-control" id="drpFromStoreName">
+                                </select>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <label style="margin-top:6px;font-weight:600">Stock To</label>
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <select style="font-size: 14px;font-weight:600;height: 35px;" class="form-control" id="drpToStoreName">
+                                </select>
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <div class="form-group">
+                                    <button style="margin-left:7px;" class="btn btn-primary" onclick="OpenStockReceive();">Stock Receive</button>
+                                </div>
+                            </div>
+                        </div>
+                        <br />
+                        <div class="row">
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <input type="text" id="txtDrugSearch" onkeyup="SearchDrug();" class="form-control" placeholder="Search Drugs" />
+                                <label id="lblDrugName" hidden></label>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <table class="table table-bordered table-striped dataTable table-reflow tableHB" border="1" id="tblDrugSales" style="color: black;margin-left: 5px;">
+                                    <thead>
+                                        <tr>
+                                            <th>S.No</th>
+                                            <th>Item Name</th>
+                                            <th>Batch</th>
+                                            <th>Expiry</th>
+                                            <th>Rate</th>
+                                            <th>Stock</th>
+                                            <th>Trasfer QTY</th>
+                                            <th>Balance QTY</th>
+                                            <th>Total</th>
+                                            <th>Delete</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <button class="btn btn-primary" onclick="SaveStockTransfer();">Save</button>
+                                <button class="btn btn-primary" onclick="Cancel();">Cancel</button>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <label>Total Amount:</label>
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <input type="text" id="txtGrandTotal" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                    <div id="ModalAdd" style="display: none; width: 600px;font-family:'Microsoft Sans Serif'; font-size: small;">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="panel-body">
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <table class="table table-bordered table-striped dataTable table-reflow tableHB" id="tblSelectBatch" style="color: black;margin-left: 5px;">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Item Name</th>
+                                                            <th>Batch</th>
+                                                            <th>Expiry</th>
+                                                            <th>Stock</th>
+                                                            <th>Rate</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="ModelInvoice" style="display: none; width: 600px;font-family:'Microsoft Sans Serif'; font-size: small;">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="panel-body">
+                                        <div class="row">
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <table class="table table-bordered table-striped dataTable table-reflow tableHB" id="tblInvoice" style="color: black;margin-left: 5px;">
+                                                    <thead>
+                                                        <tr>
+                                                            <th></th>
+                                                            <th>S.NO</th>
+                                                            <th>Transfer ID</th>
+                                                            <th>From WareHosue</th>
+                                                            <th>To WareHosue</th>
+                                                            <th>Transfer Date</th>
+                                                            <th>Staus</th>
+                                                            <th>Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

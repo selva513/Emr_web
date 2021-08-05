@@ -1,0 +1,682 @@
+﻿
+<style>
+    label {
+        font-size: 14px;
+        font-weight: 600;
+        font-style: serif;
+    }
+
+    hr {
+        margin: 20px 0;
+        border: 0;
+        border-top: 1px solid #E0DFDF;
+        border-bottom: 1px solid #FEFEFE;
+    }
+
+    .table-wrap {
+        height: 450px;
+        overflow-y: auto;
+    }
+
+    .btn {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        transition: box-shadow 0.28s;
+    }
+
+    .btn-primary {
+        color: #fff;
+        background-color: #337ab7;
+        border-color: #337ab7;
+        box-shadow: none;
+        border-width: 0 !important;
+        overflow: hidden;
+        position: relative;
+        user-select: none;
+        padding: 9px 14px 8px 14px;
+    }
+</style>
+
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+    });
+    function InvoiceSummaryPageLoad() {
+        try {
+            DateBind();
+        }
+        catch (e) {
+
+        }
+    }
+    function DateBind() {
+        try {
+            var today = new Date();
+            var currentyear = today.getFullYear();
+            var onetwentyyearback = currentyear - 120;
+            var daterange = onetwentyyearback + ':' + currentyear;
+
+            $('#txtinvfromdate').datepicker({
+                changeMonth: true,
+                changeYear: true,
+                yearRange: daterange,
+                dateFormat: 'dd/mm/yy',
+                endDate: "today",
+                maxDate: today,
+            });
+            $('#txtinvtodate').datepicker({
+                changeMonth: true,
+                changeYear: true,
+                yearRange: daterange,
+                dateFormat: 'dd/mm/yy',
+                endDate: "today",
+                maxDate: today,
+            });
+            $("#txtinvfromdate").datepicker('setDate', new Date());
+            $("#txtinvtodate").datepicker('setDate', new Date());
+            GetInvoiceSupplierMaster();
+        }
+        catch (e) {
+
+        }
+    }
+    function GetInvoiceSupplierMaster() {
+        try {
+            $.ajax({
+                url: "/Pharma/Invoice/GetAllSupplierMaster",
+                type: "GET",
+                dataType: "json",
+                success: function (response) {
+                    if (response.length > 0) {
+                        for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                            var PH_SupplierID = response[PCHeader].PH_SupplierID;
+                            var PH_SupplierName = response[PCHeader].PH_SupplierName;
+                            $('#ddlSuplier')
+                                .append($("<option></option>").val(PH_SupplierID).html(PH_SupplierName));
+                        }
+                    }
+                }
+            });
+        }
+        catch (e) {
+
+        }
+    }
+    function BindInvoice() {
+        try {
+            var StartDate = $('#txtinvfromdate').val();
+            var EndDate = $('#txtinvtodate').val();
+            var InvoiceType = $('#ddlInVatType').val();
+            if (InvoiceType == "Select")
+                InvoiceType = "";
+            var SuplierId = $('#ddlSuplier').val();
+            if (SuplierId == "Select")
+                SuplierId = 0;
+            $.ajax({
+                url: rootUrl + "/api/InvoiceSummaryApi/getAllInvoicebySuppplierID",
+                type: "GET",
+                data: {
+                    StartDate: StartDate,
+                    EndDate: EndDate,
+                    SupplierId: SuplierId,
+                    InvoiceType: InvoiceType
+                },
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    if (response.Header.length > 0) {
+                        $("#Container").html('');
+                        var html = "<table id='tblInvoice' class='table  table-bordered table-hover dataTable table-reflow' border=1 cellpadding=3 style='color:black;'>";
+                        html += "<thead><th>S.No</th><th>GST No</th><th>Supplier Name</th><th>Invoice Number</th><th>Invoice Date</th>";
+                        html += "<th>Tax</th><th>Net Amount</th><th>SGST</th><th>CGST</th></thead>";
+                        for (PCHeader = 0; PCHeader < response.Header.length; PCHeader++) {
+                            var ID = response.Header[PCHeader].ID;
+                            var GSTNO = response.Header[PCHeader].PH_Supplier_GSTRegNo;
+                            var SupplierName = response.Header[PCHeader].SupplierName;
+                            var SupplierInvoiceNum = response.Header[PCHeader].SupplierInvoiceNum;
+                            var SupplierInvoiceDate = response.Header[PCHeader].SupplierInvoiceDate;
+                            var InvoiceTax = response.Header[PCHeader].RowTax;
+                            var InvoiceNetAmt = response.Header[PCHeader].RowNetAmount;
+                            var SGST = response.Header[PCHeader].SGST;
+                            var CGST = response.Header[PCHeader].IGST;
+
+                            html += "<tr>";
+                            html += "<td>" + ID + "</td>";
+                            html += "<td>" + GSTNO + "</td>";
+                            html += "<td>" + SupplierName + "</td>";
+                            html += "<td >" + SupplierInvoiceNum + "</td>";
+                            html += "<td >" + SupplierInvoiceDate + "</td>";
+                            html += "<td>" + InvoiceTax + "</td>";
+                            html += "<td>" + InvoiceNetAmt + "</td>";
+                            html += "<td>" + SGST + "</td>";
+                            html += "<td>" + CGST + "</td>";
+                            html += "</tr>";
+                        }
+                        html += "</table>";
+                        $("#Container").html(html);
+                        if (response.Deatils.length > 0) {
+                            $("#Summary").html('');
+                            var html = "<table id='tblInvoiceSummary' class='table  table-bordered table-hover dataTable table-reflow' border=1 cellpadding=3 style='color:black;'>";
+                            html += "<thead><th>Group</th><th>Amount</th><th>Tax</th>";
+                            html += "<th>Net Amt</th></thead>";
+                            for (PCDetails = 0; PCDetails < response.Deatils.length; PCDetails++) {
+                                var VatGroup = response.Deatils[PCDetails].VatGroup;
+                                var Amount = response.Deatils[PCDetails].Amount;
+                                var Tax = response.Deatils[PCDetails].Tax;
+                                var NetAmt = response.Deatils[PCDetails].NetAmt;
+                                html += "<tr>";
+                                html += "<td>" + VatGroup + "</td>";
+                                html += "<td >" + Amount + "</td>";
+                                html += "<td >" + Tax + "</td>";
+                                html += "<td>" + NetAmt + "</td>";
+                                html += "</tr>";
+                            }
+                            html += "</table>";
+                            $("#Summary").html(html);
+                        }
+                    }
+                    else {
+                        $("#Container").html('');
+                        $("#Summary").html('');
+                        alert('No data Found');
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        catch (e) {
+
+        }
+    }
+    function downloadInvoiceReport() {
+        try {
+            var tab_text = "<table border='2px'><tr>";
+            var a = document.createElement('a');
+            var tab = document.getElementById('tblInvoice');// id of table
+            var data_type = 'data:application/vnd.ms-excel';
+            var filename = "InvoiceExport";
+            for (j = 0; j < tab.rows.length; j++) {
+                tab_text = tab_text + tab.rows[j].innerHTML + "</tr>";
+            }
+            tab_text = tab_text.trim() + "</table><br />";
+
+            var tab_text1 = "<table border='2px'><tr>";
+
+            var tab1 = document.getElementById('tblInvoiceSummary');// id of table
+            for (z = 0; z < tab1.rows.length; z++) {
+                tab_text1 = tab_text1 + tab1.rows[z].innerHTML + "</tr>";
+            }
+            tab_text1 = tab_text1.trim() + "</table>";
+            tab_text = tab_text + tab_text1;
+            a.href = data_type + ', ' + encodeURIComponent(tab_text);
+            a.download = filename + '.xls';
+            a.click();
+        }
+        catch (e) {
+            alert('No Data Found');
+        }
+        
+    }
+    function ClearInvoice() {
+        try {
+            $("#Container").html('');
+            $("#Summary").html('');
+            $('#ddlInVatType').val('Select');
+            $('#ddlSuplier').val('Select');
+            DateBind();
+        }
+        catch (e) {
+
+        }
+    }
+    function SearchInvoice(){
+        var StartDate = $('#txtinvfromdate').val();
+        var EndDate = $('#txtinvtodate').val();
+        var InvoiceType = $('#ddlInVatType').val();
+        if (InvoiceType == "Select")
+            InvoiceType = "";
+        var SuplierId = $('#ddlSuplier').val();
+        if (SuplierId == "Select")
+            SuplierId = 0;
+        else
+            SupplierId = parseInt($('#ddlSuplier').val());
+        GetInvoiceSummaryByDate(StartDate, EndDate, SuplierId, InvoiceType);
+    }
+    function GetInvoiceSummaryByDate(StartDt, EndDt, SupplierId, InvoiceType) {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        $.ajax({
+            url: "/api/InvoiceSummary/GetInvoiceSummaryByDate",
+            type: "GET",
+            data: {
+                StartDate: StartDt,
+                EndDate: EndDt,
+                SupplierId: SupplierId,
+                InvoiceType: InvoiceType
+            },
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                $("#tblInvoiceSummaryReport tbody").empty();
+                $("#tblInvoiceSummaryTotal tbody").empty();
+                $("#tblReturnInvoiceSummary tbody").empty();
+                $("#tblRetPurchaseSummaryTotal tbody").empty();
+                if (response.Header.length > 0) {
+                    var html = "";
+                    var gst = 0;
+                    var amount = 0;
+                    var iGST = 0;
+                    var cGST = 0;
+                    var sGST = 0;
+                    var netAmount = 0;
+                   
+
+                    var table = document.getElementById("tblInvoiceSummaryReport");
+                    for (PCHeader = 0; PCHeader < response.Header.length; PCHeader++) {
+                        var PH_IN_SUPP_INVNO = response.Header[PCHeader].PH_IN_SUPP_INVNO;
+                        var PH_SupplierName = response.Header[PCHeader].PH_SupplierName;
+                        var PH_Supplier_GSTRegNo = response.Header[PCHeader].PH_Supplier_GSTRegNo;
+                        var GST = response.Header[PCHeader].GST;
+                        gst = gst + GST;
+                        var Amount = response.Header[PCHeader].Amount;
+                        amount = amount + Amount;
+                        var IGST = response.Header[PCHeader].IGST;
+                        iGST = iGST + IGST;
+                        var CGST = response.Header[PCHeader].CGST;
+                        cGST = cGST + CGST;
+                        var SGST = response.Header[PCHeader].SGST;
+                        sGST = sGST + SGST;
+                        var NetAmount = response.Header[PCHeader].NetAmount;
+                        netAmount = netAmount + NetAmount;
+                        var InvoiceGSTType = response.Header[PCHeader].InvoiceGSTType;
+                        var PH_IN_ENTRYDATE = response.Header[PCHeader].PH_IN_ENTRYDATE;
+                        var Sno = PCHeader + 1;
+                        var $tr = $('#tblInvoiceSummaryReport tr[data-id="' + PH_IN_SUPP_INVNO + '"]');
+                        if ($tr.length === 0) {
+                            html += "<tr data-id=\"" + PH_IN_SUPP_INVNO + "\">";
+                            //html += "<td>" + Sno + "</td>";
+                            html += "<td>" + PH_IN_SUPP_INVNO + "</td>";
+                            html += "<td>" + PH_IN_ENTRYDATE + "</td>";
+                            html += "<td>" + PH_SupplierName + "</td>";
+                            html += "<td>" + PH_Supplier_GSTRegNo + "</td>";
+                            html += "<td>" + GST + "</td>";
+                            html += "<td>" + Amount + "</td>";
+                            html += "<td>" + IGST + "</td>";
+                            html += "<td>" + CGST + "</td>";
+                            html += "<td>" + SGST + "</td>";
+                            html += "<td>" + NetAmount + "</td>";
+                            html += "<td style='display:none;'>" + InvoiceGSTType + "</td>";
+                            html += "</tr>";
+                            $("#tblInvoiceSummaryReport tbody").append(html);
+                            html = "";
+                        }
+                        else {
+                            html += "<tr data-id=\"" + PH_IN_SUPP_INVNO + "\">";
+                            //html += "<td>" + Sno + "</td>";
+                            html += "<td></td>";
+                            html += "<td></td>";
+                            html += "<td></td>";
+                            html += "<td></td>";
+                            html += "<td>" + GST + "</td>";
+                            html += "<td>" + Amount + "</td>";
+                            html += "<td>" + IGST + "</td>";
+                            html += "<td>" + CGST + "</td>";
+                            html += "<td>" + SGST + "</td>";
+                            html += "<td>" + NetAmount + "</td>";
+                            html += "<td style='display:none;'>" + InvoiceGSTType + "</td>";
+                            html += "</tr>";
+                            $("#tblInvoiceSummaryReport tbody").append(html);
+                            html = "";
+                        }
+                       
+
+                    }
+                    html += "<tr>";
+                    //html += "<td>" + Sno + "</td>";
+                    html += "<td></td>";
+                    html += "<td></td>";
+                    html += "<td></td>";
+                    html += "<td></td>";
+                    html += "<td></td>";
+                    html += "<td>" + amount + "</td>";
+                    html += "<td>" + iGST + "</td>";
+                    html += "<td>" + cGST + "</td>";
+                    html += "<td>" + sGST + "</td>";
+                    html += "<td>" + netAmount + "</td>";
+                    html += "<td></td>";
+                    html += "</tr>";
+                    $("#tblInvoiceSummaryReport tbody").append(html);
+                    if (response.Summary.length) {
+                        var html = "";
+                        var amount = 0;
+                        var igst = 0;
+                        var cgst = 0;
+                        var sgst = 0;
+                        var netamount = 0;
+                        $("#tblInvoiceSummaryTotal tbody").empty();
+                        for (PCHeader = 0; PCHeader < response.Summary.length; PCHeader++) {
+                            var InvoiceGSTType = response.Summary[PCHeader].InvoiceGSTType;
+                            var GST = response.Summary[PCHeader].GST;
+                            var Amount = response.Summary[PCHeader].Amount;
+                            amount = amount + Amount;
+                            var IGST = response.Summary[PCHeader].IGST;
+                            igst = igst + IGST;
+                            var CGST = response.Summary[PCHeader].CGST;
+                            cgst = cgst + CGST;
+                            var SGST = response.Summary[PCHeader].SGST;
+                            sgst = sgst + SGST
+                            var NetAmount = response.Summary[PCHeader].NetAmount;
+                            netamount = netamount + NetAmount
+                            html += "<tr>";
+                            //html += "<td>" + Sno + "</td>";
+                            if (InvoiceGSTType ==="GST purchase")
+                                html += "<td> GST " + GST + " % (WITHIN THE STATE)</td>";
+                            else if (InvoiceGSTType ==="IGST purchase")
+                                html += "<td> IGST PURCHASES " + GST + " % (INTERSTATE)</td>";
+                            else
+                                html += "<td>" + GST + "</td>";
+
+                            html += "<td>" + Amount + "</td>";
+                            html += "<td>" + IGST + "</td>";
+                            html += "<td>" + CGST + "</td>";
+                            html += "<td>" + SGST + "</td>";
+                            html += "<td>" + NetAmount + "</td>";
+                            html += "</tr>";
+                            $("#tblInvoiceSummaryTotal tbody").append(html);
+                            html = "";
+                        }
+                        html += "<tr>";
+                        html += "<td></td>";
+                        html += "<td>" + amount + "</td>";
+                        html += "<td>" + igst + "</td>";
+                        html += "<td>" + cgst + "</td>";
+                        html += "<td>" + sgst + "</td>";
+                        html += "<td>" + netamount.toFixed(2) + "</td>";
+                        html += "</tr>";
+                        $("#tblInvoiceSummaryTotal tbody").append(html);
+                    }
+                    if (response.RetHeader.length > 0) {
+                        var html = "";
+                        var retamount = 0;
+                        var retigst = 0;
+                        var retcgst = 0;
+                        var retsgst = 0;
+                        var retnetamount = 0;
+                        $("#tblReturnInvoiceSummary tbody").empty();
+                        for (PCHeader = 0; PCHeader < response.RetHeader.length; PCHeader++) {
+                            var Ph_Ret_InvoiceNo = response.RetHeader[PCHeader].Ph_Ret_InvoiceNo;
+                            var PH_SupplierName = response.RetHeader[PCHeader].PH_SupplierName;
+                            var PH_Supplier_GSTRegNo = response.RetHeader[PCHeader].PH_Supplier_GSTRegNo;
+                            var Ph_Ret_GST = response.RetHeader[PCHeader].Ph_Ret_GST;
+                            var Amount = response.RetHeader[PCHeader].Amount;
+                            retamount = retamount + Amount;
+                            var IGST = response.RetHeader[PCHeader].IGST;
+                            retigst = retigst + IGST;
+                            var CGST = response.RetHeader[PCHeader].CGST;
+                            retcgst = retcgst + CGST;
+                            var SGST = response.RetHeader[PCHeader].SGST;
+                            retsgst = retsgst + SGST;
+                            var NetAmount = response.RetHeader[PCHeader].NetAmount;
+                            retnetamount = retnetamount + NetAmount;
+                            var InvoiceGSTType = response.RetHeader[PCHeader].InvoiceGSTType;
+                            var PH_IN_ENTRYDATE = response.RetHeader[PCHeader].PH_IN_ENTRYDATE;
+                            var Sno = PCHeader + 1;
+                            var $tr = $('#tblReturnInvoiceSummary tr[data-id="' + PH_IN_SUPP_INVNO + '"]');
+                            if ($tr.length === 0) {
+                                html += "<tr data-id=\"" + Ph_Ret_InvoiceNo + "\">";
+                                //html += "<td>" + Sno + "</td>";
+                                html += "<td>" + PH_IN_SUPP_INVNO + "</td>";
+                                html += "<td>" + PH_IN_ENTRYDATE + "</td>";
+                                html += "<td>" + PH_SupplierName + "</td>";
+                                html += "<td>" + PH_Supplier_GSTRegNo + "</td>";
+                                html += "<td>" + Ph_Ret_GST + "</td>";
+                                html += "<td>" + Amount + "</td>";
+                                html += "<td>" + IGST + "</td>";
+                                html += "<td>" + CGST + "</td>";
+                                html += "<td>" + SGST + "</td>";
+                                html += "<td>" + NetAmount + "</td>";
+                                html += "<td style='display:none;'>" + InvoiceGSTType + "</td>";
+                                html += "</tr>";
+                                $("#tblReturnInvoiceSummary tbody").append(html);
+                                html = "";
+                            }
+                            else {
+                                html += "<tr data-id=\"" + Ph_Ret_InvoiceNo + "\">";
+                                //html += "<td>" + Sno + "</td>";
+                                html += "<td></td>";
+                                html += "<td></td>";
+                                html += "<td></td>";
+                                html += "<td></td>";
+                                html += "<td>" + Ph_Ret_GST + "</td>";
+                                html += "<td>" + Amount + "</td>";
+                                html += "<td>" + IGST + "</td>";
+                                html += "<td>" + CGST + "</td>";
+                                html += "<td>" + SGST + "</td>";
+                                html += "<td>" + NetAmount + "</td>";
+                                html += "<td style='display:none;'>" + InvoiceGSTType + "</td>";
+                                html += "</tr>";
+                                $("#tblReturnInvoiceSummary tbody").append(html);
+                                html = "";
+                            }
+                        }
+                        html += "<tr>";
+                        html += "<td></td>";
+                        html += "<td></td>";
+                        html += "<td></td>";
+                        html += "<td></td>";
+                        html += "<td></td>";
+                        html += "<td>" + retamount + "</td>";
+                        html += "<td>" + retigst + "</td>";
+                        html += "<td>" + retcgst + "</td>";
+                        html += "<td>" + retsgst + "</td>";
+                        html += "<td>" + retnetamount + "</td>";
+                        html += "<td ></td>";
+                        html += "</tr>";
+                        $("#tblReturnInvoiceSummary tbody").append(html);
+                    }
+                    if (response.RetSummary.length) {
+                        var html = "";
+                        var RetSummaryAmount = 0;
+                        var RetSummaryIGST = 0;
+                        var RetSummaryCGST = 0;
+                        var RetSummarySGST = 0;
+                        var RetSummaryNetAmount = 0;
+                       
+                        $("#tblRetPurchaseSummaryTotal tbody").empty();
+                        for (PCHeader = 0; PCHeader < response.RetSummary.length; PCHeader++) {
+                            var InvoiceGSTType = response.RetSummary[PCHeader].InvoiceGSTType;
+                            var Ph_Ret_GST = response.RetSummary[PCHeader].Ph_Ret_GST;
+                            var Amount = response.RetSummary[PCHeader].Amount;
+                            RetSummaryAmount = RetSummaryAmount + Amount;
+                            var IGST = response.RetSummary[PCHeader].IGST;
+                            RetSummaryIGST = RetSummaryIGST + IGST
+                            var CGST = response.RetSummary[PCHeader].CGST;
+                            RetSummaryCGST = RetSummaryCGST + CGST;
+                            var SGST = response.RetSummary[PCHeader].SGST;
+                            RetSummarySGST = RetSummarySGST + SGST
+                            var NetAmount = response.RetSummary[PCHeader].NetAmount;
+                            RetSummaryNetAmount = RetSummaryNetAmount + NetAmount;
+                            html += "<tr>";
+                            //html += "<td>" + Sno + "</td>";
+                            if (InvoiceGSTType === "GST purchase")
+                                html += "<td> GST " + Ph_Ret_GST + " % (WITHIN THE STATE)</td>";
+                            else if (InvoiceGSTType === "IGST purchase")
+                                html += "<td> IGST PURCHASES " + Ph_Ret_GST + " % (INTERSTATE)</td>";
+                            else
+                                html += "<td>" + Ph_Ret_GST + "</td>";
+
+                            html += "<td>" + Amount + "</td>";
+                            html += "<td>" + IGST + "</td>";
+                            html += "<td>" + CGST + "</td>";
+                            html += "<td>" + SGST + "</td>";
+                            html += "<td>" + NetAmount + "</td>";
+                            html += "</tr>";
+                            $("#tblRetPurchaseSummaryTotal tbody").append(html);
+                            html = "";
+                        }
+                        html += "<tr>";
+                        html += "<td></td>";
+                        html += "<td>" + RetSummaryAmount + "</td>";
+                        html += "<td>" + RetSummaryIGST + "</td>";
+                        html += "<td>" + RetSummaryCGST + "</td>";
+                        html += "<td>" + RetSummarySGST + "</td>";
+                        html += "<td>" + RetSummaryNetAmount + "</td>";
+                        html += "</tr>";
+                        $("#tblRetPurchaseSummaryTotal tbody").append(html);
+                    }
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+</script>
+
+
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+
+        <div class="card-body">
+            <div class="row">
+                <div class="col-xs-6 col-sm-6 col-md-6">
+                    <div class="form-group">
+                        <label>
+                            From Date
+                        </label>
+                        <input type="text" id="txtinvfromdate" placeholder="From Date" class="form-control" />
+                    </div>
+                </div>
+                <div class="col-xs-6 col-sm-6 col-md-6">
+                    <div class="form-group">
+                        <label>
+                            To Date
+                        </label>
+                        <input type="text" id="txtinvtodate" placeholder="To Date" class="form-control" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-xs-6 col-sm-6 col-md-6">
+                    <div class="form-group">
+                        <label>
+                            Invoice VAT Type
+                        </label>
+                        <div class="form-group">
+                            <select class="form-control" id="ddlInVatType" style="cursor:pointer;">
+                                <option value="Select">Select</option>
+                                <option value="GST purchase">SGST + CGST</option>
+                                <option value="IGST purchase">IGST</option>
+                                @*<option value="Cst purchase">Cst purchase</option>*@
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-6 col-sm-6 col-md-6">
+                    <div class="form-group">
+                        <label>
+                            Supplier Name
+                        </label>
+                        <div class="form-group">
+                            <select class="form-control" id="ddlSuplier" style="cursor:pointer;">
+                                <option value="Select">Select</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <button class="btn btn-primary" onclick="SearchInvoice();">Search</button>
+                    <button class="btn btn-primary" id="btnExport" onclick="downloadInvoiceReport();">Export Excel</button>
+                    <button class="btn btn-primary" onclick="ClearInvoice();">Cancel</button>
+                </div>
+            </div>
+            <br />
+            <h4>Purchase Summary</h4>
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <table class="table table-bordered table-striped" id="tblInvoiceSummaryReport">
+                        <thead>
+                            <tr>
+                                <th>Invoice No</th>
+                                <th>Invoice Date</th>
+                                <th>Supplier Name</th>
+                                <th>GSTIN</th>
+                                <th>GST Rate</th>
+                                <th>Taxable Value</th>
+                                <th>IGST Paid</th>
+                                <th>CGST Paid</th>
+                                <th>SGST Paid</th>
+                                <th>Total Bill Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12" id="Summary">
+                    <table class="table table-bordered table-striped" id="tblInvoiceSummaryTotal">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Taxable Value</th>
+                                <th>IGST</th>
+                                <th>CGST</th>
+                                <th>SGST</th>
+                                <th>Total Input</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <br />
+            <h4>Purchase Return Summary</h4>
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <table class="table table-bordered table-striped" id="tblReturnInvoiceSummary">
+                        <thead>
+                            <tr>
+                                <th>Invoice No</th>
+                                <th>Invoice Date</th>
+                                <th>Supplier Name</th>
+                                <th>GSTIN</th>
+                                <th>GST Rate</th>
+                                <th>Taxable Value</th>
+                                <th>IGST Paid</th>
+                                <th>CGST Paid</th>
+                                <th>SGST Paid</th>
+                                <th>Total Bill Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12" id="Summary">
+                    <table class="table table-bordered table-striped" id="tblRetPurchaseSummaryTotal">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Taxable Value</th>
+                                <th>IGST</th>
+                                <th>CGST</th>
+                                <th>SGST</th>
+                                <th>Total Input</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

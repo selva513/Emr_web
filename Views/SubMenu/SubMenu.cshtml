@@ -1,0 +1,145 @@
+﻿
+@{
+    ViewData["Title"] = "SubMenu";
+}
+@using Syncfusion.EJ2
+@using Newtonsoft.Json
+@model Emr_web.Models.SubMenuView
+<link href="~/AutoComplete/jquery-ui_1.11.4.css" rel="stylesheet" />
+<script src="~/AutoComplete/jquery-1.10.2.js"></script>
+<script src="~/AutoComplete/jquery-ui_1.11.4.js"></script>
+<script>
+    $(document).ready(function () {
+        var instance = ej.base.getComponent(document.getElementById("checkedactive"), "checkbox");
+        instance.checked = true;
+    });
+    function Mainmenuonfiltering(e) {
+            var query = new ej.data.Query();
+            query = (e.text !== '') ? query.where('M_Menuname', 'Contains', e.text, true) : query;
+            e.updateData(@Html.Raw(JsonConvert.SerializeObject(ViewBag.MainMenu)), query);
+    }
+    function rowSelected(args) {
+        var selectedrecords = this.getSelectedRecords();  // get the selected records.
+        document.getElementById('submenuid').ej2_instances[0].value = args.data.S_Menu_id;
+        document.getElementById('mainmenuname').ej2_instances[0].value = selectedrecords[0].M_Menuname;
+        document.getElementById('submenuname').ej2_instances[0].value = selectedrecords[0].S_MenuName;
+        document.getElementById('submenulink').ej2_instances[0].value = selectedrecords[0].S_Menu_Link;
+        $("#btnsave").hide();
+        $("#btnupdate").show();
+    }
+    function CancelClick() {
+        try {
+            window.location.href = "/SubMenu/SubMenu";
+        }
+        catch (e) {
+
+        }
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-primary">
+                        <div class="card-header" style="margin-top:15px;">
+                            <h3 class="card-title">Patient Registration</h3>
+                            <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                        </div>
+                        <form role="form" autocomplete="off" method="post" asp-controller="SubMenu" asp-action="InsertSubMenu" data-toggle="validator"
+                              onkeydown="return event.key != 'Enter';">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                        <div class="form-group">
+                                            <ejs-textbox id="submenuid" placeholder="Sub Menu Id" value="0" ejs-for="S_Menu_id"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <ejs-combobox id="mainmenuname" autofill="true" ejs-for="S_MainMenu_id"
+                                                          allowFiltering="true" filtering="Mainmenuonfiltering"
+                                                          dataSource="@ViewBag.MainMenu" placeholder="Main Menu Name"
+                                                          popupHeight="230px">
+                                                <e-combobox-fields text="M_Menuname" value="M_Menu_id"></e-combobox-fields>
+                                            </ejs-combobox>
+                                            <div class="help-block with-errors"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <ejs-textbox id="submenuname" placeholder="Sub Menu Name" ejs-for="S_MenuName" autofocus required></ejs-textbox>
+                                            <div class="help-block with-errors"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <ejs-textbox id="submenulink" placeholder="Sub Menu Link" ejs-for="S_Menu_Link" autofocus required></ejs-textbox>
+                                            <div class="help-block with-errors"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <ejs-checkbox id="checkedactive" checked="true" name="S_IsActive" label="Active" ejs-for="S_IsActive"></ejs-checkbox>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <div class="form-group">
+                                                @*<ejs-button id="btnhospital" type="submit" content="Save" isPrimary="true"></ejs-button>*@
+                                                <button type="submit" id="btnsave" class="btn btn-info Save">
+                                                    Save
+                                                </button>
+                                                <button type="submit" id="btnupdate" style="display:none;" class="btn btn-info Update">
+                                                    Update
+                                                </button>
+                                                <button type="button" id="btnCancel" onclick="CancelClick();" class="btn btn-info">
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
+                                            <ejs-grid id="GridSubmenu" dataSource="ViewBag.Submenudetail" allowPaging="true"
+                                                      toolbar="@(new List<string>() {"Search"})" rowSelected="rowSelected">
+                                                <e-grid-searchsettings fields="@(new string[] { "S_Menu_id","S_MenuName","M_Menuname"})"
+                                                                       operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                                <e-grid-selectionsettings type="Single"></e-grid-selectionsettings>
+                                                <e-grid-pagesettings pageSize="10" pageCount="10"></e-grid-pagesettings>
+                                                <e-grid-columns>
+                                                    <e-grid-column field="S_Menu_id" headerText="Sub Menu Id"></e-grid-column>
+                                                    <e-grid-column field="S_MenuName" headerText="Sub Menu Name"></e-grid-column>
+                                                    <e-grid-column field="M_Menuname" headerText="Main Menu Name"></e-grid-column>
+                                                    <e-grid-column field="S_Menu_Link" headerText="Sub Menu Link"></e-grid-column>
+                                                </e-grid-columns>
+                                            </ejs-grid>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+
+

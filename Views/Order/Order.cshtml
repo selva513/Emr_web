@@ -1,0 +1,545 @@
+﻿
+@{
+    ViewData["Title"] = "Order";
+}
+@using Syncfusion.EJ2.Navigations;
+<link href="~/AutoComplete/jquery-ui_1.11.4.css" rel="stylesheet" />
+<script src="~/AutoComplete/jquery-1.10.2.js"></script>
+<script src="~/AutoComplete/jquery-ui_1.11.4.js"></script>
+
+<style type="text/css">
+    #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loading1 {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loadingcontent {
+        display: table;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loadingspinner {
+        display: table-cell;
+        vertical-align: middle;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+        padding-top: 80px;
+    }
+</style>
+<style>
+    select {
+        margin-left: 10px;
+    }
+
+    .btn {
+        padding-top: 13px;
+        margin-bottom: 6px;
+        border-radius: 2px;
+        margin-left: 30px;
+        width: 50px;
+    }
+
+    a {
+        color: #0d638f;
+    }
+
+    .form-group {
+        margin-top: 20px;
+        font-family: serif;
+        font-weight: 400;
+    }
+
+    table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    .head {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+        font-family: serif;
+        color: gray;
+        font-size: 14px;
+        background-color: #7e8ae33b;
+    }
+
+    .head1 {
+        border: 1px solid #00bcd4;
+        text-align: left;
+        padding: 8px;
+        font-family: serif;
+        /*color: black;*/
+        font-size: 14px;
+        cursor: pointer;
+        /*color:#00ff21;*/
+    }
+
+    .head2 {
+        border: 1px solid #8bc34a;
+        text-align: left;
+        padding: 8px;
+        font-family: serif;
+        /*color: black;*/
+        font-size: 14px;
+        cursor: pointer;
+        /*border-color: #0d638f !important;*/
+        /*color:#0d638f;*/
+    }
+    
+    th {
+        border: 1px solid #dddd;
+        text-align: center;
+        padding: 8px;
+        font-size: 15px;
+        color: black;
+    }
+
+    td {
+        /*border: 1px solid;*/
+        text-align: left;
+        padding: 8px;
+    }
+
+    tr:nth-child(even) {
+        background-color: #8080800d;
+    }
+
+    .container-fluid {
+        background-color: white;
+    }
+</style>
+<script>
+    function getValues(url) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: false,
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (data) {
+                result = data;
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return result;
+    }
+    function postValues(url, jdata) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(jdata),
+            dataType: "json",
+            async: false,
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (data) {
+                result = data;
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return result;
+    }
+</script>
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        Statusbind();
+        ClinicBind();
+        //BindOrdertable();
+    });
+    function BindOrdertable() {
+        try {
+            var r = document.getElementById("drprowcount");
+            var RowCount = r.options[r.selectedIndex].text;
+
+            var s = document.getElementById("drpstatus");
+            var StatusID = s.options[s.selectedIndex].value;
+
+            var txtsearch = document.getElementById("txtordersearch").value;
+            var ClinicId = $("#drpOrderClinic").val();
+            var PatType = $("#drpPatType").val();
+            var tData = getValues("/Order/GetTodayPatients?ClinicId=" + ClinicId + "&Search=" + txtsearch + "&RowCount=" + RowCount + "&StatusID=" + StatusID + "&PatType=" + PatType);
+            BindOrderList(tData);
+        }
+        catch (e) {
+
+        }
+    }// add row select method in tr tag
+    function BindOrderList(tData) {
+        try {
+            var html = "";
+            var GenderImageUrl = "";
+            if (tData != null && tData != '') {
+                $('#tblorder tbody').empty();
+                for (var i = 0; i < tData.length; i++) {
+                    var SNO = tData[i].SNO;
+                    var PatSeqID = tData[i].PatSeqID;
+                    var PatientID = tData[i].PatientID;
+                    var FirstName = tData[i].FirstName;
+                    var SecondName = tData[i].SecondName;
+                    var Gender = tData[i].Gender;
+                    var DoctorName = tData[i].DoctorName;
+                    var Status = tData[i].Status;
+                    var VisitID = tData[i].VisitID;
+                    var DoctorID = tData[i].DoctorID;
+                    var DueAmt = tData[i].DueAmt;
+                    var PatientType = tData[i].PatientType;
+                    var MobileNumber = tData[i].MobileNumber;
+                    var PatientTypeName = tData[i].PatientTypeName;
+                    var StatusName = tData[i].StatusName;
+                    var OrderID = tData[i].OrderID;
+                    var PatType = tData[i].PatType;
+
+                    if (Gender == 'Male')
+                        GenderImageUrl = "/images/MALE.png";
+                    else if (Gender == 'Female')
+                        GenderImageUrl = "/images/FEMALE.png";
+                    else if (Gender == 'Others')
+                        GenderImageUrl = "/images/OTHERS.png";
+                    if (PatType == "OP") {
+                        html += "<tr class='head1' onclick='SelectedBillNo(this)' >";
+
+                    }
+                    else if (PatType == "IP") {
+                        html += "<tr class='head2' onclick='SelectedBillNo(this)' >";
+
+                    }
+                    //html += "<tr class='head1' onclick='SelectedBillNo(this)'>";
+                    html += "<td>" + SNO + "</td>"; //0
+                    html += " <td>" + PatientID + "</td>"; //1
+                    html += "<td>" + FirstName + " " + SecondName+"</td>"; //2
+                    html += "<td><img src=" + GenderImageUrl + " title=" + Gender + "></td>"; //3
+                    html += "<td>" + SNO + "</td>"; //4
+                    html += "<td>" + MobileNumber + "</td>"; //5
+                    html += "<td><img src=" + PatientType + " title=" + PatientTypeName + "></td>"; //6
+                    html += "<td>" + DoctorName + "</td>"; //7
+                    html += "<td>" + DueAmt + "</td>"; //8
+                    html += "<td >" + PatType + "</td>"; //9
+                    html += "<td><img src=" + Status + " title=" + StatusName + "></td>"; //10
+                    html += "<td style='display:none;'>" + DoctorID + "</td>"; //11
+                    html += "<td style='display:none;'>" + VisitID + "</td>"; //12
+                    html += "<td style='display:none;'>" + PatSeqID + "</td>"; //13
+                    html += "<td style='display:none;'>" + OrderID + "</td>"; //14
+                    html += "<td style='display:none;'>" + Gender + "</td>"; //15
+                    html += "</tr>";
+                }
+            }
+            else if (tData == '' || tData == null) {
+                $('#tblorder tbody').empty();
+                html += "<tr class='head1'>";
+                html += "<td style='text-align:center;' colspan='12'>No Records Found</td>";
+                html += "</tr>";
+            }
+            $('#tblorder tbody').html(html);
+        }
+        catch (e) {
+
+        }
+    }
+    function Statusbind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/OrderApi/GetOrderStatus",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#drpstatus").empty();
+                    $.each(data, function (key, value) {
+                        $("#drpstatus").append($("<option></option>").val(value.SeqID).html(value.StatusName));
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function ClinicBind() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/OrderApi/GetClinicByHospitalID",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#drpOrderClinic").empty();
+                    $.each(data, function (key, value) {
+                        $("#drpOrderClinic").append($("<option></option>").val(value.ClinicID).html(value.ClinicName));
+                    });
+                    GetPinClinic();
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {console.log(e);}
+    }
+    function StatusChange() {
+        try {
+            var e = document.getElementById("drpstatus");
+            var StatusID = e.options[e.selectedIndex].value;
+            var ClinicId = $("#drpOrderClinic").val();
+            var tData = getValues("/Order/GetTodayPatientsByStatus?StatusID=" + StatusID + "&ClinicId=" + ClinicId);
+            BindOrderList(tData);
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+    function RowCountChange() {
+        try {
+            var e = document.getElementById("drprowcount");
+            var RowCount = e.options[e.selectedIndex].text;
+            var ClinicId = $("#drpOrderClinic").val();
+            var tData = getValues("/Order/GetTodayPatientsByRowCount?RowCount=" + RowCount + "&ClinicId=" + ClinicId);
+            BindOrderList(tData);
+        }
+        catch (e) {
+
+        }
+    }
+    function TableSearch() {
+        try {
+            //var $rows = $('#tblorder tr');
+            //$('#txtordersearch').keyup(function () {
+            //    var val = $.trim($(this).val()).replace(/ +/g, ' ').toLowerCase();
+
+            //    $rows.show().filter(function () {
+            //        var text = $(this).text().replace(/\s+/g, ' ').toLowerCase();
+            //        return !~text.indexOf(val);
+            //    }).hide();
+            //});
+            var txtsearch = document.getElementById("txtordersearch").value;
+            var ClinicId = $("#drpOrderClinic").val();
+            var tData = getValues("/Order/GetTodayPatientsBySearch?Search=" + txtsearch + "&ClinicId=" + ClinicId);
+            BindOrderList(tData);
+        }
+        catch (e) {
+
+        }
+    }
+    // Selevendiran
+    function SelectedBillNo(SelectedRow) {
+        sessionStorage.setItem("PatientID", SelectedRow.cells[1].innerHTML);
+        sessionStorage.setItem("FirstName", SelectedRow.cells[2].innerHTML);
+        sessionStorage.setItem("Gender", SelectedRow.cells[15].innerHTML);
+        sessionStorage.setItem("MobileNumber", SelectedRow.cells[5].innerHTML);
+        sessionStorage.setItem("DoctorID", SelectedRow.cells[11].innerHTML);
+        sessionStorage.setItem("VisitID", SelectedRow.cells[12].innerHTML);
+        sessionStorage.setItem("OrderID", SelectedRow.cells[14].innerHTML);
+        openOrderEntry();
+    }
+    function GetPinClinic() {
+        try {
+            $.ajax({
+                url: rootUrl + "/api/OrderApi/GetClinicPin",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    if (response.length > 0) {
+                        var ClinicId = response[0].ClinicId;
+                        $("#drpOrderClinic").val(ClinicId);
+                    }
+                    BindOrdertable();
+                }
+            });
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+    function ClinicPinclick() {
+        try {
+            var ClinicId = $("#drpOrderClinic").val();
+            $.ajax({
+                url: rootUrl + "/api/OrderApi/CreateOrUpdateClinicPin",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data: {
+                    ClinicId: ClinicId
+                },
+                success: function (response) {
+                    if (response) {
+                        alert('Clinic Pinned Successfully.');
+                    }
+                },
+            });
+
+        } catch (e) {
+            console.log(e);
+        }
+    }
+    function openOrderEntry() {
+       var url = '@Url.Action("Orders", "Order")';
+        window.location.href = url;
+        win.focus();
+    }
+    // Selvendiran
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div id="loading">
+            <div id="loadingcontent">
+                @*<p id="loadingspinner">
+                        Please Wait...
+                    </p>*@
+                <div id="loadingspinner">
+                    <img src="~/images/loading.gif" style="width:100px;height:100px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-wrapper">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-primary">
+                    <div class="card-header" style="margin-top:15px;">
+                        <h3 class="card-title">Patient Order</h3>
+                        <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <input type="text" placeholder="Search" id="txtordersearch" onkeyup="BindOrdertable();"
+                                       class="form-control" />
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div class="row">
+                                    <div class="col-xs-3 col-sm-3 col-md-3">
+                                        <label style="vertical-align:sub;">Status:</label>
+                                    </div>
+                                    <div class="col-xs-9 col-sm-9 col-md-9">
+                                        <select id="drpstatus" onchange="BindOrdertable();" class="form-control"
+                                                style="font-family:serif;cursor:pointer;">
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <div class="row">
+                                    <div class="col-xs-7 col-sm-7 col-md-7" style="text-align:right;">
+                                        <label style="vertical-align:sub;">Display Row Count :</label>
+                                    </div>
+                                    <div class="col-xs-5 col-sm-5 col-md-5">
+                                        <select id="drprowcount" style="cursor:pointer;" onchange="BindOrdertable();" class="form-control">
+                                            <option>10</option>
+                                            <option>20</option>
+                                            <option>30</option>
+                                            <option>40</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xs-5 col-sm-5 col-md-5">
+                                <div class="row">
+                                    <div class="col-xs-5 col-sm-5 col-md-5">
+                                        <div class="row">
+                                            <div class="col-xs-5 col-sm-5 col-md-5" style="text-align:right;">
+                                                <label style="vertical-align:sub;">Pat Type :</label>
+                                            </div>
+                                            <div class="col-xs-7 col-sm-7 col-md-6">
+                                                <select id="drpPatType" class="form-control" onchange="BindOrdertable();">
+                                                    <option value="All">All</option>
+                                                    <option value="OP">OP</option>
+                                                    <option value="IP">IP</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-1 col-sm-1 col-md-1" style="text-align:right;">
+                                        <label style="vertical-align:sub;">Clinic:</label>
+                                    </div>
+                                    <div class="col-xs-5 col-sm-5 col-md-5">
+                                        <select id="drpOrderClinic" onchange="BindOrdertable();"
+                                                style="" class="form-control"></select>
+                                    </div>
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <img src="../images/pinlightred.png" title="Pin" width="30" height="30" onclick="ClinicPinclick()"
+                                             style="cursor:pointer;margin-top:5px;" />
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <table id="tblorder">
+                                    <thead>
+                                        <tr class="head">
+                                            <th style="width:3%">S.No</th>
+                                            <th style="width:10%">UHID</th>
+                                            <th style="width:20%">Patient Name</th>
+                                            <th style="width:2%">Gender</th>
+                                            <th style="width:5%">T No</th>
+                                            <th style="width:13%">Mobile No</th>
+                                            <th style="width:3%">Type</th>
+                                            <th style="width:22%">Doctor</th>
+                                            <th style="width: 9%;"> Due</th>
+                                            <th style="width:8%;">Pat Type</th>
+                                            <th style="width:1%">Status</th>
+                                            <th style="display:none;">DoctorID</th>
+                                            <th style="display:none;">VisitID</th>
+                                            <th style="display:none;">PatseqID</th>
+                                            <th style="display:none;">OrderID</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,340 @@
+﻿@{
+    ViewData["Title"] = "Account Posting";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<style>
+    label {
+        font-size: 14px;
+        font-weight: 600;
+        font-style: serif;
+    }
+
+    hr {
+        margin: 20px 0;
+        border: 0;
+        border-top: 1px solid #E0DFDF;
+        border-bottom: 1px solid #FEFEFE;
+    }
+</style>
+
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        var today = new Date();
+        var currentyear = today.getFullYear();
+        var onetwentyyearback = currentyear - 120;
+        var daterange = onetwentyyearback + ':' + currentyear;
+
+        $('#txtfromdate').datepicker({
+            changeMonth: true,
+            changeYear: true,
+            yearRange: daterange,
+            dateFormat: 'dd/mm/yy',
+            endDate: "today",
+            maxDate: today,
+        });
+        $('#txttodate').datepicker({
+            changeMonth: true,
+            changeYear: true,
+            yearRange: daterange,
+            dateFormat: 'dd/mm/yy',
+            endDate: "today",
+            maxDate: today,
+        });
+        $("#txtfromdate").datepicker('setDate', new Date(currentyear, today.getMonth(), today.getDate() - 10));
+        $("#txttodate").datepicker('setDate', new Date());
+        var GetdataType = "All";
+        BindAllPostingData(GetdataType);
+    });
+    function BindAllPostingData(GetdataType) {
+        try {
+            var fromdate = $("#txtfromdate").val();
+            var todate = $("#txttodate").val();
+            $.ajax({
+                url: rootUrl + "/api/AccountPostingApi/GetPostingData",
+                type: "GET",
+                data: {
+                    FromDate: fromdate,
+                    Todate: todate,
+                    GetDataType: GetdataType
+                },
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    $("#tblAccountposting tbody").empty();
+                    $(response).find("Receipt").each(function () {
+                        var Sno = ($(this).find("RowNumber").text());
+                        var TRANS_DATE = ($(this).find("TRANS_DATE").text());
+                        var DATE = ($(this).find("DATE").text());
+                        var SHIFT = ($(this).find("SHIFT").text());
+                        var OPPHAMT = ($(this).find("OPPHAMT").text());
+                        var OPPHTAX = ($(this).find("OPPHTAX").text());
+                        var OPPHTOTAL = ($(this).find("OPPHTOTAL").text());
+                        var IPPHAMT = ($(this).find("IPPHAMT").text());
+                        var IPPHTAX = ($(this).find("IPPHTAX").text());
+                        var IPPHTOTAL = ($(this).find("IPPHTOTAL").text());
+                        var PHARMAMT = ($(this).find("PHARMAMT").text());
+                        var PHARMTAX = ($(this).find("PHARMTAX").text());
+                        var PHARMTOTAL = ($(this).find("PHARMTOTAL").text());
+                        var RoundPHARMTOTAL = ($(this).find("RoundPHARMTOTAL").text());
+                        var FREETOT = ($(this).find("FREETOT").text());
+                        var FREETAX = ($(this).find("FREETAX").text());
+                        var UPDATE = ($(this).find("UPDATE").text());
+
+                        var date = new Date(TRANS_DATE);
+                        year = "" + date.getFullYear();
+                        month = "" + (date.getMonth() + 1); if (month.length == 1) { month = "0" + month; }
+                        day = "" + date.getDate(); if (day.length == 1) { day = "0" + day; }
+
+                        var TransDate = day + "-" + month + "-" + year;
+
+                        SHIFT = "M";
+
+                        now = new Date();
+                        year = "" + now.getFullYear();
+                        month = "" + (now.getMonth() + 1); if (month.length == 1) { month = "0" + month; }
+                        day = "" + now.getDate(); if (day.length == 1) { day = "0" + day; }
+                        hour = "" + now.getHours(); if (hour.length == 1) { hour = "0" + hour; }
+                        minute = "" + now.getMinutes(); if (minute.length == 1) { minute = "0" + minute; }
+                        second = "" + now.getSeconds(); if (second.length == 1) { second = "0" + second; }
+
+                        DATE = day + "-" + month + "-" + year;
+
+                        var btncolor = "";
+                        if (UPDATE == "Post") {
+                            btncolor = "style='background-color: green;text-align: center;cursor: pointer; color: white;'";
+                        }
+                        else if (UPDATE == "Repost") {
+                            btncolor = "style='background-color: #ffb848;;text-align: center;cursor: pointer; color: white;'";
+                        }
+                        else {
+                            btncolor = "style='background-color: #C1121A;;text-align: center;cursor: pointer; color: white;'";
+                        }
+                        $("#tblAccountposting tbody").append
+                            ("<tr style='text-align: -webkit-center;'>" + "<td>" + Sno + "</td>" +
+                                "<td >" + TransDate + "</td>" +
+                                "<td style='display:none;'>" + DATE + "</td>" +
+                                "<td style='display:none;'>" + SHIFT + "</td>" +
+                                "<td>" + OPPHAMT + "</td>" +
+                                "<td>" + OPPHTAX + "</td>" +
+                                "<td>" + OPPHTOTAL + "</td>" +
+                                "<td>" + IPPHAMT + "</td>" +
+                                "<td>" + IPPHTAX + "</td>" +
+                                "<td>" + IPPHTOTAL + "</td>" +
+                                "<td>" + PHARMAMT + "</td>" +
+                                "<td>" + PHARMTAX + "</td>" +
+                                "<td>" + PHARMTOTAL + "</td>" +
+                                "<td>" + RoundPHARMTOTAL + "</td>" +
+                                "<td>" + FREETOT + "</td>" +
+                                "<td>" + FREETAX + "</td>" +
+                                "<td style='display:none;' onclick='OnselectedPatientsRow(this)'  " + btncolor + " >" + UPDATE + "</td>" +
+                                "<td  onclick='OnselectedPatientsRowforAccPost(this)' style='text-align: center;cursor: pointer; ' > Export </td>" +
+                                + "</tr>");
+                    });
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+    function OnselectedPatientsRowforAccPost(e) {
+        try {
+            var cell = e.target || window.event.srcElement;
+            var RowNum = cell.parentNode.rowIndex;
+
+            var TRANS_DATE = document.getElementById("tblAccountposting").rows[RowNum].cells[1].innerHTML;
+            var DATE = document.getElementById("tblAccountposting").rows[RowNum].cells[2].innerHTML;
+            var SHIFT = document.getElementById("tblAccountposting").rows[RowNum].cells[3].innerHTML;
+            var OPPHAMT = parseFloat(document.getElementById("tblAccountposting").rows[RowNum].cells[4].innerHTML);
+
+            var OPPHTAX = parseFloat(document.getElementById("tblAccountposting").rows[RowNum].cells[5].innerHTML);
+            var OPPHTOTAL = parseFloat(document.getElementById("tblAccountposting").rows[RowNum].cells[6].innerHTML);
+            var IPPHAMT = parseFloat(document.getElementById("tblAccountposting").rows[RowNum].cells[7].innerHTML);
+            var IPPHTAX = parseFloat(document.getElementById("tblAccountposting").rows[RowNum].cells[8].innerHTML);
+            var IPPHTOTAL = parseFloat(document.getElementById("tblAccountposting").rows[RowNum].cells[9].innerHTML);
+            var PHARMAMT = parseFloat(document.getElementById("tblAccountposting").rows[RowNum].cells[10].innerHTML);
+            var PHARMTAX = parseFloat(document.getElementById("tblAccountposting").rows[RowNum].cells[11].innerHTML);
+            var PHARMTOTAL = parseFloat(document.getElementById("tblAccountposting").rows[RowNum].cells[13].innerHTML);
+            var FREETOT = parseFloat(document.getElementById("tblAccountposting").rows[RowNum].cells[14].innerHTML);
+            var FREETAX = parseFloat(document.getElementById("tblAccountposting").rows[RowNum].cells[15].innerHTML);
+            var Status = document.getElementById("tblAccountposting").rows[RowNum].cells[16].innerHTML;
+
+            var AccountPosting = {
+                TRANS_DATE: TRANS_DATE,
+                DATE: DATE,
+                SHIFT: SHIFT,
+                OPPHAMT: OPPHAMT,
+                OPPHTAX: OPPHTAX,
+                OPPHTOTAL: OPPHTOTAL,
+                IPPHAMT: IPPHAMT,
+                IPPHTAX: IPPHTAX,
+                IPPHTOTAL: IPPHTOTAL,
+                PHARMAMT: PHARMAMT,
+                PHARMTAX: PHARMTAX,
+                PHARMTOTAL: PHARMTOTAL,
+                FREETOT: FREETOT,
+                FREETAX: FREETAX,
+                Status: Status
+            }
+            $.ajax({
+                url: rootUrl + "/api/AccountPostingApi/CreateSalesLedger",
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(AccountPosting),
+                dataType: 'json',
+                success: function (data) {
+                    if (data == 1) {
+                        alert('Exported Successfully');
+                    }
+                    else {
+                        alert('Export Failed');
+                    }
+                },
+                failure: function (response) {
+                    alert(response);
+                },
+                error: function (response) {
+                    alert(response);
+                }
+            });
+        }
+        catch (e) {
+
+        }
+    }
+    function DatewisePostingReport() {
+        try {
+            var GetdataType = "Datewise";
+            BindAllPostingData(GetdataType);
+        }
+        catch (e) {
+
+        }
+    }
+    function Cancel() {
+        try {
+            var today = new Date();
+            var currentyear = today.getFullYear();
+            var onetwentyyearback = currentyear - 120;
+            var daterange = onetwentyyearback + ':' + currentyear;
+
+            $('#txtfromdate').datepicker({
+                changeMonth: true,
+                changeYear: true,
+                yearRange: daterange,
+                dateFormat: 'dd/mm/yy',
+                endDate: "today",
+                maxDate: today,
+            });
+            $('#txttodate').datepicker({
+                changeMonth: true,
+                changeYear: true,
+                yearRange: daterange,
+                dateFormat: 'dd/mm/yy',
+                endDate: "today",
+                maxDate: today,
+            });
+            $("#txtfromdate").datepicker('setDate', new Date(currentyear, today.getMonth(), today.getDate() - 10));
+            $("#txttodate").datepicker('setDate', new Date());
+            var GetdataType = "All";
+            BindAllPostingData(GetdataType);
+        }
+        catch (e) {
+
+        }
+    }
+</script>
+<script>
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+
+
+<div class="content-wrapper" style=" font-family: arial, sans-serif;">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="panel panel-default DivBox" style="background-color: white;">
+                        <div class="panel-heading" style="background-color: #007bff;color: white;margin-top: 6px;height:50px;">
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <h3 class="card-title" style="padding-top: 11px;padding-left: 7px;">Account Posting</h3>
+                                    <img src="~/images/ShutdownWhite.png" style="padding-top:11px;padding-right:7px;float:right;cursor:pointer;" onclick="GotoLogin();" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                    <div class="form-group">
+                                        <label>
+                                            From Date
+                                        </label>
+                                        <input type="text" id="txtfromdate" placeholder="From Date" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                    <div class="form-group">
+                                        <label>
+                                            To Date
+                                        </label>
+                                        <input type="text" id="txttodate" placeholder="To Date" class="form-control" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col">
+                                    <button class="btn btn-primary" onclick="DatewisePostingReport();">Search</button>
+                                    <button class="btn btn-primary" onclick="Cancel();">Cancel</button>
+                                </div>
+                            </div>
+                            <br />
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="table-wrap ">
+                                        <table class=" table-striped table table-bordered  table-hover" style="font-size: 13px; " id="tblAccountposting">
+                                            <thead>
+                                                <tr>
+                                                    <th>S.no</th>
+                                                    <th>Collect Date</th>
+                                                    <th style="display: none;">DATE</th>
+                                                    <th style='display: none;'>SHIFT</th>
+                                                    <th>OP Amt</th>
+                                                    <th>OP Tax</th>
+                                                    <th>OP Tot</th>
+                                                    <th>IP Amt</th>
+                                                    <th>IP Tax</th>
+                                                    <th>IP Tot</th>
+                                                    <th>Pharm Amt</th>
+                                                    <th>Pharm Tax</th>
+                                                    <th>Pharm Totl</th>
+                                                    <th>Pharm Collect</th>
+                                                    <th>Free Tot</th>
+                                                    <th>Free Tax</th>
+                                                    <th style='display:none;'>UPDATE</th>
+                                                    <th>Acc Post</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,451 @@
+﻿
+
+<style>
+    label {
+        font-size: 14px;
+        font-weight: 600;
+        font-style: serif;
+    }
+
+    hr {
+        margin: 20px 0;
+        border: 0;
+        border-top: 1px solid #E0DFDF;
+        border-bottom: 1px solid #FEFEFE;
+    }
+
+    .table-wrap {
+        height: 450px;
+        overflow-y: auto;
+    }
+
+    .btn {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        transition: box-shadow 0.28s;
+    }
+
+    .btn-primary {
+        color: #fff;
+        background-color: #337ab7;
+        border-color: #337ab7;
+        box-shadow: none;
+        border-width: 0 !important;
+        overflow: hidden;
+        position: relative;
+        user-select: none;
+        padding: 9px 14px 8px 14px;
+    }
+</style>
+
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        var today = new Date();
+        var currentyear = today.getFullYear();
+        var onetwentyyearback = currentyear - 120;
+        var daterange = onetwentyyearback + ':' + currentyear;
+
+        $('#txtfromdate').datepicker({
+            changeMonth: true,
+            changeYear: true,
+            yearRange: daterange,
+            dateFormat: 'dd/mm/yy',
+            endDate: "today",
+            maxDate: today,
+        });
+        $('#txttodate').datepicker({
+            changeMonth: true,
+            changeYear: true,
+            yearRange: daterange,
+            dateFormat: 'dd/mm/yy',
+            endDate: "today",
+            maxDate: today,
+        });
+        $("#txtfromdate").datepicker('setDate', new Date());
+        $("#txttodate").datepicker('setDate', new Date());
+    });
+    function InvoiceReportPageLoad() {
+        var today = new Date();
+        var currentyear = today.getFullYear();
+        var onetwentyyearback = currentyear - 120;
+        var daterange = onetwentyyearback + ':' + currentyear;
+
+        $('#txtfromdate').datepicker({
+            changeMonth: true,
+            changeYear: true,
+            yearRange: daterange,
+            dateFormat: 'dd/mm/yy',
+            endDate: "today",
+            maxDate: today,
+        });
+        $('#txttodate').datepicker({
+            changeMonth: true,
+            changeYear: true,
+            yearRange: daterange,
+            dateFormat: 'dd/mm/yy',
+            endDate: "today",
+            maxDate: today,
+        });
+        $("#txtfromdate").datepicker('setDate', new Date());
+        $("#txttodate").datepicker('setDate', new Date());
+    }
+    function SearchData() {
+        var fromDate = $("#txtfromdate").val();
+        var toDate = $("#txttodate").val();
+        var invoiceVatType = $('#ddlinvoicevattype option:selected').text();
+        var invoiceType = $('#ddlinvoicetype option:selected').text();
+
+
+        //$.ajax({
+        //    type: "Get",
+        //    url: rootUrl + "/api/InvoiceReport/GetInvoiceReportsDeatislByDate?FromDate=" + fromDate + "&ToDate=" + toDate + "&invoiceVatType=" + invoiceVatType + "&invoiceType=" + invoiceType,
+        //    contentType: "application/json; charset=utf-8",
+        //    dataType: "json",
+        //    success: BindInvoiceReport()
+
+
+        //})
+        $.ajax({
+            url: rootUrl + "/api/InvoiceReport/GetInvoiceReportsDeatislByDate?FromDate=" + fromDate + "&ToDate=" + toDate + "&invoiceVatType=" + invoiceVatType + "&invoiceType=" + invoiceType,
+            type: "Get",
+            contentType: "application/json; charset=utf-8",
+            dataType: 'json',
+            success: function (response) {
+                BindInvoiceReport(response)
+            },
+            failure: function (response) {
+                alert(response);
+            },
+            error: function (response) {
+                alert(response);
+            }
+        });
+
+    }
+
+
+    function BindInvoiceReport(response) {
+        $("#tblInvoiceReport tbody").empty();
+        html = "";
+        //var arr = ['PH_SupplierName', 'PH_IN_SUPP_INVNO', 'PH_IN_INV_CONVERTDT', 'InvoiceType', 'InvoiceGSTType', 'Amount', 'Tax', 'NetAmount']
+
+        for (i = 0; i < response.length; i++) {
+                html += "<tr>"
+                html += "<td>" + response[i].PH_SupplierName + "</td>";
+                html += "<td>" + response[i].PH_IN_SUPP_INVNO+ "</td>";
+                html += "<td>" + response[i].PH_IN_INV_CONVERTDT + "</td>";
+                html += "<td>" + response[i].InvoiceType + "</td>";
+                html += "<td>" + response[i].InvoiceGSTType + "</td>";
+                html += "<td>" + response[i].Amount + "</td>";
+                html += "<td>" + response[i].Tax + "</td>";
+                html += "<td>" + response[i].NetAmount + "</td>";
+                html += "<tr>";
+
+            $("#tblInvoiceReport tbody").append(html);
+        }
+    }
+    function write_headers_to_excel() {
+        str = "";
+
+        var myTableHead = document.getElementById('tblInvoiceReport');
+        var rowCount = myTableHead.rows.length;
+        var colCount = myTableHead.getElementsByTagName("tr")[0].getElementsByTagName("th").length;
+
+        //var ExcelApp = new ActiveXObject("Scripting.FileSystemObject");
+        //ExcelApp.visible = true;
+        var ExcelSheet = new ActiveXObject("D:\\Book1.xlsx");
+        ExcelSheet.Application.Visible = true;
+
+        for (var i = 0; i < rowCount; i++) {
+            for (var j = 0; j < colCount; j++) {
+                str = myTableHead.getElementsByTagName("tr")[i].getElementsByTagName("th")[j].innerHTML;
+                ExcelSheet.ActiveSheet.Cells(i + 1, j + 1).Value = str;
+            }
+        }
+
+    }
+
+    function Print() {
+        var html = "";
+        var fromDate = $("#txtfromdate").val();
+        var toDate = $("#txttodate").val();
+        html += "<hr>";
+        html += "<div style='text-align: Center;font-size:20px;font-weight:bold;'>Invoice Report</div><br/>";
+        html += "<div style='text-align: Center;'>From " + fromDate + " To " + toDate + "</div><br/>";
+        html += "<hr>";
+        html += "<br/>";
+        html += "<table style='font-size:small;border-collapse: collapse;'>";
+        //html += "<thead>";
+        //html += "<tr>";
+        //html += "<td style='padding-right: 10px;'>Supplier Name</td> ";
+        //html += "<td style='padding-right: 10px;'> Invoice Number </td> ";
+        //html += "<td style='padding-right: 10px;'> Invoice Date </td> ";
+        //html += "<td style='padding-right: 10px;'> Vat Type </td> ";
+        //html += "<td style='padding-right: 10px;'> Amount </td> ";
+        //html += "<td style='padding-right: 30px;'> TAX </td> ";
+        //html += "<td style='padding-right: 30px;'> Net Amount </td> ";
+        //html += "</tr> ";
+        //html += "</thead> ";
+        html += "<tbody> ";
+
+        //var rows = document.getElementsByTagName("tbody")[0].rows;
+
+        //var td = rows[i].getElementsByTagName("td")[i];
+        /*  var table = document.getElementById("tblInvoiceReport ");*/
+        var table = document.getElementById('tblInvoiceReport');
+        /*var Cells = Row.getElementsByTagName("td");*/
+        for (var i = 0, row; row = table.rows[i]; i++) {
+            console.dir(row.cells)
+            html += "<tr>"
+            for (var j = 0; j < row.cells.length; j++) {
+                html += "<td>" + row.cells[j].textContent + "</td>";
+            }
+            html += "<tr>";
+
+            //if (row.cells && row.cells.length) {
+
+            //    html += "<td>" + row.cells[0].textContent + "</td>";
+            //    html += "<td>" + row.cells[1].textContent + "</td>";
+            //    html += "<td>" + row.cells[2].textContent + "</td>";
+            //    html += "<td>" + row.cells[3].textContent + "</td>";
+            //    html += "<td>" + row.cells[4].textContent + "</td>";
+            //    html += "<td>" + row.cells[5].textContent + "</td>";
+            //    html += "<td>" + row.cells[6].textContent + "</td>";
+            //    html += "<td>" + row.cells[7].textContent + "</td>";
+
+            //}
+
+
+
+        }
+        html += "</tbody> ";
+        html += " </table  > ";
+        var table = document.getElementById('review-products');
+
+        sessionStorage.setItem("PrintDetails", html);
+        openRequestedPopup()
+    }
+    function openRequestedPopup() {
+        var url = rootUrl + "/Home/Print";
+        window.open(url, '_blank');
+        sessionStorage.setItem("PrintDetails", "");
+    }
+
+    //function Print() {
+    //    var rows = document.getElementsByTagName("tbody")[0].rows;
+    //    for (var i = 0; i < rows.length; i++) {
+    //        var td = rows[i].getElementsByTagName("td")[i];
+    //        console.log(td)
+    //    }
+    //}
+    function downloadReport() {
+        var tab_text = "<table border='2px'><tr>";
+        var a = document.createElement('a');
+        var tab = document.getElementById('tblInvoiceReport');// id of table
+        var data_type = 'data:application/vnd.ms-excel';
+        var filename = "InvoiceExport";
+        for (j = 0; j < tab.rows.length; j++) {
+            tab_text = tab_text + tab.rows[j].innerHTML + "</tr>";
+        }
+
+        tab_text = tab_text.trim() + "</table>";
+        //tab_text = tab_text.replace(/<img[^>]*>/gi, ""); // remove if u want images in your table
+        //tab_text = tab_text.replace(/<input[^>]*>|<\/input>/gi, "");// reomves input params
+        //tab_text = tab_text.replace(/<select[^>]*>|<\/select>/gi, "");
+        //tab_text = tab_text.replace(/<option[^>]*>|<\/option>/gi, "");
+
+        a.href = data_type + ', ' + encodeURIComponent(tab_text);
+        a.download = filename + '.xls';
+        a.click();
+
+
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+
+    function Clear() {
+        $("#tblInvoiceReport tbody").empty();
+        var today = new Date();
+        var currentyear = today.getFullYear();
+        var onetwentyyearback = currentyear - 120;
+        var daterange = onetwentyyearback + ':' + currentyear;
+
+        $('#txtfromdate').datepicker({
+            changeMonth: true,
+            changeYear: true,
+            yearRange: daterange,
+            dateFormat: 'dd/mm/yy',
+            endDate: "today",
+            maxDate: today,
+        });
+        $('#txttodate').datepicker({
+            changeMonth: true,
+            changeYear: true,
+            yearRange: daterange,
+            dateFormat: 'dd/mm/yy',
+            endDate: "today",
+            maxDate: today,
+        });
+        $("#txtfromdate").datepicker('setDate', new Date());
+        $("#txttodate").datepicker('setDate', new Date());
+       
+    }
+</script>
+
+
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+
+        <div class="card-body">
+            <div class="row">
+                <div class="col-xs-6 col-sm-6 col-md-6">
+                    <div class="form-group">
+                        <label>
+                            From Date
+                        </label>
+                        <input type="text" id="txtfromdate" placeholder="From Date" class="form-control" />
+                    </div>
+                </div>
+                <div class="col-xs-6 col-sm-6 col-md-6">
+                    <div class="form-group">
+                        <label>
+                            To Date
+                        </label>
+                        <input type="text" id="txttodate" placeholder="To Date" class="form-control" />
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-6 col-sm-6 col-md-6">
+                    <div class="form-group">
+                        <label>
+                            Invoice VAT Type
+                        </label>
+                        <div class="form-group">
+                            <select class="form-control" id="ddlinvoicevattype" style="cursor:pointer;">
+                                <option value="Select">Select</option>
+                                <option value="GST purchase">Gst Purchase</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-6 col-sm-6 col-md-6">
+                    <div class="form-group">
+                        <label>
+                            Invoice Type
+                        </label>
+                        <div class="form-group">
+                            <select class="form-control" id="ddlinvoicetype" style="cursor:pointer;">
+                                <option value="Select">Select</option>
+                                <option value="Medicine">Medicine</option>
+                                <option value="Surgicals">Surgicals</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <button class="btn btn-primary" onclick="SearchData();">Search</button>
+                    <button class="btn btn-primary" id="btnExport" onclick="downloadReport();">Export Excel</button>
+                    <button class="btn btn-primary" onclick="Print();">Print</button>
+                    <button class="btn btn-primary" onclick="Clear();">Cancel</button>
+                </div>
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="table-wrap ">
+                        <table class="table table-bordered" id="tblInvoiceReport">
+                            <thead>
+                                <tr style="font-size:15px;font-weight:500;font-family:sans-serif;line-height:15px">
+                                    <th>Supplier Name</th>
+                                    <th>Invoice Number</th>
+                                    <th>Invoice Date</th>
+                                    <th>Invoice Type</th>
+                                    <th>Vat Type</th>
+                                    <th>Amount</th>
+                                    <th>Tax</th>
+                                    <th>Net Amount</th>
+
+                                </tr>
+                            </thead>
+                            <tbody style="font-size: 14px; font-weight: 600; line-height: 13px; ">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+            @*<div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="table-wrap ">
+                        <table class=" table-striped table table-bordered  table-hover" id="tblSupplier">
+                            <thead style="font-size: 13px; ">
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Tax</th>
+                                    <th>Amount</th>
+                                    <th>Total Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-4 col-sm-4 col-md-4">
+                    <div class="form-group">
+                        <label>
+                            Tax 5%
+                        </label>
+                        <input type="text" id="txttaxfive" placeholder="Tax 5%" class="form-control" />
+                    </div>
+                </div>
+                <div class="col-xs-4 col-sm-4 col-md-4">
+                    <div class="form-group">
+                        <label>
+                            Tax 14.5%
+                        </label>
+                        <input type="text" id="txttaxfourteen" placeholder="Tax 14.5%" class="form-control" />
+                    </div>
+                </div>
+                <div class="col-xs-4 col-sm-4 col-md-4">
+                    <div class="form-group">
+                        <label>
+                            Tax 10%
+                        </label>
+                        <input type="text" id="txttaxten" placeholder="Tax 10%" class="form-control" />
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-4 col-sm-4 col-md-4">
+                    <div class="form-group">
+                        <label>
+                            Amount
+                        </label>
+                        <input type="text" id="txtamount" placeholder="Amount" class="form-control" />
+                    </div>
+                </div>
+                <div class="col-xs-4 col-sm-4 col-md-4">
+                    <div class="form-group">
+                        <label>
+                            Total Amount
+                        </label>
+                        <input type="text" id="txttotalamt" placeholder="Total Amount" class="form-control" />
+                    </div>
+                </div>
+            </div>*@
+        </div>
+    </div>
+</div>
+

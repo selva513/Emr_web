@@ -1,0 +1,278 @@
+﻿
+@{
+    ViewData["Title"] = "Country";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@using Syncfusion.EJ2
+@using Newtonsoft.Json
+@model Emr_web.Models.CountryView
+<link href="~/AutoComplete/jquery-ui_1.11.4.css" rel="stylesheet" />
+<script src="~/AutoComplete/jquery-1.10.2.js"></script>
+<script src="~/AutoComplete/jquery-ui_1.11.4.js"></script>
+
+<style>
+    .main-page {
+        background: linear-gradient(-141deg, #FBFAFF 14%, #FBFAFF 100%);
+        margin: 0;
+    }
+
+    body,
+    text {
+        font-family: "Helvetica Neue", "Helvetica", "Arial", sans-serif, "-apple-system", "BlinkMacSystemFont";
+    }
+
+    .form-group.required .control-label:after {
+        content: "*";
+        color: red;
+    }
+</style>
+
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        var instance = ej.base.getComponent(document.getElementById("checkedactive"), "checkbox");
+        instance.checked = true;
+    });
+    function rowSelected(args) {
+        var selectedrecords = this.getSelectedRecords();
+        document.getElementById('txt_countryid').ej2_instances[0].value = selectedrecords[0].CountrySeqId;
+        document.getElementById('txt_countryname').ej2_instances[0].value = selectedrecords[0].CountryName;
+        document.getElementById('txt_countrycode').ej2_instances[0].value = selectedrecords[0].CountryCode;
+        document.getElementById('txt_currencycode').ej2_instances[0].value = selectedrecords[0].CurrencyCode;
+        document.getElementById('txt_mobiledigits').ej2_instances[0].value = selectedrecords[0].MobileDigits;
+        $("#btnsave").hide();
+        $("#btnupdate").show();
+    }
+    function CancelClick() {
+        try {
+            window.location.href = "/Country/Country";
+        }
+        catch (e) {
+
+        }
+    }
+    function onlyNumberKey(evt) {
+        var ASCIICode = (evt.which) ? evt.which : evt.keyCode
+        if (ASCIICode > 31 && (ASCIICode < 48 || ASCIICode > 57))
+            return false;
+        return true;
+    }
+    function CountryChange() {
+        try {
+            var countryname = document.getElementById('txt_countryname').ej2_instances[0].value;
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetCountryName/?CountryName=" + countryname,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    var data = response;
+                    if (data != "" && data != null) {
+                        var CountrySeqid = data[0].CountrySeqId;
+                        if (CountrySeqid != 0) {
+                            alert('Country Name Already Exist');
+                            document.getElementById('txt_countryname').ej2_instances[0].value = "";
+                            document.getElementById('txt_countryname').ej2_instances[0].focusIn();
+                        }
+                    }
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+
+        }
+    }
+    function CodeChange() {
+        try {
+            var countrycode = document.getElementById('txt_countrycode').ej2_instances[0].value;
+            countrycode = encodeURIComponent(countrycode);
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetCountryCode/?CountryCode=" + countrycode,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    var data = response;
+                    if (data != "" && data != null) {
+                        var CountrySeqid = data[0].CountrySeqId;
+                        var Countryname = data[0].CountryName;
+                        if (CountrySeqid != 0) {
+                            alert('Country Code Already Mapped  to ' + Countryname + '"');
+                            document.getElementById('txt_countrycode').ej2_instances[0].value = "";
+                            document.getElementById('txt_countrycode').ej2_instances[0].focusIn();
+                        }
+                    }
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+
+        }
+    }
+    function CurrencyChange() {
+        try {
+            var currencycode = document.getElementById('txt_currencycode').ej2_instances[0].value;
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetCurrencyCode/?CurrencyCode=" + currencycode,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    var data = response;
+                    if (data != "" && data != null) {
+                        var CountrySeqid = data[0].CountrySeqId;
+                        var Countryname = data[0].CountryName;
+                        if (CountrySeqid != 0) {
+                            alert('Currency Code Already Mapped  to ' + Countryname + '"');
+                            document.getElementById('txt_currencycode').ej2_instances[0].value = "";
+                            document.getElementById('txt_currencycode').ej2_instances[0].focusIn();
+                        }
+                    }
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+
+        }
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-primary">
+                        <div class="card-header" style="margin-top:15px;">
+                            <h3 class="card-title">Country Master</h3>
+                            <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                        </div>
+                        <form role="form" autocomplete="off" style="font-size:small;" method="post" asp-controller="Country" asp-action="InsertCountry" data-toggle="validator"
+                              onkeydown="return event.key != 'Enter';">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                        <div class="form-group">
+                                            <ejs-textbox id="txt_countryid" placeholder="Main Menu Name" value="0" ejs-for="CountrySeqId"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group required">
+                                            <label class="control-label" style="color: black;">
+                                                Country Name
+                                            </label>
+                                            <ejs-textbox id="txt_countryname" placeholder="Country Name" ejs-for="CountryName" blur="CountryChange"
+                                                         autofocus required></ejs-textbox>
+                                            <div class="help-block with-errors"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group required">
+                                            <label class="control-label" style="color: black;">
+                                                Country Code
+                                            </label>
+                                            <ejs-textbox id="txt_countrycode" placeholder="Country Code" ejs-for="CountryCode" blur="CodeChange" required></ejs-textbox>
+                                            <div class="help-block with-errors"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <label class="control-label" style="color: black;">
+                                                Currency Code
+                                            </label>
+                                            <ejs-textbox id="txt_currencycode" placeholder="Currency Code" blur="CurrencyChange" ejs-for="CurrencyCode"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group required">
+                                            <label class="control-label" style="color: black;">
+                                                Number of Digits (Mobile)
+                                            </label>
+                                            <ejs-textbox id="txt_mobiledigits" placeholder="Mobile Digits" ejs-for="MobileDigits"
+                                                         onkeypress="return onlyNumberKey(event)"></ejs-textbox>
+                                            <div class="help-block with-errors"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <ejs-checkbox id="checkedactive" checked="true" name="M_IsActive" label="Active" ejs-for="Isactive"></ejs-checkbox>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <div class="form-group">
+                                                <button type="submit" id="btnsave" style="background-color:blue;" class="btn btn-info">
+                                                    Save
+                                                </button>
+                                                <button type="submit" id="btnupdate" style="display:none;background-color:blue;" class="btn btn-info Update">
+                                                    Update
+                                                </button>
+                                                <button type="button" id="btnCancel" onclick="CancelClick();" style="background-color:blue;" class="btn btn-info">
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
+                                            <ejs-grid id="GridDeptMaster" width="98%" style="padding:0px 20px;cursor:pointer;"
+                                                      dataSource="ViewBag.CountryDetail" allowPaging="true"
+                                                      toolbar="@(new List<string>() { "Search"})" rowSelected="rowSelected">
+                                                <e-grid-searchsettings fields="@(new string[] { "CountrySeqId","CountryName","CountryCode","CurrencyCode","MobileDigits"})"
+                                                                       operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                                <e-grid-selectionsettings type="Single"></e-grid-selectionsettings>
+                                                <e-grid-pagesettings pageSize="10" pageCount="10"></e-grid-pagesettings>
+                                                <e-grid-columns>
+                                                    <e-grid-column field="SNO" headerText="SNO"></e-grid-column>
+                                                    <e-grid-column field="CountrySeqId" visible="false" headerText="Country Id"></e-grid-column>
+                                                    <e-grid-column field="CountryName" headerText="Country Name"></e-grid-column>
+                                                    <e-grid-column field="CountryCode" headerText="Country Code"></e-grid-column>
+                                                    <e-grid-column field="CurrencyCode" headerText="Currency Code"></e-grid-column>
+                                                    <e-grid-column field="MobileDigits" headerText="Mobile Digits"></e-grid-column>
+                                                </e-grid-columns>
+                                            </ejs-grid>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+
+
+

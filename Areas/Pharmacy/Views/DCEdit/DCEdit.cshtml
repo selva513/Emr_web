@@ -1,0 +1,481 @@
+﻿<script type="text/javascript">
+    $(document).ready(function () {
+        GetDCEditSupplierMaster();
+        GetDCEditStoreName();
+    });
+    function GetDCEditSupplierMaster() {
+        $.ajax({
+            url: "/Pharma/Invoice/GetAllSupplierMaster",
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.length > 0) {
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var PH_SupplierID = response[PCHeader].PH_SupplierID;
+                        var PH_SupplierName = response[PCHeader].PH_SupplierName;
+                        $('#ddlDCEditSuplier')
+                            .append($("<option></option>").val(PH_SupplierID).html(PH_SupplierName));
+                    }
+                }
+            }
+        });
+    }
+    function GetDCEditStoreName() {
+        $.ajax({
+            url: "/Pharma/Invoice/GetStoreName",
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.length > 0) {
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var HIS_PH_STOREMASTER = response[PCHeader].HIS_PH_STOREMASTER;
+                        var HIS_PH_STORENAME = response[PCHeader].HIS_PH_STORENAME;
+                        $('#ddlDCEditWherHouse')
+                            .append($("<option></option>").val(HIS_PH_STORENAME).html(HIS_PH_STORENAME));
+                    }
+                }
+            }
+        });
+    }
+    function GetDCPurchaseByDcNumber(DCNumber) {
+        $.ajax({
+            url: "/api/DCEdit/GetDcPurchaseByDcNumber",
+            type: "GET",
+            data: {
+                DcNumber: DCNumber
+            },
+            dataType: "json",
+            success: function (response) {
+                if (response.Header.length > 0) {
+                    for (PCHeader = 0; PCHeader < response.Header.length; PCHeader++) {
+                        var PH_DC_SEQID = response.Header[PCHeader].PH_DC_SEQID;
+                        var PH_SupplierID = response.Header[PCHeader].PH_SupplierID;
+                        $('#ddlDCEditSuplier').val(PH_SupplierID);
+                        var WareHouse = response.Header[PCHeader].WareHouse;
+                        $('#ddlDCEditWherHouse').val(WareHouse);
+                        var PH_DC_ENTRYDATE = response.Header[PCHeader].PH_DC_ENTRYDATE;
+                        $("#txtSupplierDCEditDate").val(PH_DC_ENTRYDATE);
+                        var html = "";
+                        $("#tblDCEditDrugBind tbody").empty();
+                        for (PCDetails = 0; PCDetails < response.Deatils.length; PCDetails++) {
+                            var dtlSeqID = response.Deatils[PCDetails].PH_DCDTL_SEQID;
+                            var BrandName = response.Deatils[PCDetails].PH_ITEM_DRUGNAME_BRAND;
+                            var Batch = response.Deatils[PCDetails].PH_DCDTL_DRUGBATCHNO;
+                            var DrugCode = response.Deatils[PCDetails].PH_DCDTL_DRUGCODE;
+                            var Expiry = response.Deatils[PCDetails].PH_DCDTL_DRUGEXPIRY;
+                            var Qty = response.Deatils[PCDetails].PH_DCDTL_RECVDQTY;
+                            var FreeQty = response.Deatils[PCDetails].PH_DCDTL_BONUSQTY;
+                            var Cost = response.Deatils[PCDetails].PH_DCDTL_RATEEACH;
+                            var Tax = response.Deatils[PCDetails].GST;
+                            var IsMovedInvoice = response.Deatils[PCDetails].IsMovedInvoice;
+                            var MRP = response.Deatils[PCDetails].MRP;
+                            var DiscountPrec = parseFloat(response.Deatils[PCDetails].DiscountPrec);
+                            var Uom = response.Deatils[PCDetails].PH_ITEM_DRUG_UOM;
+                            var amt = parseFloat(Cost * Qty).toFixed(2);
+                            var vatamt = parseFloat((amt * Tax) / 100).toFixed(2);
+                            var total = parseFloat(amt) + parseFloat(vatamt);
+                            total = total.toFixed(2);
+
+                            var disAmt = parseFloat((amt * DiscountPrec) / 100).toFixed(2);
+                            amt = parseFloat(amt) - parseFloat(disAmt);
+                            vatamt = parseFloat((amt * Tax) / 100).toFixed(2);
+                            total = parseFloat(amt) + parseFloat(vatamt);
+                            total = total.toFixed(2);
+                            var Sno = PCDetails + 1;
+                            if (IsMovedInvoice === true) {
+                                html += "<tr data-id=\"" + DrugCode + "\"><td>" + Sno + "</td>";//0
+                                html += "<td style='display:none;'>" + DrugCode + "</td>";//1
+                                html += "<td>" + BrandName + "</td>";//2
+                                html += "<td><input type=\"Text\" id='txtBatch' value='" + Batch + "'style='height:28px;width:120px;' readonly  ></td>";//3
+                                html += "<td><input type=\"date\" style='height:28px;' data-date-format='DD/MM/YYYY' value='" + Expiry + "' readonly></td>";//4
+                                html += "<td><input type=\"Text\" value='" + Qty + "' readonly id='txtQTY' onchange='DCEditRateValue(this)' value=''style='height:28px;width:50px;'> " + Uom + "</td>";//5
+                                html += "<td style='display:none;'><input type=\"Text\" id='txtFree' readonly value=''style='height:28px;width:50px;'></td>";//6
+                                html += "<td><input type=\"Text\" value='" + Cost + "' readonly id='txtRate' value=''style='height:28px;width:50px;' onchange='DCEditRateValue(this)' onkeypress='return isNumberAndDecimal(this,event)'></td>";//7
+                                html += "<td><input type=\"Text\" id='txtMRP' value='" + MRP + "' readonly onkeypress='return isNumberAndDecimal(this,event)' style='height:28px;width:50px;'></td>";//8
+                                html += "<td  class='DCEditAmountCell'>" + amt + "</td>";//9
+                                html += "<td>" + Tax + "</td>";//10
+                                html += "<td class='DCEditTaxCell'>" + vatamt + "</td>";//11
+                                html += "<td style='display:none;'><input type=\"Text\" id='txtDiscount' onchange='DiscountValue(this)' readonly onkeypress='return isNumberAndDecimal(this,event)' value='" + DiscountPrec+"' style='height:28px;width:50px;'></td>";//12
+                                html += "<td class='DCEditTotalAmountCell'>" + total + "</td>";//13
+                                html += "<td style='text-align: center;display:none;'>";
+                                html += "<img src='" + rootUrl + "/Images/DELETE-32.png'  onclick='return DeleteOrdersRow(this)' style='cursor:pointer;width: 30px !important;height:30px !important;'>";//14
+                                html += "<td style='display:none;'>" + dtlSeqID + "</td>";//15
+                                html += "<td>Invoiced</td>";//16
+                                html += "<td style='display:none;'>" + Batch + "</td>";//17
+                                html += "<td style='display:none;'>" + Qty + "</td>";//18
+                                html += "</tr>";
+                            }
+                            else {
+                                html += "<tr data-id=\"" + DrugCode + "\"><td>" + Sno + "</td>";//0
+                                html += "<td style='display:none;'>" + DrugCode + "</td>";//1
+                                html += "<td>" + BrandName + "</td>";//2
+                                html += "<td><input type=\"Text\" id='txtBatch' value='" + Batch + "'style='height:28px;width:120px;' ></td>";//3
+                                html += "<td><input type=\"date\" style='height:28px;' data-date-format='DD/MM/YYYY' value='" + Expiry + "'></td>";//4
+                                html += "<td><input type=\"Text\" value='" + Qty + "' id='txtQTY' onchange='DCEditRateValue(this)' value=''style='height:28px;width:50px;'> " + Uom + "</td>";//5
+                                html += "<td style='display:none;'><input type=\"Text\" id='txtFree' value=''style='height:28px;width:50px;'></td>";//6
+                                html += "<td><input type=\"Text\" value='" + Cost + "' id='txtRate' value=''style='height:28px;width:50px;' onchange='DCEditRateValue(this)' onkeypress='return isNumberAndDecimal(this,event)'></td>";//7
+                                html += "<td><input type=\"Text\" id='txtMRP' value='" + MRP + "' onkeypress='return isNumberAndDecimal(this,event)' style='height:28px;width:50px;'></td>";//8
+                                html += "<td  class='DCEditAmountCell'>" + amt + "</td>";//9
+                                html += "<td>" + Tax + "</td>";//10
+                                html += "<td class='DCEditTaxCell'>" + vatamt + "</td>";//11
+                                html += "<td style='display:none;'><input type=\"Text\" id='txtDiscount' onchange='DiscountValue(this)' onkeypress='return isNumberAndDecimal(this,event)' value='" + DiscountPrec +"' style='height:28px;width:50px;'></td>";//12
+                                html += "<td class='DCEditTotalAmountCell'>" + total + "</td>";//13
+                                html += "<td style='text-align: center;display:none;'>";
+                                html += "<img src='" + rootUrl + "/Images/DELETE-32.png'  onclick='return DeleteOrdersRow(this)' style='cursor:pointer;width: 30px !important;height:30px !important;'>";//14
+                                html += "<td style='display:none;'>" + dtlSeqID + "</td>";//15
+                                html += "<td>DC</td>";//16
+                                html += "<td style='display:none;'>" + Batch + "</td>";//17
+                                html += "<td style='display:none;'>" + Qty + "</td>";//18
+                                html += "</tr>";
+                            }
+                        }
+                        $("#tblDCEditDrugBind tbody").append(html);
+                    }
+                    TotalDCEditCalculation();
+                }
+            }
+        });
+    }
+    function OnChangeDcNumber() {
+        var DcNumber = $("#txtDCEditSupplierDCNo").val();
+        GetDCPurchaseByDcNumber(DcNumber);
+    }
+    function TotalDCEditCalculation() {
+        var AmountCells = document.getElementsByClassName("DCEditAmountCell"); //returns a list with all the elements that have class 'priceCell'
+        var Amount = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < AmountCells.length; i++) {
+            var thisPrice = parseFloat(AmountCells[i].innerHTML); //get inner text of this cell in number format
+            Amount = Amount + thisPrice;
+        };
+        Amount = Amount.toFixed(2);
+        $("#txtDCEditSummaryAmt").val(Amount);
+
+        var TaxCells = document.getElementsByClassName("DCEditTaxCell"); //returns a list with all the elements that have class 'priceCell'
+        var Tax = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < TaxCells.length; i++) {
+            var thisPrice = parseFloat(TaxCells[i].innerHTML); //get inner text of this cell in number format
+            Tax = Tax + thisPrice;
+        };
+        Tax = Tax.toFixed(2);
+        $("#txtDCEditSummaryTax").val(Tax);
+
+        var TotalAmountCells = document.getElementsByClassName("DCEditTotalAmountCell"); //returns a list with all the elements that have class 'priceCell'
+        var TotalAmount = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < TotalAmountCells.length; i++) {
+            var thisPrice = parseFloat(TotalAmountCells[i].innerHTML); //get inner text of this cell in number format
+            TotalAmount = TotalAmount + thisPrice;
+        };
+        TotalAmount = TotalAmount.toFixed(2);
+        $("#txtDCEditSummaryNetAmt").val(TotalAmount);
+        $("#txtDCEditNetTotal").val(TotalAmount);
+    }
+    function DCEditRateValue(SelectedRow) {
+        // var DrugName = $("#txtSearchDrugType").val();
+        var row = SelectedRow.parentNode.parentNode;
+        var rowIndex = SelectedRow.rowIndex;
+        var Qty = parseInt(row.cells[5].getElementsByTagName("input")[0].value);
+        if (Qty > 0) {
+            var Cost = parseFloat(row.cells[7].getElementsByTagName("input")[0].value).toFixed(2);
+            var Tax = parseFloat(row.cells[10].innerHTML).toFixed(2);
+            var amt = parseFloat(Cost * Qty).toFixed(2);
+            var vatamt = parseFloat((amt * Tax) / 100).toFixed(2);
+            var total = parseFloat(amt) + parseFloat(vatamt);
+            total = total.toFixed(2);
+            row.cells[9].innerHTML = amt;
+            row.cells[11].innerHTML = vatamt;
+            row.cells[13].innerHTML = total;
+            TotalDCEditCalculation();
+        }
+        else {
+            alert('Please Enter Qty');
+        }
+    }
+    function DcEditPurchaseSave() {
+        var DrugInfo = new Array();
+        var tblDrugSales = document.getElementById("tblDCEditDrugBind");
+        var rowtblDrugSales = tblDrugSales.rows.length;
+        var ErrorMsg = "";
+        DrugInfo.length = 0;
+        for (M = 1; M < rowtblDrugSales; M++) {
+            var rowDrug = tblDrugSales.rows[M];
+            var ObjectDetails = new Object();
+            ObjectDetails.DrugCode = parseFloat(rowDrug.cells[1].innerHTML);
+            ObjectDetails.DrugName = rowDrug.cells[2].innerHTML;
+            var Batch = rowDrug.cells[3].getElementsByTagName("input")[0].value;
+            if (Batch !== "")
+                ObjectDetails.Batch = rowDrug.cells[3].getElementsByTagName("input")[0].value;
+            else
+                ErrorMsg += "\n - Please Enter Batch for:" + ObjectDetails.DrugName + "";
+            var ExpiryDt = rowDrug.cells[4].getElementsByTagName("input")[0].value;
+            if (ExpiryDt !== "") {
+                var DateSplit = ExpiryDt.split('-');
+                var year = DateSplit[0];
+                var month = DateSplit[1];
+                var day = DateSplit[2];
+                var today = new Date();
+                var consoleddate = month + '/' + day + '/' + year + ' 23:59:59';
+                var exdate = new Date(consoleddate);
+                if (year.length > 4) {
+                    ErrorMsg += "\n - Please Enter A Valid Year.";
+                }
+                else if (exdate < today) {
+                    ErrorMsg += "\n - Expiry Date Must Be Greater Than Today's Date.";
+                }
+                else {
+                    ObjectDetails.ExpiryDate = rowDrug.cells[4].getElementsByTagName("input")[0].value;
+                }
+            }
+            else {
+                ErrorMsg += "\n - Please Enter Expiry for:" + ObjectDetails.DrugName + "";
+            }
+            var Qty = rowDrug.cells[5].getElementsByTagName("input")[0].value;
+            if (Qty !== "")
+                ObjectDetails.Qty = parseFloat(rowDrug.cells[5].getElementsByTagName("input")[0].value);
+            else
+                ErrorMsg += "\n - Please Enter Qty for:" + ObjectDetails.DrugName + "";
+            var Free = rowDrug.cells[6].getElementsByTagName("input")[0].value;
+            if (Free !== "")
+                ObjectDetails.FreeQty = parseFloat(rowDrug.cells[6].getElementsByTagName("input")[0].value);
+            else
+                ObjectDetails.FreeQty = 0;
+            var Rate = rowDrug.cells[7].getElementsByTagName("input")[0].value;
+            if (Rate !== "")
+                ObjectDetails.Rate = parseFloat(rowDrug.cells[7].getElementsByTagName("input")[0].value);
+            else
+                ErrorMsg += "\n - Please Enter Rate for:" + ObjectDetails.DrugName + "";
+            var MRPValue = rowDrug.cells[8].getElementsByTagName("input")[0].value;
+            if (MRPValue !== "") {
+                ObjectDetails.MRP = parseFloat(rowDrug.cells[8].getElementsByTagName("input")[0].value);
+            }
+            else {
+                ErrorMsg += "\n - Please Enter MRP for:" + ObjectDetails.DrugName + "";
+            }
+            ObjectDetails.Amount = parseFloat(rowDrug.cells[9].innerHTML);
+            ObjectDetails.TaxPrecentage = parseFloat(rowDrug.cells[10].innerHTML);
+            ObjectDetails.Tax = parseFloat(rowDrug.cells[11].innerHTML);
+            var Discount = rowDrug.cells[12].getElementsByTagName("input")[0].value;
+            if (Discount !== "")
+                ObjectDetails.Discount = parseFloat(rowDrug.cells[12].getElementsByTagName("input")[0].value);
+            else
+                ObjectDetails.Discount = 0;
+            ObjectDetails.NetAmount = parseFloat(rowDrug.cells[13].innerHTML);
+            ObjectDetails.DtlSeqID = parseFloat(rowDrug.cells[15].innerHTML);
+            ObjectDetails.Status = rowDrug.cells[16].innerHTML;
+            ObjectDetails.OldBatch = rowDrug.cells[17].innerHTML;
+            ObjectDetails.OldStock = parseInt(rowDrug.cells[18].innerHTML);
+            DrugInfo.push(ObjectDetails);
+        }
+        if (ErrorMsg === "") {
+            var sendJsonData = {
+                SupplierDCNumber: $("#txtDCEditSupplierDCNo").val(),
+                SupplierID: parseInt($("#ddlDCEditSuplier").val()),
+                SupplierDCDate: $("#txtSupplierDCEditDate").val(),
+                DcTaxType: "",
+                SupplierName: $("#ddlDCEditSuplier option:selected").text(),
+                WareHouse: $("#ddlDCEditWherHouse option:selected").text(),
+                Amount: parseFloat($("#txtDCEditSummaryAmt").val()),
+                Tax: parseFloat($("#txtDCEditSummaryTax").val()),
+                NetAmount: parseFloat($("#txtDCEditNetTotal").val()),
+                Discount: parseFloat($("#txtDCEditDiscountAmt").val()),
+                DisType: $("#ddlDCEditDiscountType").val(),
+                DiscountValue: parseFloat($("#txtDCEditRateValue").val()),
+                DraftDeatils: DrugInfo
+            };
+            $.ajax({
+                url: "/api/DCEdit/DcEditPurchaseSave",
+                type: 'POST',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(sendJsonData),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    $("#tblDCEditDrugBind tbody").empty();
+                    $("#txtDCEditSupplierDCNo").val("");
+                    $("#ddlDCEditSuplier").val("0");
+                    $("#txtSupplierDCEditDate").val("");
+                    $("#ddlDCEditWherHouse").val("0");
+                    $("#txtDCEditSummaryAmt").val("");
+                    $("#txtDCEditSummaryTax").val("");
+                    $("#txtDCEditNetTotal").val("");
+                    $("#txtDCEditDiscountAmt").val("");
+                    $("#txtDCEditSummaryNetAmt").val("");
+                    alert(response);
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        else {
+            alert(ErrorMsg);
+        }
+    }
+</script>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="panel panel-default DivBox" style="background-color: white;">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div class="form-group">
+                                    <label>
+                                        Supplier DC No
+                                    </label>
+                                    <input type="text" id="txtDCEditSupplierDCNo" class="form-control" onchange="OnChangeDcNumber();" />
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div>
+                                    <label>Suppiler Name </label>
+                                    <select class="form-control" id="ddlDCEditSuplier">
+                                        <option value="0">--Select--</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div class="form-group">
+                                    <label>
+                                        Ware house
+                                    </label>
+                                    <select class="form-control" id="ddlDCEditWherHouse" style="margin-left: 5px;">
+                                        <option value="0">--Select--</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div class="form-group">
+                                    <label>
+                                        DC Date
+                                    </label>
+                                    <input type="text" id="txtSupplierDCEditDate" class="form-control" readonly="readonly" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12" id="DCEditDiv" style="font-size:13px;font-family:sans-serif;">
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <table class="table table-bordered table-striped" id="tblDCEditDrugBind">
+                                            <thead>
+                                                <tr>
+                                                    <th>S.NO</th>
+                                                    <th>Brand Name</th>
+                                                    <th>Batch</th>
+                                                    <th>Expiry Dt</th>
+                                                    <th>Qty / UOM</th>
+                                                    <th style="display:none;">Free</th>
+                                                    <th>Rate</th>
+                                                    <th>MRP</th>
+                                                    <th>Amount</th>
+                                                    <th>GST%</th>
+                                                    <th>Tax</th>
+                                                    <th style="display:none;">Discount%</th>
+                                                    <th>Net Amt</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="col-xs-3 col-sm-3 col-md-3" style="display:none;">
+                                        <table class="table table-bordered table-striped" id="tblDCEditInvoiceSummary">
+                                            <thead>
+                                                <tr>
+                                                    <th>GST %</th>
+                                                    <th>Amount</th>
+                                                    <th>Tax</th>
+                                                    <th>Total Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12" id="DCEditInvoiceTotal">
+                                <div class="row">
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Total
+                                            </label>
+                                            <input type="text" id="txtDCEditSummaryAmt" class="form-control" />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Tax
+                                            </label>
+                                            <input type="text" id="txtDCEditSummaryTax" class="form-control" />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-2 col-sm-2 col-md-2">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Total amount
+                                            </label>
+                                            <input type="text" id="txtDCEditSummaryNetAmt" class="form-control" />
+
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Discount
+                                            </label>
+                                            <Select id="ddlDCEditDiscountType" class="form-control" onchange="TotalDiscountCalculation();">
+                                                <option Value='PER'>PER</option>
+                                                <option Value='LS'>LS</option>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Dis Value
+                                            </label>
+                                            <input type="text" id="txtDCEditRateValue" value="0" class="form-control" onkeypress='return isNumberKey(event)' onchange="TotalDiscountCalculation();" />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Dis Amt
+                                            </label>
+                                            <input type="text" id="txtDCEditDiscountAmt" value="0" class="form-control" onkeypress='return isNumberKey(event)' />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-2 col-sm-2 col-md-2">
+                                        <div class="form-group">
+                                            <label style="margin-left: 5px;">
+                                                Net Amount
+                                            </label>
+                                            <input type="text" id="txtDCEditNetTotal" class="form-control" />
+
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-3 col-sm-3 col-md-3">
+                                        <label style="margin-left: 5px;"></label>
+                                        <div class="form-group">
+                                            <button style="margin-left:7px;margin-top:7px;" class="btn btn-primary" onclick="DcEditPurchaseSave();">Save</button>
+                                            <button style="margin-left:7px;margin-top:7px;" class="btn btn-primary" onclick="ClearAll();">Cancel</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

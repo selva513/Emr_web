@@ -1,0 +1,238 @@
+﻿<style>
+    label {
+        font-size: 14px;
+        font-weight: 600;
+        font-style: serif;
+    }
+
+    hr {
+        margin: 20px 0;
+        border: 0;
+        border-top: 1px solid #E0DFDF;
+        border-bottom: 1px solid #FEFEFE;
+    }
+
+    th {
+        position: sticky;
+        top: 0;
+        background: white;
+    }
+
+    table {
+        position: relative;
+    }
+
+    .modal-lg {
+        width: 1000px;
+        margin: auto;
+    }
+
+    .input-group-text {
+        border: none;
+        background-color: white;
+    }
+
+    #modal-CategoryUOM {
+        z-index: 9997;
+    }
+
+    #modal-Substance {
+        z-index: 9998;
+    }
+
+    hr {
+        border-bottom: 1px solid;
+    }
+
+    .table-wrap {
+        height: 450px;
+        overflow-y: auto;
+    }
+
+    .btn {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        transition: box-shadow 0.28s;
+    }
+
+    .btn-primary {
+        color: #fff;
+        background-color: #337ab7;
+        border-color: #337ab7;
+        box-shadow: none;
+        border-width: 0 !important;
+        overflow: hidden;
+        position: relative;
+        user-select: none;
+        padding: 9px 14px 8px 14px;
+    }
+</style>
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+
+
+    function GetExpiryReportBySearch() {
+        var ExpiryMonth = $('#txtExpiryMonth').val();
+        if (ExpiryMonth == "" || ExpiryMonth == null) {
+            alert("Please Enter The ExpiryMonth")
+        }
+        else {
+            var Expiry = parseFloat(ExpiryMonth);
+
+            $.ajax({
+                url: rootUrl + "/api/ExpiryReport/GetExpiryDateDetailsBySearch?Search=" + Expiry,
+                type: "Get",
+                contentType: "application/json; charset=utf-8",
+                dataType: 'json',
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    BindSupplierDetails(response)
+                },
+                complete: function () { $("#loading").css("display", "none") },
+                failure: function (response) {
+                    alert(response);
+                },
+                error: function (response) {
+                    alert(response);
+                }
+            });
+        }
+
+
+    }
+
+
+
+
+    function BindSupplierDetails(response) {
+        var html = "";
+        $("#tblExpiryReport tbody").empty();
+        for (i = 0; i < response.length; i++) {
+            html += "<tr>";
+            html += "<td>" + response[i].PH_CUR_DRUGBRANDNAME + "</td>";
+            html += "<td>" + response[i].PH_CUR_STOCK_BATCHNO + "</td>";
+            html += "<td>" + response[i].PH_CUR_STOCK_EXPIRYDT + "</td>";
+            html += "<td>" + response[i].PH_CUR_STOCK_PURCHCOST + "</td>";
+            html += "<td>" + response[i].PH_CUR_STOCK_BILLINGPRICE + "</td>";
+            html += "<td>" + response[i].PH_CUR_STOCK_STORENAME + "</td>";
+            html += "<tr>";
+        }
+        $("#tblExpiryReport tbody").append(html);
+
+    }
+    function isNumber(evt) {
+        evt = (evt) ? evt : window.event;
+        var charCode = (evt.which) ? evt.which : evt.keyCode;
+        if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+            return false;
+        }
+        return true;
+    }
+
+    function onCancelClick() {
+        $('#txtExpiryMonth').val('');
+        $("#tblExpiryReport tbody").empty();
+
+    }
+    function ExpiryPrint() {
+        var html = "";
+        var fromDate = $("#txtfromdate").val();
+        var toDate = $("#txttodate").val();
+        html += "<hr>";
+        html += "<div style='text-align: Center;font-size:20px;font-weight:bold;'>Expiry Report</div><br/>";
+      /*  html += "<div style='text-align: Center;'>From " + fromDate + " To " + toDate + "</div><br/>";*/
+        html += "<hr>";
+        html += "<br/>";
+        html += "<table style='font-size:small;border-collapse: collapse;'>";
+        //html += "<thead>";
+        //html += "<tr>";
+        //html += "<td style='padding-right: 10px;'>Supplier Name</td> ";
+        //html += "<td style='padding-right: 10px;'> Invoice Number </td> ";
+        //html += "<td style='padding-right: 10px;'> Invoice Date </td> ";
+        //html += "<td style='padding-right: 10px;'> Vat Type </td> ";
+        //html += "<td style='padding-right: 10px;'> Amount </td> ";
+        //html += "<td style='padding-right: 30px;'> TAX </td> ";
+        //html += "<td style='padding-right: 30px;'> Net Amount </td> ";
+        //html += "</tr> ";
+        //html += "</thead> ";
+        html += "<tbody> ";
+
+        //var rows = document.getElementsByTagName("tbody")[0].rows;
+
+        //var td = rows[i].getElementsByTagName("td")[i];
+        /*  var table = document.getElementById("tblInvoiceReport ");*/
+        var table = document.getElementById('tblExpiryReport');
+        /*var Cells = Row.getElementsByTagName("td");*/
+        for (var i = 0, row; row = table.rows[i]; i++) {
+            console.dir(row.cells)
+            html += "<tr>"
+            for (var j = 0; j < row.cells.length; j++) {
+                html += "<td>" + row.cells[j].textContent + "</td>";
+            }
+            html += "<tr>";
+
+            //if (row.cells && row.cells.length) {
+
+            //    html += "<td>" + row.cells[0].textContent + "</td>";
+            //    html += "<td>" + row.cells[1].textContent + "</td>";
+            //    html += "<td>" + row.cells[2].textContent + "</td>";
+            //    html += "<td>" + row.cells[3].textContent + "</td>";
+            //    html += "<td>" + row.cells[4].textContent + "</td>";
+            //    html += "<td>" + row.cells[5].textContent + "</td>";
+            //    html += "<td>" + row.cells[6].textContent + "</td>";
+            //    html += "<td>" + row.cells[7].textContent + "</td>";
+
+            //}
+
+
+
+        }
+        html += "</tbody> ";
+        html += " </table  > ";
+        var table = document.getElementById('review-products');
+
+        sessionStorage.setItem("PrintDetails", html);
+        openRequestedPopup()
+    }
+</script>
+
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-xs-1-5 col-sm-1-5 col-md-1-5">
+                    <label style="margin-top:9px">Expiry Month:</label>
+                </div>
+                <div class="col-xs-4 col-sm-4 col-md-4">
+                    <input type="text" class="form-control" id="txtExpiryMonth" placeholder="Enter Expiry Month" onkeypress="return isNumber(event)" />
+                </div>
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-xs-6 col-sm-6 col-md-6">
+                    <button class="btn btn-primary" onclick="GetExpiryReportBySearch();">Search</button>
+                    <button class="btn btn-primary" onclick="ExpiryPrint();">print</button>
+                    <button class="btn btn-primary" onclick="onCancelClick();">Cancel</button>
+                </div>
+            </div>
+            <br />
+            <div class="row table-wrap">
+                <table class="table table-bordered table-striped" id="tblExpiryReport" style="height:0px">
+                    <thead>
+                        <tr style="font-size:13px;font-weight:700;font-family:sans-serif;">
+                            <th>Name</th>
+                            <th>Batch No</th>
+                            <th>Expiry Date</th>
+                            <th>Purchase Cost</th>
+                            <th>Billing Cost</th>
+                            <th>Store Name</th>
+                        </tr>
+                    </thead>
+                    <tbody style=" font-size: 13px;">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

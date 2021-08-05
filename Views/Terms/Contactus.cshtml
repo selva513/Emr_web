@@ -1,0 +1,108 @@
+﻿
+@{
+    ViewData["Title"] = "Contactus";
+}
+@using Syncfusion.EJ2
+@using Newtonsoft.Json
+@model Emr_web.Models.ContactusView
+<style>
+    .form-group.required .control-label:after {
+        content: "*";
+        color: red;
+    }
+</style>
+
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-primary">
+                        <div class="card-header" style="margin-top:15px;">
+                            <h3 class="card-title">Contact Us</h3>
+                            <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                        </div>
+                        <form role="form" autocomplete="off" style="font-size:small;" method="post" asp-controller="Terms"
+                              asp-action="InsertSuggestion" data-toggle="validator"
+                              onkeydown="return event.key != 'Enter';">
+                            <div class="card-body">
+                                @*<div class="row">
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <div class="form-group required">
+                                                <label class="control-label" style="color: black;">
+                                                    Your Name
+                                                </label>
+                                                <ejs-textbox id="txtname" placeholder="Your Name" ejs-for="CustomerName"
+                                                             autofocus required></ejs-textbox>
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <div class="form-group required">
+                                                <label class="control-label" style="color: black;">
+                                                    Your Email
+                                                </label>
+                                                <input type="email" asp-for="CustomerEmail" style="height:31px;" id="Email"
+                                                       class="form-control inputEmr" placeholder="eg: youremail@gmail.com"
+                                                       oninvalid="this.setCustomValidity('Please Enter valid email')" oninput="setCustomValidity('')" required />
+                                                <div class="help-block with-errors"></div>
+                                            </div>
+                                        </div>
+                                    </div>*@
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group required">
+                                            <label class="control-label" style="color: black;">
+                                                Tell us Everything
+                                            </label>
+                                            <textarea id="txtSuggestion" class="form-control" style="height:115px;" asp-for="Description"
+                                                      required></textarea>
+                                            <div class="help-block with-errors"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <div class="form-group">
+                                                <button type="submit" id="btnsubmit" style="background-color:blue;" class="btn btn-info">
+                                                    Submit
+                                                </button>
+                                                <button type="button" id="btnCancel" style="background-color:blue;" class="btn btn-info">
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card card-widget">
+                                        <div class="card-body">
+                                            <h3>Allied Business Solutions</h3>
+                                            <p style="color: #000000">
+                                                45, Rajagopalan Street, Karumariamman Nagar Valasaravakkam,<br>
+                                                Chennai - 600087, India<br>
+                                                <a href="mailto:knockdok@alliedbusiness.co.in">knockdok@alliedbusiness.co.in</a>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                        @if (TempData["UserFailed"] != null)
+                        {
+                            <script type="text/javascript">
+                                window.onload = function () {
+                                    alert("@TempData["UserFailed"]");
+                                };
+                            </script>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

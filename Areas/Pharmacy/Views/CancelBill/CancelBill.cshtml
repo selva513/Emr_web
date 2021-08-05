@@ -1,0 +1,216 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
+*@
+<script>
+    $(document).ready(function () {
+        CanBillDateBind();
+        GetCancelBillStoreName();
+    });
+    function CanBillDateBind() {
+        try {
+            var today = new Date();
+            var currentyear = today.getFullYear();
+            var onetwentyyearback = currentyear - 120;
+            var daterange = onetwentyyearback + ':' + currentyear;
+
+            $('#txtCanfromdate').datepicker({
+                changeMonth: true,
+                changeYear: true,
+                yearRange: daterange,
+                dateFormat: 'dd/mm/yy',
+                endDate: "today",
+                maxDate: today,
+            });
+            $('#txtCantodate').datepicker({
+                changeMonth: true,
+                changeYear: true,
+                yearRange: daterange,
+                dateFormat: 'dd/mm/yy',
+                endDate: "today",
+                maxDate: today,
+            });
+            $("#txtCanfromdate").datepicker('setDate', new Date());
+            $("#txCantodate").datepicker('setDate', new Date());
+        }
+        catch (e) {
+        }
+    }
+    function GetLast100CanceledBills() {
+        var StoreName = $("#ddlCancelWarehouse option:selected").text();
+        $.ajax({
+            url: "/Pharma/Dispense/GetLast100CanceledBills",
+            type: "GET",
+            dataType: "json",
+            data: {
+                StoreName: StoreName
+            },
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                $("#tblCanceledBills tbody").empty();
+                if (response.length > 0) {
+                    var html = "";
+                    var Sno = 0;
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        Sno = PCHeader + 1;
+                        var PH_CSH_BILLNO = response[PCHeader].PH_CSH_BILLNO;
+                        var BillDt = response[PCHeader].BillDt;
+                        var PH_CSH_PATNAME = response[PCHeader].PH_CSH_PATNAME;
+                        var PH_CSH_PATSEX = response[PCHeader].PH_CSH_PATSEX;
+                        var PH_CSH_PROCESSKEY = response[PCHeader].PH_CSH_PROCESSKEY;
+                        var PH_CSH_NETTAMOUNT = response[PCHeader].PH_CSH_NETTAMOUNT;
+                        var PH_CSH_ROUNDOFF = response[PCHeader].PH_CSH_ROUNDOFF;
+                        var PH_CSH_TAXAMOUNT = response[PCHeader].PH_CSH_TAXAMOUNT;
+                        var PH_CSH_CONCESSION = response[PCHeader].PH_CSH_CONCESSION;
+                        var PH_CSH_TOTAMOUNT = response[PCHeader].PH_CSH_TOTAMOUNT;
+                        var PH_CSH_CASHRECIVEDAMT = response[PCHeader].PH_CSH_CASHRECIVEDAMT;
+
+                        html += "<tr ><td>" + Sno + "</td>";
+                        html += "<td>" + PH_CSH_BILLNO + "</td>";
+                        html += "<td>" + PH_CSH_PATNAME + "</td>";
+                        html += "<td>" + BillDt + "</td>";
+                        html += "<td>" + PH_CSH_PATSEX + "</td>";
+                        html += "<td>" + PH_CSH_TOTAMOUNT + "</td>";
+                        html += "<td>" + PH_CSH_TAXAMOUNT + "</td>";
+                        html += "<td>" + PH_CSH_ROUNDOFF + "</td>";
+                        html += "<td>" + PH_CSH_CASHRECIVEDAMT + "</td>";
+                        html += "<td style='text-align: center;'>";
+                        html += "<button class='btn btn - primary' onclick='SelectBillCancel(this)'>Bill Cancel</button></td>";
+                        html += "<td style='display:none;'>" + PH_CSH_PROCESSKEY + "</td></tr>";
+                    }
+                    $("#tblCanceledBills tbody").append(html);
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+    function GetCancelBillStoreName() {
+        $.ajax({
+            url: "/Pharma/Invoice/GetStoreName",
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.length > 0) {
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var HIS_PH_STOREMASTER = response[PCHeader].HIS_PH_STOREMASTER;
+                        var HIS_PH_STORENAME = response[PCHeader].HIS_PH_STORENAME;
+                        $('#ddlCancelWarehouse')
+                            .append($("<option></option>").val(HIS_PH_STOREMASTER).html(HIS_PH_STORENAME));
+                    }
+                }
+            }
+        });
+    }
+    function GetLast100CanceledBillsByDate() {
+        var StoreName = $("#ddlCancelWarehouse option:selected").text();
+        var fromDate = $('#txtCanfromdate').val();
+        var toDate = $('#txtCantodate').val();
+        $.ajax({
+            url: "/Pharma/Dispense/GetLast100CanceledBillsByDate",
+            type: "GET",
+            dataType: "json",
+            data: {
+                StoreName: StoreName,
+                FromDt: fromDate,
+                ToDt: toDate
+            },
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                $("#tblCanceledBills tbody").empty();
+                if (response.length > 0) {
+                    var html = "";
+                    var Sno = 0;
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        Sno = PCHeader + 1;
+                        var PH_CSH_BILLNO = response[PCHeader].PH_CSH_BILLNO;
+                        var BillDt = response[PCHeader].BillDt;
+                        var PH_CSH_PATNAME = response[PCHeader].PH_CSH_PATNAME;
+                        var PH_CSH_PATSEX = response[PCHeader].PH_CSH_PATSEX;
+                        var PH_CSH_PROCESSKEY = response[PCHeader].PH_CSH_PROCESSKEY;
+                        var PH_CSH_NETTAMOUNT = response[PCHeader].PH_CSH_NETTAMOUNT;
+                        var PH_CSH_ROUNDOFF = response[PCHeader].PH_CSH_ROUNDOFF;
+                        var PH_CSH_TAXAMOUNT = response[PCHeader].PH_CSH_TAXAMOUNT;
+                        var PH_CSH_CONCESSION = response[PCHeader].PH_CSH_CONCESSION;
+                        var PH_CSH_TOTAMOUNT = response[PCHeader].PH_CSH_TOTAMOUNT;
+                        var PH_CSH_CASHRECIVEDAMT = response[PCHeader].PH_CSH_CASHRECIVEDAMT;
+
+                        html += "<tr ><td>" + Sno + "</td>";
+                        html += "<td>" + PH_CSH_BILLNO + "</td>";
+                        html += "<td>" + PH_CSH_PATNAME + "</td>";
+                        html += "<td>" + BillDt + "</td>";
+                        html += "<td>" + PH_CSH_PATSEX + "</td>";
+                        html += "<td>" + PH_CSH_TOTAMOUNT + "</td>";
+                        html += "<td>" + PH_CSH_TAXAMOUNT + "</td>";
+                        html += "<td>" + PH_CSH_ROUNDOFF + "</td>";
+                        html += "<td>" + PH_CSH_CASHRECIVEDAMT + "</td>";
+                        html += "<td style='display:none;'>" + PH_CSH_PROCESSKEY + "</td></tr>";
+                    }
+                    $("#tblCanceledBills tbody").append(html);
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+</script>
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+
+        <div class="card-body">
+            <div class="row">
+                <div class="col-xs-3 col-sm-3 col-md-3">
+                    <div class="form-group">
+                        <label>
+                            From Date
+                        </label>
+                        <input type="text" id="txtCanfromdate" placeholder="From Date" class="form-control" />
+                    </div>
+                </div>
+                <div class="col-xs-3 col-sm-3 col-md-3">
+                    <div class="form-group">
+                        <label>
+                            To Date
+                        </label>
+                        <input type="text" id="txtCantodate" placeholder="To Date" class="form-control" />
+                    </div>
+                </div>
+                <div class="col-xs-2 col-sm-2 col-md-2">
+                    <div class="form-group">
+                        <label>
+                            Warehouse
+                        </label>
+                        <select class="form-control" id="ddlCancelWarehouse" style="margin-left: 5px;">
+                        </select>
+                    </div>
+                </div>
+                <div class="col-xs-2 col-sm-2 col-md-2">
+                    <label style="margin-left: 5px;"></label>
+                    <div class="form-group">
+                        <button style="margin-left:7px;margin-top:7px;" class="btn btn-primary" onclick="GetLast100CanceledBillsByDate();">Search</button>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <table class="table table-bordered table-striped" id="tblCanceledBills">
+                        <thead>
+                            <tr>
+                                <th>S.No</th>
+                                <th>Bill No</th>
+                                <th>Patient Name</th>
+                                <th>Bill Dt</th>
+                                <th>Gender</th>
+                                <th>Amt</th>
+                                <th>Tax</th>
+                                <th>Round Off</th>
+                                <th>Net Amt</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

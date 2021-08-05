@@ -1,0 +1,393 @@
+﻿
+@{
+    ViewData["Title"] = "City";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@using Syncfusion.EJ2
+@using Newtonsoft.Json
+@model Emr_web.Models.CityView
+
+<link href="~/AutoComplete/jquery-ui_1.11.4.css" rel="stylesheet" />
+<script src="~/AutoComplete/jquery-1.10.2.js"></script>
+<script src="~/AutoComplete/jquery-ui_1.11.4.js"></script>
+
+<style>
+    .main-page {
+        background: linear-gradient(-141deg, #FBFAFF 14%, #FBFAFF 100%);
+        margin: 0;
+    }
+
+    body,
+    text {
+        font-family: "Helvetica Neue", "Helvetica", "Arial", sans-serif, "-apple-system", "BlinkMacSystemFont";
+    }
+
+    .form-group.required .control-label:after {
+        content: "*";
+        color: red;
+    }
+</style>
+
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        var instance = ej.base.getComponent(document.getElementById("checkedactive"), "checkbox");
+        instance.checked = true;
+        GetCityPins();
+    });
+    function GetCityPins() {
+        try {
+             $.ajax({
+                    type: "GET",
+                    url: rootUrl + "/api/Patient/GetCityPins",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    success: function (response) {
+                        var data = response;
+                        if (data != "" && data != null) {
+                            var State = data[0].State;
+                            var Stateid = data[0].Stateid;
+                            var Country = data[0].Country;
+                            var Countryid = data[0].Countryid;
+                            if (State != "" && State != null) {
+                                document.getElementById('txtstate').ej2_instances[0].text = State;
+                                document.getElementById('txtstate').ej2_instances[0].value = Stateid;
+                            }
+                            if (Country != "" && Country != null) {
+                                document.getElementById('txtcountry').ej2_instances[0].text = Country;
+                                document.getElementById('txtcountry').ej2_instances[0].value = Countryid;
+                            }
+                        }
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+        }
+        catch (e) {
+        }
+    }
+    function rowSelected(args) {
+        var selectedrecords = this.getSelectedRecords();
+        document.getElementById('txt_cityid').ej2_instances[0].value = selectedrecords[0].CitySeqID;
+        //document.getElementById('txt_stateid').ej2_instances[0].value = selectedrecords[0].StateSeqID;
+        //document.getElementById('txt_countryid').ej2_instances[0].value = selectedrecords[0].CountrySeqID;
+        document.getElementById('txt_cityname').ej2_instances[0].value = selectedrecords[0].CityName;
+        document.getElementById('txt_citycode').ej2_instances[0].value = selectedrecords[0].CityCode;
+        document.getElementById('txtstate').ej2_instances[0].text = args.data.StateName;
+        document.getElementById('txtstate').ej2_instances[0].value = selectedrecords[0].StateSeqID;
+        document.getElementById('txtcountry').ej2_instances[0].text = args.data.CountryName;
+        document.getElementById('txtcountry').ej2_instances[0].value = selectedrecords[0].CountrySeqID;
+        $("#btnsave").hide();
+        $("#btnupdate").show();
+    }
+    function Countryonfiltering(e) {
+        var query = new ej.data.Query();
+        query = (e.text !== '') ? query.where('CountryName', 'Contains', e.text, true) : query;
+        e.updateData(@Html.Raw(JsonConvert.SerializeObject(ViewBag.CountryDetail)), query);
+    }
+    function Stateonfiltering(e) {
+        var query = new ej.data.Query();
+        query = (e.text !== '') ? query.where('StateName', 'Contains', e.text, true) : query;
+        e.updateData(@Html.Raw(JsonConvert.SerializeObject(ViewBag.StateDetail)), query);
+    }
+    function CancelClick() {
+        try {
+            window.location.href = "/City/City";
+        }
+        catch (e) {
+
+        }
+    }
+    function StatePinclick() {
+        try {
+            var statename = document.getElementById('txtstate').ej2_instances[0].text;
+            var stateid = document.getElementById('txtstate').ej2_instances[0].value;
+            $.ajax({
+                url: rootUrl + "/City/UpdateCityStatePin/?Statecode=" + stateid + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    var data = response;
+                    if (data == true) {
+                        alert('State Pinned Successfully.');
+                    }
+                },
+            });
+        }
+        catch (e) {
+
+        }
+    }
+    function CountryPinclick() {
+        try {
+            var countryname = document.getElementById('txtcountry').ej2_instances[0].text;
+            var countryid = document.getElementById('txtcountry').ej2_instances[0].value;
+            $.ajax({
+                url: rootUrl + "/City/UpdateCityCountryPin/?Countrycode=" + countryid + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    var data = response;
+                    if (data == true) {
+                        alert('Country Pinned Successfully.');
+                    }
+                },
+            });
+        }
+        catch (e) {
+
+        }
+    }
+    function Stateblur() {
+        try {
+            var statename = document.getElementById('txtstate').ej2_instances[0].text;
+            var stateid = document.getElementById('txtstate').ej2_instances[0].value;
+            if (statename != null && stateid != null) {
+                if (stateid == statename) {
+                    alert('Please Enter Valid State Name');
+                    document.getElementById('txtstate').ej2_instances[0].value = "";
+                }
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function Countryblur() {
+        try {
+            var countryname = document.getElementById('txtcountry').ej2_instances[0].text;
+            var countryid = document.getElementById('txtcountry').ej2_instances[0].value;
+            if (countryname != null && countryid != null) {
+                if (countryid == countryname) {
+                    alert('Please Enter Valid Country Name');
+                    document.getElementById('txtcountry').ej2_instances[0].value = "";
+                }
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function CityChange() {
+        try {
+            var cityname = document.getElementById('txt_cityname').ej2_instances[0].value;
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetCityName/?CityName=" + cityname,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    var data = response;
+                    if (data != "" && data != null) {
+                        var CitySeqid = data[0].CitySeqID;
+                        if (CitySeqid != 0) {
+                            alert('City Name Already Exist');
+                            document.getElementById('txt_cityname').ej2_instances[0].value = "";
+                            document.getElementById('txt_cityname').ej2_instances[0].focusIn();
+                        }
+                    }
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+
+        }
+    }
+    function CodeChange() {
+        try {
+            var citycode = document.getElementById('txt_citycode').ej2_instances[0].value;
+            
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/GetCityCode/?CityCode=" + citycode,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    var data = response;
+                    if (data != "" && data != null) {
+                        var CitySeqid = data[0].CitySeqID;
+                        var Cityname = data[0].CityName;
+                        if (CitySeqid != 0) {
+                            alert('City Code Already Mapped  to ' + Cityname + '"');
+                            document.getElementById('txt_citycode').ej2_instances[0].value = "";
+                            document.getElementById('txt_citycode').ej2_instances[0].focusIn();
+                        }
+                    }
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+
+        }
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-primary">
+                        <div class="card-header" style="margin-top:15px;">
+                            <h3 class="card-title">City Master</h3>
+                            <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                        </div>
+                        <form role="form" autocomplete="off" style="font-size:small;" method="post" asp-controller="City" asp-action="InsertCity" data-toggle="validator"
+                              onkeydown="return event.key != 'Enter';">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                        <div class="form-group">
+                                            <ejs-textbox id="txt_cityid" placeholder="Main Menu Name" value="0" ejs-for="CitySeqID"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                    @*<div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                            <div class="form-group">
+                                                <ejs-textbox id="txt_stateid" placeholder="Main Menu Name" value="0" ejs-for="StateSeqID"></ejs-textbox>
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-6 col-sm-6 col-md-6" style="display:none;">
+                                            <div class="form-group">
+                                                <ejs-textbox id="txt_countryid" placeholder="Main Menu Name" value="0" ejs-for="CountrySeqID"></ejs-textbox>
+                                            </div>
+                                        </div>*@
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group required">
+                                            <label class="control-label" style="color: black;">
+                                                City Name
+
+                                            </label>
+                                            <ejs-textbox id="txt_cityname" placeholder="City Name" blur="CityChange" ejs-for="CityName" autofocus required></ejs-textbox>
+                                            <div class="help-block with-errors"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <label class="control-label" style="color: black;">
+                                                City Code (Telephone for Landline)
+                                            </label>
+                                            <ejs-textbox id="txt_citycode" placeholder="City Code" ejs-for="CityCode" blur="CodeChange"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-5 col-sm-5 col-md-5">
+                                        <div class="form-group required">
+                                            <label class="control-label" style="color: black;">
+                                                State Name
+                                            </label>
+                                            <ejs-combobox id="txtstate" autofill="true" ejs-for="StateSeqID"
+                                                          allowFiltering="true" filtering="Stateonfiltering"
+                                                          dataSource="@ViewBag.StateDetail" placeholder="State" popupHeight="230px" blur="Stateblur"
+                                                          required>
+                                                <e-combobox-fields text="StateName" value="StateSeqID"></e-combobox-fields>
+                                            </ejs-combobox>
+                                            <div class="help-block with-errors"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <div class="form-group">
+                                            <img src="../images/pinlightred.png" title="Pin" width="30" height="30" onclick="StatePinclick()"
+                                                 style="cursor:pointer;margin-top:33px;" />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-5 col-sm-5 col-md-5">
+                                        <div class="form-group required">
+                                            <label class="control-label" style="color: black;">
+                                                Country Name
+                                            </label>
+                                            <ejs-combobox id="txtcountry" autofill="true" ejs-for="CountrySeqID"
+                                                          allowFiltering="true" filtering="Countryonfiltering" blur="Countryblur"
+                                                          dataSource="@ViewBag.CountryDetail" placeholder="Country" popupHeight="230px"
+                                                          required>
+                                                <e-combobox-fields text="CountryName" value="CountrySeqId"></e-combobox-fields>
+                                            </ejs-combobox>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-1 col-sm-1 col-md-1">
+                                        <div class="form-group">
+                                            <img src="../images/pinlightred.png" title="Pin" width="30" height="30" onclick="CountryPinclick()"
+                                                 style="cursor:pointer;margin-top:33px;" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <ejs-checkbox id="checkedactive" checked="true" name="M_IsActive" label="Active" ejs-for="Isactive"></ejs-checkbox>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <div class="form-group">
+                                                <button type="submit" id="btnsave" style="background-color:blue;" class="btn btn-info">
+                                                    Save
+                                                </button>
+                                                <button type="submit" id="btnupdate" style="display:none;background-color:blue;" class="btn btn-info Update">
+                                                    Update
+                                                </button>
+                                                <button type="button" id="btnCancel" onclick="CancelClick();" style="background-color:blue;" class="btn btn-info">
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
+                                            <ejs-grid id="GridCityMaster" width="98%" style="padding:0px 20px;cursor:pointer;"
+                                                      dataSource="ViewBag.CityDetail" allowPaging="true"
+                                                      toolbar="@(new List<string>() { "Search"})" rowSelected="rowSelected">
+                                                <e-grid-searchsettings fields="@(new string[] { "CitySeqID","CityName","StateName","CountryName"})"
+                                                                       operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                                <e-grid-selectionsettings type="Single"></e-grid-selectionsettings>
+                                                <e-grid-pagesettings pageSize="10" pageCount="10"></e-grid-pagesettings>
+                                                <e-grid-columns>
+                                                    <e-grid-column field="SNO" headerText="SNO"></e-grid-column>
+                                                    <e-grid-column field="CitySeqID" visible="false" headerText="City Id"></e-grid-column>
+                                                    <e-grid-column field="StateSeqID" visible="false" headerText="State Id"></e-grid-column>
+                                                    <e-grid-column field="CountrySeqID" visible="false" headerText="Country Id"></e-grid-column>
+                                                    <e-grid-column field="CityName" headerText="City Name"></e-grid-column>
+                                                    <e-grid-column field="CityCode" headerText="City Code"></e-grid-column>
+                                                    <e-grid-column field="StateName" headerText="State Name"></e-grid-column>
+                                                    <e-grid-column field="CountryName" headerText="Country Name"></e-grid-column>
+                                                </e-grid-columns>
+                                            </ejs-grid>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+

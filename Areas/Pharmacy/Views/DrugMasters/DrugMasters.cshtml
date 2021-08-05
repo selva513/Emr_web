@@ -1,0 +1,3906 @@
+﻿
+<link href="~/AutoComplete/jquery-ui_1.11.4.css" rel="stylesheet" />
+<script src="~/AutoComplete/jquery-ui_1.11.4.js"></script>
+<script src="~/AutoComplete/jquery-1.10.2.js"></script>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<style>
+    label {
+        font-size: 14px;
+        font-weight: 600;
+        font-style: serif;
+    }
+
+    hr {
+        margin: 20px 0;
+        border: 0;
+        border-top: 1px solid #E0DFDF;
+        border-bottom: 1px solid #FEFEFE;
+    }
+
+    th {
+        position: sticky;
+        top: 0;
+        background: white;
+    }
+
+    table {
+        position: relative;
+    }
+
+    .modal-lg {
+        width: 1000px;
+        margin: auto;
+    }
+
+    .input-group-text {
+        border: none;
+        background-color: white;
+    }
+
+    #modal-CategoryUOM {
+        z-index: 9997;
+    }
+
+    #modal-Substance {
+        z-index: 9998;
+    }
+
+    hr {
+        border-bottom: 1px solid;
+    }
+
+    .table-wrap {
+        height: 450px;
+        overflow-y: auto;
+    }
+
+    .btn {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        transition: box-shadow 0.28s;
+    }
+
+    .btn-primary {
+        color: #fff;
+        background-color: #337ab7;
+        border-color: #337ab7;
+        box-shadow: none;
+        border-width: 0 !important;
+        overflow: hidden;
+        position: relative;
+        user-select: none;
+        padding: 9px 14px 8px 14px;
+    }
+
+    #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 9998;
+    }
+
+    #loading1 {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 9998;
+    }
+
+    #loadingcontent {
+        display: table;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loadingspinner {
+        display: table-cell;
+        vertical-align: middle;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+        padding-top: 80px;
+    }
+</style>
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        DrugMasterPageLoad();
+    });
+    function DrugMasterPageLoad() {
+        onChangeDrugMenu();
+        SearchManufactureMasterOthrs();
+        SearchManufactureMasterIns();
+        SearchManufactureMasterDis();
+        BindDate();
+        /*SearchDrugForm();*/
+        SearchPackType();
+        SearchGenericName();
+        SubstanceFormulaDetails();
+        SearchManufactureMaster();
+        CurrentDate();
+        GetSurgicalInstrumentsData();
+        /*  BindSurgicalDisposableData();*/
+        GetSurgicalDisposableData();
+        SearchDcMaster();
+        RackMasterSearch();
+        //SearchDrugForm();
+        SearchDFormMaster();
+        SearcDisRackMaster();
+        SearcInsRackMaster();
+        SearcOthrRackMaster();
+        SearchDisPackType();
+        SearchOthrsPackType();
+        SearchInsPackType();
+    }
+    function GenricPopup() {
+        //$('#modal-default').modal('show');
+        $('#modal-Substance').modal('show');
+
+
+    }
+    function DeleteDisposablePopup() {
+
+        $('#modal-DeleteDisposable').modal({
+            backdrop: 'static',
+            keyboard: false
+        })
+    }
+    function DeleteInstrumentsPopup() {
+
+
+        $('#modal-DeleteInstruments').modal({
+            backdrop: 'static',
+            keyboard: false
+        })
+    }
+    function DeleteOthersPopup() {
+        $('#modal-DeleteOthers').modal({
+            backdrop: 'static',
+            keyboard: false
+        })
+    }
+    function SurgicalDisposablePopup() {
+
+        $('#modal-SurgicalDisposable').modal({
+            backdrop: 'static',
+            keyboard: false
+        })
+        $('#modal-SurgicalDisposable').modal('show');
+
+    }
+
+    function SurgicalInstrumentPopup() {
+        $('#modal-SurgicalInstrument').modal({
+            backdrop: 'static',
+            keyboard: false
+        })
+        $('#modal-SurgicalInstrument').modal('show');
+
+
+
+    }
+    function Others() {
+        $('#modal-Others').modal({
+            backdrop: 'static',
+            keyboard: false
+        })
+        $('#modal-Others').modal('show');
+
+    }
+    function CategoryUOMPopup() {
+        $('#modal-CategoryUOM').modal('show');
+        $('#modal-CategoryUOM').modal({
+            backdrop: 'static',
+            keyboard: false
+        })
+
+    }
+    function BindDrugForm() {
+        $.ajax({
+            url: rootUrl + "/api/DrugMastersApi/GetSupplierDetails",
+            type: "GET",
+            contentType: "application/json; charset=utf-8",
+            dataType: 'json',
+            success: function (response) {
+
+                $.each(response, function (key, value) {
+
+                    $("#txtDrugForm").append($("<option></option>").val(value.PH_UOMID).html(value.PH_UOMDESC));
+                })
+            },
+            failure: function (response) {
+                alert(response);
+            },
+            error: function (response) {
+                alert(response);
+            }
+        });
+    }
+    function OnPackTypeClick() {
+        var DrugForm = $("#txtPackage").val();
+        if (DrugForm != null && DrugForm != "")
+            $("#txtPackage").autocomplete("search", DrugForm);
+        else
+            $("#txtPackage").autocomplete("search", "");
+    }
+    function SearchPackType() {
+
+        $("#txtPackage").autocomplete({
+
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/DrugMastersApi/GetDrugsUombySearch",
+                    type: "GET",
+                    data: {
+                        Search: request.term
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_UOMDESC,
+                                value: el.PH_UOMID
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                //$("#txtCity").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#txtPackage").val(ui.item.label);
+                $("#txtPackage").val(ui.item.label);
+                /*$("#txtPH_UOMID").val(ui.item.value);*/
+                //$("#txtCustomerName").val(ui.item.label);
+                //$("#txtContactSearch").val('');
+            },
+            minLength: 0
+        });
+        $(".PackType").autocomplete("option", "appendTo", ".eventInsForm");
+    }
+    function GenericNameClick() {
+        var GenericName = $("#txtGenericName").val();
+        if (GenericName != null && GenericName != "")
+            $("#txtGenericName").autocomplete("Search", GenericName);
+        else
+            $("#txtGenericName").autocomplete("Search", "");
+    }
+    function SearchGenericName() {
+
+        $("#txtGenericName").autocomplete({
+
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/DrugMastersApi/GetGenericNamesbySearch",
+                    type: "GET",
+                    data: {
+                        Search: request.term
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_DRUG_GENERICNAME,
+                                value: el.PH_DRUG_GENERICSEQID
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                //$("#txtCity").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#txtGenericName").val(ui.item.label);
+                $("#txtGenericName").val(ui.item.label);
+                $("#txtPH_DRUG_GENERICSEQID").val(ui.item.value);
+                //$("#txtCustomerName").val(ui.item.label);
+                //$("#txtContactSearch").val('');
+            },
+            minLength: 0
+        });
+        $(".GenericName").autocomplete("option", "appendTo", ".eventInsForm");
+    }
+    function SubstanceFormulaDetails() {
+        try {
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/DrugMastersApi/GetSubstancesNameBySearch",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (data) {
+                    $("#txtSubstanceName").empty();
+                    $.each(data, function (key, value) {
+                        $("#txtSubstanceName").append($("<option></option>").val(value.FormulaSeqId).html(value.FormulaName));
+                    });
+                    $('#txtSubstanceName').multiselect({
+                        enableFiltering: true,
+                        includeSelectAllOption: true,
+                        maxHeight: 400,
+                        buttonWidth: '100%',
+                        dropUp: false
+                    });
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) { }
+    }
+    //function SubstanceNameClick() {
+    //    var SubstanceName = $("#txtSubstanceName").val();
+    //    if (SubstanceName != null && SubstanceName != "")
+    //        $("#txtSubstanceName").autocomplete("Search", SubstanceName);
+    //    else
+    //        $("#txtSubstanceName").autocomplete("Search", "");
+    //}
+    //function SearchSubstanceName() {
+
+    //    $("#txtSubstanceName").autocomplete({
+
+    //        source: function (request, response) {
+    //            $.ajax({
+    //                url: rootUrl + "/api/DrugMastersApi/GetSubstanceNameBySearch",
+    //                type: "GET",
+    //                data: {
+    //                    Search: request.term
+    //                },
+    //                dataType: "json",
+    //                success: function (data) {
+    //                    response($.map(data, function (el) {
+    //                        return {
+    //                            label: el.FormulaName,
+    //                            value: el.FormulaSeqId
+    //                        };
+    //                    }));
+    //                }
+    //            });
+    //        },
+    //        focus: function (event, ui) {
+    //            event.preventDefault();
+    //            //$("#txtCity").val(ui.item.label);
+    //        },
+    //        select: function (event, ui) {
+    //            event.preventDefault();
+    //            $("#txtSubstanceName").val(ui.item.label);
+    //            $("#txtSubstanceName").val(ui.item.label);
+    //            $("#txtSubstanceSeqId").val(ui.item.value);
+    //            var SubstanceName = $("#txtSubstanceName").val();
+    //            var SeqId = $("#txtSubstanceSeqId").val();
+    //            var SubstanceSeqId = parseFloat(SeqId)
+    //            OnSubstanceFormula(SubstanceName, SubstanceSeqId)
+    //            //$("#txtCustomerName").val(ui.item.label);
+    //            //$("#txtContactSearch").val('');
+    //        },
+    //        minLength: 0
+    //    });
+    //}
+    //function OnSubstanceFormula(SubstanceName, SubstanceSeqId) {
+    //    try {
+
+    //        var SubstanceName = SubstanceName;
+    //        var SubstanceSeqId = SubstanceSeqId;
+    //        BindSubstanceDetails(SubstanceName, SubstanceSeqId)
+    //        document.getElementById('txtSubstanceName').value="";
+    //        document.getElementById('txtSubstanceSeqId').value="";
+
+
+
+
+    //    }
+    //    catch (e) {
+
+    //    }
+    //}
+    //function BindSubstanceDetails(SubstanceName, SubstanceSeqId) {
+    //    $.ajax({
+    //        url: rootUrl + "/api/DrugMastersApi/GetSubstanceDetailsBySearch?SubstanceSeqId=" + SubstanceSeqId,
+    //        type: 'Get',
+    //        contentType: "application/json; charset=utf-8",
+    //        dataType: "json",
+    //        success: function (response) {
+    //            var html = "";
+    //                html += "<tr>";
+    //                html += "<td style='display:none'>" + SubstanceSeqId + "</td>";
+    //            html += "<td>" + SubstanceName + "</td>";
+    //            html += "<img src='../Images/Delete.png'  onclick='return DeleteInvestigation(this)' style='width: 25px !important;height:25px !important;cursor:pointer;'>";
+    //                html += "</tr>";
+
+    //            $("#tblDrugFormula tbody").append(html);
+
+    //        }
+
+    //    });
+
+    //}
+    /*   var DrugMaster = new Array();*/
+    //function AddDrugMaster() {
+    //    var DrugName = $('#txtDrugName').val();
+    //    var GenericName = $('#txtGenericName').val();
+    //    var drugCategory = $('#txtDrugCategory').val();
+    //    var DrugForm = $('#txtDrugForm').val();
+    //    var Package = $('#txtPackage').val();
+    //    var Qty = $('#txtDrugQty').val();
+    //    var DrugQty = parseFloat(Qty)
+    //    var HSN = $('#txtHSN').val();
+    //    var GST = $('#txtGST').val();
+    //    var Manufacture = $('#txtManufacture').val();
+    //    var ManufactureId = $('#txtManufactureId').val();
+    //    /*var Expirydate = $('#txtroot').val();*/
+    //    var ScheduleType = $('#txtScheduleType').val();
+    //    var Strength = $('#txtStrength').val();
+    //    var DrugValue = $('#DrugValue').val();
+    //    var Rack = $('#txtRack').val();
+    //    var notes = $('#txtNotes').val();
+
+    //    var share_user_text = $('#txtSubstanceName option:selected').toArray().map(item => item.text);
+    //    var share_user_val = $('#txtSubstanceName option:selected').toArray().map(item => item.value);
+
+    //    var SubstanceMappingarray = new Array();
+    //    if (share_user_val != "" || share_user_val != null) {
+    //        for (var i = 0; i < share_user_val.length; i++) {
+    //            var SubstanceMappings = new Object();
+    //            SubstanceMappings.FormulaSeqId = parseFloat(share_user_val[i]);
+    //            SubstanceMappingarray.push(SubstanceMappings);
+    //        }
+    //    }
+    //    var DrugMasters = {
+    //        PH_ITEM_DRUGNAME_BRAND: DrugName,
+    //        PH_ITEM_DRUG_GENERIC: GenericName,
+    //        PH_ITEM_DRUG_CATEGORY: drugCategory,
+    //        PH_ITEM_DRUG_UOM: DrugForm,
+    //        PH_ITEM_PACKAGE: Package,
+    //        PH_ITEM_DRUG_QTY: DrugQty,
+    //        PH_ITEM_HSNCODE: HSN,
+    //        PH_ITEM_GST: GST,
+    //        PH_ITEM_MANUFACTURE: parseFloat(ManufactureId),
+    //        PH_ITEM_MANUFACTURENAME: Manufacture,
+    //        PH_ITEM_SCHEDULETYPE: ScheduleType,
+    //        PH_ITEM_STRENGTH: Strength,
+    //        PH_ITEM_RACK: Rack,
+    //        PH_ITEM_NOTES: notes,
+    //        substanceMappings: SubstanceMappingarray
+    //    }
+    //    DrugMaster.push(DrugMasters);
+    //    drugClear();
+    //}
+    function CheckExistData() {
+        var DrugName = $('#txtDrugName').val();
+        var drugCategory = $('#txtDrugCategory').val();
+        var Strength = $('#txtStrength').val();
+
+
+
+    }
+    function SaveDrugMaster() {
+        $('#btnDrugSave').prop("disabled", true);
+        var DrugCodes = 0;
+        var DrugName = $('#txtDrugName').val();
+        var drugCategory = $('#txtDrugCategory').val();
+        var Strength = $('#txtStrength').val();
+        if (Strength == null) {
+            Strength = "";
+        }
+        if (DrugName == "" || DrugName == null) {
+            alert("Enter the DrugName");
+            $('#btnDrugSave').prop("disabled", false);
+        }
+        //else if (Strength == "" || Strength == null) {
+        //    //alert("Enter the Strength");
+        //    //$('#btnDrugSave').prop("disabled", false);
+
+        //}
+        else if (drugCategory == "" || drugCategory == null) {
+            alert("Enter the Drug Category");
+            $('#btnDrugSave').prop("disabled", false);
+        }
+
+
+
+        else {
+            $.ajax({
+                url: rootUrl + "/api/DrugMastersApi/GetExistDrugData?DrugName=" + DrugName.trim() + "&drugCategory=" + drugCategory.trim() + "&Strength=" + Strength.trim() + "&DrugCode=" + DrugCodes,
+                type: 'get',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+
+                    if (response.length > 0) {
+
+                        alert("Drug Already Exists");
+                        $('#txtDrugName').val('');
+                        $('#txtDrugCategory').val('');
+                        $('#txtStrength').val('');
+                        $('#btnDrugSave').prop("disabled", false);
+                    }
+
+
+                    else {
+                        var GenericName = $('#txtGenericName').val();
+                        var drugCategory = $('#txtDrugCategory').val();
+                        var drugCategoryId = $('#txtDrugCategoryId').val();
+                        if (drugCategory == "" || drugCategory == null) {
+                            drugCategoryId = 0;
+                        }
+                        if (drugCategoryId == "" || drugCategoryId == null) {
+                            drugCategoryId = 0;
+                        }
+                        var DrugFormName = $('#txtDrugForm').val();
+                        var DrugForm = $('#txtDrugFormId').val();
+                        if (DrugForm == "" || DrugForm == null) {
+                            DrugForm = 0;
+                        }
+                        if (DrugFormName == "" || DrugFormName == null) {
+                            DrugForm = 0;
+                        }
+                        var Package = $('#txtPackage').val();
+                        var Qty = $('#txtDrugQty').val();
+                        if (Qty == "" || Qty == null) {
+                            Qty = 0;
+                        }
+                        else {
+                            var drugQty = parseFloat(Qty);
+                        }
+                        /* var DrugQty = parseFloat(Qty);*/
+                        var HSN = $('#txtHSN').val();
+                        var GST = $('#txtGST').val();
+                        var Manufacture = $('#txtManufacture').val();
+                        var ManufactureId = $('#txtManufactureId').val();
+                        if (ManufactureId == "" || ManufactureId == null) {
+                            ManufactureId = 0;
+                        }
+                        else {
+                            var manufacture = parseFloat(ManufactureId);
+                        }
+
+                        /*var Expirydate = $('#txtroot').val();*/
+                        var ScheduleType = $('#txtScheduleType').val();
+
+                        var DrugValue = $('#DrugValue').val();
+                        var Rack = $('#txtRack').val();
+                        var notes = $('#txtNotes').val();
+
+                        var share_user_text = $('#txtSubstanceName option:selected').toArray().map(item => item.text);
+                        var share_user_val = $('#txtSubstanceName option:selected').toArray().map(item => item.value);
+
+                        var SubstanceMappingarray = new Array();
+                        if (share_user_val != "" || share_user_val != null) {
+                            for (var i = 0; i < share_user_val.length; i++) {
+                                var SubstanceMappings = new Object();
+                                SubstanceMappings.FormulaSeqId = parseFloat(share_user_val[i]);
+                                SubstanceMappingarray.push(SubstanceMappings);
+                            }
+                        }
+                        //if (DrugName == "" || DrugName == null) {
+                        //    alert("Enter the DrugName");
+                        //}
+                        //else if (DrugForm == "" || DrugForm == null) {
+                        //    alert("Enter the DrugForm");
+                        //}
+                        //else if (ManufactureId == "" || ManufactureId == null) {
+                        //    alert("Enter the Manufacture ");
+                        //}
+                        //else if (GenericName == "" || GenericName == null) {
+                        //    alert("Enter the GenericName ");
+                        //}
+                        /* else {*/
+                        var DrugMasters = {
+                            PH_ITEM_DRUGNAME_BRAND: DrugName,
+                            PH_ITEM_DRUG_GENERIC: GenericName,
+                            PH_ITEM_DRUG_CATEGORY: drugCategory,
+                            PH_ITEM_DRUG_CatID: parseFloat(drugCategoryId),
+                            PH_ITEM_DRUG_UOM: Package,
+                            PH_ITEM_PACKAGE: Package,
+                            PH_DrugFormName: DrugFormName,
+                            PH_ITEM_DRUG_FORMId: parseFloat(DrugForm),
+                            PH_ITEM_DRUG_QTY: drugQty,
+                            PH_ITEM_HSNCODE: HSN,
+                            PH_ITEM_GST: GST,
+                            PH_ITEM_MANUFACTURE: manufacture,
+                            PH_ITEM_MANUFACTURENAME: Manufacture,
+                            PH_ITEM_SCHEDULETYPE: ScheduleType,
+                            PH_ITEM_STRENGTH: Strength,
+                            PH_ITEM_RACK: Rack,
+                            PH_ITEM_NOTES: notes,
+                            substanceMappings: SubstanceMappingarray
+                        }
+                        /*    DrugMaster.push(DrugMasters);*/
+                        $('#btnDrugSave').prop("disabled", false),
+                            $.ajax({
+                                url: rootUrl + "/api/DrugMastersApi/CreateDrugMasters",
+                                type: "POST",
+                                contentType: "application/json; charset=utf-8",
+                                data: JSON.stringify(DrugMasters),
+                                beforeSend: function () { $("#loading").css("display", "block"); },
+                                dataType: 'json',
+                                success: function (data) {
+                                    if (data > 0) {
+                                        alert("Saved Sucessfully");
+                                        drugClear();
+                                        GetDrugdetails();
+                                        $('#btnDrugSave').prop("disabled", false);
+                                        //$(function () {
+                                        //    $('#modal-CategoryUOM').modal('toggle');
+                                        //});
+                                    }
+                                },
+                                complete: function () { $("#loading").css("display", "none") },
+                                failure: function (response) {
+                                    alert(response);
+                                },
+                                error: function (response) {
+                                    alert(response);
+                                },
+                                complete: function () { $("#loading").css("display", "none") }
+
+                            });
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none") }
+            });
+
+        }
+    }
+
+    /*  }*/
+
+    /* }*/
+
+
+
+    function closeDrugMaster() {
+
+        drugClear();
+        $('#btnDrugSave').attr("hidden", false);
+        $('#btnDrugUpdate').attr("hidden", true);
+        $('#modal-CategoryUOM').modal('toggle');
+
+    }
+
+    function drugClear() {
+        $('#txtDrugName').val('');
+        $('#txtGenericName').val('');
+        $('#txtDrugCategory').val('');
+        $('#txtDrugForm').val('');
+        $('#txtPackage').val('');
+        $('#txtDrugQty').val('');
+        $('#txtHSN').val('');
+        $('#txtGST').val('');
+        $('#txtManufacture').val('');
+        $('#txtManufactureId').val('');
+        $('#lblDisplayDrugName').html('');
+        /*var Expirydate = $('#txtroot').val();*/
+        $('#txtScheduleType').val('');
+        $('#txtStrength').val('');
+        $('#DrugValue').val('');
+        $('#txtRack').val('');
+        $('#txtNotes').val('');
+        $('#txtSubstanceName option:selected').prop("selected", false);
+        $("#txtSubstanceName").multiselect('refresh');
+    }
+    function Cancel() {
+        //window.location.href = "/Pharmacy/DrugMasters/DrugMasters";
+        window.location.href = "/Pharmacy/PharmacyMasters/PharmacyMastersView";
+    }
+
+    function ManufactureMasterClick() {
+        var Manufacture = $("#txtManufacture").val();
+        if (Manufacture != null && Manufacture != "")
+            $("#txtManufacture").autocomplete("Search", Manufacture);
+        else
+            $("#txtManufacture").autocomplete("Search", "");
+    }
+    function SearchManufactureMaster() {
+
+        $("#txtManufacture").autocomplete({
+
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/DrugMastersApi/ManufactureSearch",
+                    type: "GET",
+                    data: {
+                        Search: request.term
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_ManufactureName,
+                                value: el.PH_ManufactureID
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                //$("#txtCity").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#txtManufacture").val(ui.item.label);
+                $("#txtManufacture").val(ui.item.label);
+                $("#txtManufactureId").val(ui.item.value);
+                //$("#txtCustomerName").val(ui.item.label);
+                //$("#txtContactSearch").val('');
+            },
+            minLength: 0
+        });
+        $(".addresspicker").autocomplete("option", "appendTo", ".eventInsForm");
+    }
+    function SaveFormula() {
+
+        var AddSubstance = $('#txtAddSubstance').val();
+        if (AddSubstance == "" || AddSubstance == null) {
+            alert("Please Enter the Substance ")
+        }
+        else {
+            var Save = {
+                FormulaName: AddSubstance
+            }
+
+
+            $.ajax({
+                url: rootUrl + "/api/DrugMastersApi/CreatesubstanceFormulas",
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(Save),
+                dataType: 'json',
+                success: function (data) {
+                    if (data = true) {
+                        alert("Saved Sucessfully");
+                        $('#txtAddSubstance').val('');
+                        SubstanceFormulaDetails();
+
+                    }
+                },
+                failure: function (response) {
+                    alert(response);
+                },
+                error: function (response) {
+                    alert(response);
+                }
+            });
+        }
+
+    }
+    function BindDate() {
+        var now = new Date();
+
+
+        var month = ("0" + (now.getMonth() + 1)).slice(-2);
+
+        var today = now.getFullYear() + "-" + (month);
+
+        $('#txt').val(today);
+
+
+
+        //document.getElementById('txtStartTime').value = Date.gettime();
+    }
+    function CurrentDate() {
+        var dtToday = new Date();
+
+        var month = dtToday.getMonth() + 1;
+        var day = dtToday.getDate();
+        var year = dtToday.getFullYear();
+        if (month < 10)
+            month = '0' + month.toString();
+
+
+        var maxDate = year + '-' + month;
+        $('#txt').attr('min', maxDate);
+
+    };
+    function GetDrugdetails() {
+        $.ajax({
+            url: rootUrl + "/api/DrugMastersApi/GetDrugMasterByHospitalID",
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                BindDrugDetails(response);
+            }
+
+
+        })
+    }
+
+
+    function BindDrugDetails(response) {
+        var html = "";
+        $("#tblDrug tbody").empty();
+        for (Drug = 0; Drug < response.length; Drug++) {
+            var brandName = response[Drug].PH_ITEM_DRUGNAME_BRAND;
+            if (brandName == "" || brandName == null) {
+                brandName = "";
+            }
+            var generic = response[Drug].PH_ITEM_DRUG_GENERIC;
+            if (generic == "" || generic == null) {
+                generic = "";
+            }
+            var category = response[Drug].PH_ItemCatName;
+            if (category == "" || category == null) {
+                category = "";
+            }
+            var hsn = response[Drug].PH_ITEM_HSNCODE;
+            if (hsn == "" || hsn == null) {
+                hsn = "";
+            }
+            var gst = response[Drug].PH_ITEM_GST;
+            if (gst == "" || gst == null) {
+                gst = "";
+            }
+            var manufacture = response[Drug].PH_ManufactureName;
+            if (manufacture == "" || manufacture == null) {
+                manufacture = "";
+            }
+            var scheduleType = response[Drug].PH_ITEM_SCHEDULETYPE;
+            if (scheduleType == "" || scheduleType == null) {
+                scheduleType = "";
+            }
+            var rack = response[Drug].PH_ITEM_RACK;
+            if (rack == "" || rack == null) {
+                rack = "";
+            }
+            var strength = response[Drug].PH_ITEM_STRENGTH;
+            if (strength == "" || strength == null) {
+                strength = "";
+            }
+            var packtype = response[Drug].PH_ITEM_PACKAGE;
+            if (packtype == "" || packtype == null) {
+                packtype = "";
+            }
+            var packQty = response[Drug].PH_ITEM_DRUG_QTY;
+            if (packQty == "" || packQty == null) {
+                packQty = "";
+            }
+
+            html += "<tr  style='font-size:13px;font-family:sans-serif'>";
+            html += "<td style='display:none'>" + response[Drug].PH_ITEM_DrugCode + "</td>";
+            html += "<td>" + brandName + "</td>";
+            html += "<td>" + strength + "</td>";
+            html += "<td>" + category + "</td>";
+            html += "<td style='display:none;'>" + generic + "</td>";
+            html += "<td>" + hsn + "</td>";
+            html += "<td>" + gst + "</td>";
+            html += "<td>" + manufacture + "</td>";
+            html += "<td>" + scheduleType + "</td>";
+            html += "<td>" + rack + "</td>";
+            html += "<td>" + packtype + "</td>";
+            html += "<td>" + packQty + "</td>";
+            html += "<td> <input type='image' src='/images/Edit1.png' style='height:20px' onclick ='GetDrugSelect(this);' />" +
+                "<input type='image' src='/images/Delete1.jpg' style='height:25px;margin-left:12px;' onclick='DeleteDrugDetails(this);' /></td >";
+            // html += "<td> <input type='image' src='../images/Edit1.png' /></td>";
+            html += "<tr>";
+        }
+        $("#tblDrug tbody").append(html);
+
+
+
+    }
+    function DeleteDrugDetails(SelectedRow) {
+        var row = SelectedRow.parentNode.parentNode;
+        var DrugCode = parseFloat(row.cells[0].innerHTML);
+        var drugId = $('#txtDrugCode').val(DrugCode);
+
+        $.ajax({
+            url: rootUrl + "/api/CurrentStockApi/GetCurrentStockDetailsByHospitalId",
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                for (i = 0; i < response.length; i++) {
+                    var drugCode = response[i].PH_CUR_DRUGCODE
+                    if (drugCode == DrugCode) {
+                        alert("CurrentStock Drug Cannot be Deleted");
+                        return false;
+                    }
+                }
+                $('#modal-Category').modal('show');
+
+            }
+        });
+
+
+
+
+    }
+
+
+
+
+    function DeleteDrugDetailsByDrugCode() {
+
+        var PH_ITEM_DrugCode = $('#txtDrugCode').val();
+
+        $.ajax({
+            url: rootUrl + "/api/DrugMastersApi/DeleteDrugMasterByDrugsCode?PH_ITEM_DrugCode=" + PH_ITEM_DrugCode,
+            type: 'Post',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                if (response = true) {
+                    GetDrugdetails();
+                    alert("Deleted Sucessfully");
+                    /*window.location.href = "/Pharmacy/DrugMasters/DrugMasters";*/
+                }
+            }
+        });
+    }
+
+    function GetDrugSelect(SelectedRow) {
+        var row = SelectedRow.parentNode.parentNode;
+        var DrugCode = parseFloat(row.cells[0].innerHTML);
+        BindDrugDetailsByDrugCode(DrugCode);
+
+    }
+
+    function BindDrugDetailsByDrugCode(DrugCode) {
+
+        var PH_ITEM_DrugCode = DrugCode;
+
+        $.ajax({
+            url: rootUrl + "/api/DrugMastersApi/GetDrugMastersDetailsByDrugCode?PH_ITEM_DrugCode=" + PH_ITEM_DrugCode,
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                for (i = 0; i <= response.length; i++) {
+                    if (response[i].substanceMappings !== 'undefined') {
+                        var Substance = response[i].substanceMappings;
+                        var SubstanceMapping = Substance;
+                        if (SubstanceMapping.length > 0) {
+                            var UserArray = new Array();
+                            $.each(SubstanceMapping, function () {
+                                var FormulaSeqId = this.FormulaSeqId;
+                                UserArray.push(FormulaSeqId);
+
+                            });
+                            $('#txtSubstanceName').multiselect('refresh');
+                            $('#txtSubstanceName').multiselect('select', UserArray, true);
+
+                        }
+
+                    }
+
+
+                    $('#txtDrugCode').val(PH_ITEM_DrugCode);
+                    $('#txtDrugName').val(response[i].PH_ITEM_DRUGNAME_BRAND);
+                    $('#txtGenericName').val(response[i].PH_ITEM_DRUG_GENERIC);
+                    $('#txtDrugForm').val(response[i].PH_DrugFormName);
+                    $('#txtDrugFormId').val(response[i].PH_ITEM_DRUG_FORM);
+                    $('#txtPackage').val(response[i].PH_ITEM_PACKAGE);
+                    $('#txtDrugQty').val(response[i].PH_ITEM_DRUG_QTY);
+                    $('#txtHSN').val(response[i].PH_ITEM_HSNCODE);
+                    $('#txtGST').val(response[i].PH_ITEM_GST);
+                    $('#txtManufacture').val(response[i].PH_ManufactureName);
+                    $('#txtManufactureId').val(response[i].PH_ITEM_MANUFACTURE);
+                    $('#txtScheduleType').val(response[i].PH_ITEM_SCHEDULETYPE);
+                    $('#txtStrength').val(response[i].PH_ITEM_STRENGTH);
+                    $('#DrugValue').val(response[i].PH_ITEM_STRENGTH_VALUE);
+                    $('#txtRack').val(response[i].PH_ITEM_RACK);
+                    $('#txtDrugCategory').val(response[i].PH_ItemCatName);
+                    $('#txtDrugCategoryId').val(response[i].PH_ITEM_DRUG_CatID);
+                    $('#txtNotes').val(response[i].PH_ITEM_NOTES);
+                    $('#btnDrugSave').prop('hidden', true);
+                    $('#btnDrugUpdate').prop('hidden', false);
+                    $('#btnAdd').prop('hidden', true);
+                    $('#modal-CategoryUOM').modal('show');
+                    //$('#txtSubstanceName').prop('disabled', true);
+                    //$('#txtDrugName').prop('disabled', true);
+                    //$('#txtGenericName').prop('disabled', true);
+                    //$('#txtDrugForm').prop('disabled', true);
+                    //$('#txtPackage').prop('disabled', true);
+                    //$('#txtDrugQty').prop('disabled', true);
+                    //$('#txtHSN').prop('disabled', true);
+                    //$('#txtGST').prop('disabled', true);
+                    //$('#txtManufacture').prop('disabled', true);
+                    //$('#txtScheduleType').prop('disabled', true);
+                    //$('#txtStrength').prop('disabled', true);
+                    //$('#DrugValue').prop('disabled', true);
+                    //$('#txtRack').prop('disabled', true);
+
+                    //$('#txtroot').prop('disabled', true);
+
+                    //$('#btnEdit').prop('hidden', false);
+
+                }
+
+
+            }
+
+        });
+    }
+    //function EditDrugs() {
+    //    $('#txtDrugName').prop('disabled', false);
+    //    $('#txtGenericName').prop('disabled', false);
+    //    $('#txtDrugForm').prop('disabled', false);
+    //    $('#txtPackage').prop('disabled', false);
+    //    $('#txtDrugQty').prop('disabled', false);
+    //    $('#txtHSN').prop('disabled', false);
+    //    $('#txtGST').prop('disabled', false);
+    //    $('#txtManufacture').prop('disabled', false);
+    //    $('#txtScheduleType').prop('disabled', false);
+    //    $('#txtStrength').prop('disabled', false);
+    //    $('#txtStrength').prop('disabled', false);
+    //    $('#DrugValue').prop('disabled', false);
+    //    $('#txtRack').prop('disabled', false);
+    //    $('#txtSubstanceName').prop('disabled', false);
+    //    $('#txtroot').prop('disabled', false);
+    //    $("#txtSubstanceName").multiselect("disable");
+    //    $('#btnEdit').prop('hidden', true);
+    //
+    //}
+
+
+    function UpdateDrugMaster() {
+        $('#btnDrugUpdate').prop("disabled", true);
+        var DrugCode = $('#txtDrugCode').val();
+        var DrugCodes = parseFloat(DrugCode)
+        var DrugName = $('#txtDrugName').val();
+        var Strength = $('#txtStrength').val();
+        if (Strength == null) {
+            Strength = ""
+        }
+        var drugCategory = $('#txtDrugCategory').val();
+        if (DrugName == "" || DrugName == null) {
+            alert("Enter the DrugName");
+            $('#btnDrugUpdate').prop("disabled", false);
+        }
+        //else if (Strength == "" || Strength == null) {
+        //    alert("Enter the Strength");
+        //    $('#btnDrugUpdate').prop("disabled", false);
+        //}
+        else if (drugCategory == "" || drugCategory == null) {
+            alert("Enter the Drug Category");
+            $('#btnDrugUpdate').prop("disabled", false);
+        }
+        else {
+
+            $.ajax({
+                url: rootUrl + "/api/DrugMastersApi/GetExistDrugData?DrugName=" + DrugName.trim() + "&drugCategory=" + drugCategory.trim() + "&Strength=" + Strength.trim() + "&DrugCode=" + DrugCodes,
+                type: 'get',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    $('#btnDrugUpdate').prop("disabled", false);
+                    if (response.length > 0) {
+
+                        alert("Drug Already Exists");
+                        $('#btnDrugUpdate').prop("disabled", false);
+                    }
+                    else {
+                        $.ajax({
+                            url: rootUrl + "/api/CurrentStockApi/GetCurrentStockDetailsBySeqId?SeqId=" + DrugCodes,
+                            type: 'Get',
+                            contentType: "application/json; charset=utf-8",
+                            dataType: "json",
+                            success: function (response) {
+                                if (response.Result.length > 0) {
+                                    $('#btnDrugUpdate').prop("disabled", false);
+                                    if (response.Result[0].PH_ITEM_DRUGNAME_BRAND == DrugName && response.Result[0].PH_ITEM_STRENGTH == Strength && response.Result[0].PH_ItemCatName == drugCategory) {
+                                        var GenericName = $('#txtGenericName').val();
+                                        var DrugFormName = $('#txtDrugForm').val();
+                                        var DrugForm = $('#txtDrugFormId').val();
+                                        if (DrugForm == "" || DrugForm == null) {
+                                            DrugForm = 0;
+                                        }
+                                        if (DrugFormName == "" || DrugFormName == null) {
+                                            DrugForm = 0;
+                                        }
+                                        var Package = $('#txtPackage').val();
+                                        var Qty = $('#txtDrugQty').val();
+                                        if (Qty == "" || Qty == null) {
+                                            Qty = 0;
+                                        }
+                                        var HSN = $('#txtHSN').val();
+                                        var GST = $('#txtGST').val();
+                                        var ManufactureId = $('#txtManufactureId').val();
+                                        if (ManufactureId == "" || ManufactureId == null) {
+                                            ManufactureId = 0;
+                                        }
+                                        var Manufacture = $('#txtManufacture').val();
+                                        if (Manufacture == "" || Manufacture == null) {
+                                            ManufactureId = 0;
+                                        }
+                                        var Expirydate = $('#txtroot').val();
+                                        var ScheduleType = $('#txtScheduleType').val();
+
+                                        var DrugValue = $('#DrugValue').val();
+                                        var Rack = $('#txtRack').val();
+                                        var notes = $('#txtNotes').val();
+
+                                        var drugCategoryId = $('#txtDrugCategoryId').val();
+                                        if (drugCategory == "" || drugCategory == null) {
+                                            drugCategoryId = 0;
+                                        }
+
+                                        var share_user_text = $('#txtSubstanceName option:selected').toArray().map(item => item.text);
+                                        var share_user_val = $('#txtSubstanceName option:selected').toArray().map(item => item.value);
+
+                                        var SubstanceMappingarray = new Array();
+                                        if (share_user_val != "" || share_user_val != null) {
+                                            for (var i = 0; i < share_user_val.length; i++) {
+                                                var SubstanceMappings = new Object();
+                                                SubstanceMappings.UserId = parseInt(share_user_val[i]);
+                                                SubstanceMappingarray.push(SubstanceMappings);
+                                            }
+                                        }
+                                        //if (DrugName == "" || DrugName == null) {
+                                        //    alert("Enter the DrugName");
+                                        //}
+                                        //else if (DrugForm == "") {
+                                        //    alert("Enter the DrugForm");
+                                        //}
+                                        //else if (ManufactureId == "" || ManufactureId == null) {
+                                        //    alert("Enter the Manufacture ");
+                                        //}
+                                        //else if (GenericName == "" || GenericName == null) {
+                                        //    alert("Enter the GenericName ");
+                                        //}
+                                        var DrugMaster = {
+                                            PH_ITEM_DrugCode: DrugCodes,
+                                            PH_ITEM_DRUGNAME_BRAND: DrugName,
+                                            PH_ITEM_DRUG_GENERIC: GenericName,
+                                            PH_ITEM_DRUG_UOM: Package,
+                                            PH_ITEM_PACKAGE: Package,
+                                            PH_DrugFormName: DrugFormName,
+                                            PH_ITEM_DRUG_FORMId: parseFloat(DrugForm),
+                                            PH_ITEM_DRUG_QTY: parseFloat(Qty),
+                                            PH_ITEM_HSNCODE: HSN,
+                                            PH_ITEM_GST: GST,
+                                            PH_ITEM_MANUFACTURENAME: Manufacture,
+                                            PH_ITEM_MANUFACTURE: parseFloat(ManufactureId),
+                                            PH_ITEM_SCHEDULETYPE: ScheduleType,
+                                            PH_ITEM_STRENGTH: Strength,
+                                            PH_ITEM_RACK: Rack,
+                                            PH_ITEM_NOTES: notes,
+                                            PH_ITEM_DRUG_CatID: parseFloat(drugCategoryId),
+                                            PH_ITEM_DRUG_CATEGORY: drugCategory,
+                                            substanceMappings: SubstanceMappingarray
+                                        }
+                                        $('#btnDrugUpdate').prop("disabled", false);
+
+
+                                        $.ajax({
+                                            url: rootUrl + "/api/DrugMastersApi/UpdateDrugsMasters",
+                                            type: "POST",
+                                            contentType: "application/json; charset=utf-8",
+                                            data: JSON.stringify(DrugMaster),
+                                            dataType: 'json',
+                                            beforeSend: function () { $("#loading").css("display", "block"); },
+                                            success: function (data) {
+                                                if (data > 0) {
+                                                    alert("Updated Sucessfully");
+                                                    GetDrugdetails();
+                                                    closeDrugMaster();
+                                                    $('#btnDrugUpdate').prop("disabled", false);
+                                                    /*   window.location.href = "/Pharmacy/DrugMasters/DrugMasters";*/
+                                                }
+                                            },
+                                            complete: function () { $("#loading").css("display", "none") },
+                                            failure: function (response) {
+                                                alert(response);
+                                            },
+                                            error: function (response) {
+                                                alert(response);
+                                            }
+
+                                        });
+                                    }
+                                    else {
+                                        alert("CurrentStock Drug Cannot be Updated");
+                                        $('#btnDrugUpdate').prop("disabled", false);
+                                        return false;
+                                    }
+                                }
+                                else {
+                                    var GenericName = $('#txtGenericName').val();
+                                    var DrugFormName = $('#txtDrugForm').val();
+                                    var DrugForm = $('#txtDrugFormId').val();
+                                    if (DrugForm == "" || DrugForm == null) {
+                                        DrugForm = 0;
+                                    }
+                                    if (DrugFormName == "" || DrugFormName == null) {
+                                        DrugForm = 0;
+                                    }
+                                    var Package = $('#txtPackage').val();
+                                    var Qty = $('#txtDrugQty').val();
+                                    if (Qty == "" || Qty == null) {
+                                        Qty = 0;
+                                    }
+                                    var HSN = $('#txtHSN').val();
+                                    var GST = $('#txtGST').val();
+                                    var ManufactureId = $('#txtManufactureId').val();
+                                    if (ManufactureId == "" || ManufactureId == null) {
+                                        ManufactureId = 0;
+                                    }
+                                    var Manufacture = $('#txtManufacture').val();
+                                    if (Manufacture == "" || Manufacture == null) {
+                                        ManufactureId = 0;
+                                    }
+                                    var Expirydate = $('#txtroot').val();
+                                    var ScheduleType = $('#txtScheduleType').val();
+
+                                    var DrugValue = $('#DrugValue').val();
+                                    var Rack = $('#txtRack').val();
+                                    var notes = $('#txtNotes').val();
+
+                                    var drugCategoryId = $('#txtDrugCategoryId').val();
+                                    if (drugCategory == "" || drugCategory == null) {
+                                        drugCategoryId = 0;
+                                    }
+
+                                    var share_user_text = $('#txtSubstanceName option:selected').toArray().map(item => item.text);
+                                    var share_user_val = $('#txtSubstanceName option:selected').toArray().map(item => item.value);
+
+                                    var SubstanceMappingarray = new Array();
+                                    if (share_user_val != "" || share_user_val != null) {
+                                        for (var i = 0; i < share_user_val.length; i++) {
+                                            var SubstanceMappings = new Object();
+                                            SubstanceMappings.UserId = parseInt(share_user_val[i]);
+                                            SubstanceMappingarray.push(SubstanceMappings);
+                                        }
+                                    }
+                                    //if (DrugName == "" || DrugName == null) {
+                                    //    alert("Enter the DrugName");
+                                    //}
+                                    //else if (DrugForm == "") {
+                                    //    alert("Enter the DrugForm");
+                                    //}
+                                    //else if (ManufactureId == "" || ManufactureId == null) {
+                                    //    alert("Enter the Manufacture ");
+                                    //}
+                                    //else if (GenericName == "" || GenericName == null) {
+                                    //    alert("Enter the GenericName ");
+                                    //}
+                                    var DrugMaster = {
+                                        PH_ITEM_DrugCode: DrugCodes,
+                                        PH_ITEM_DRUGNAME_BRAND: DrugName,
+                                        PH_ITEM_DRUG_GENERIC: GenericName,
+                                        PH_ITEM_DRUG_UOM: Package,
+                                        PH_ITEM_PACKAGE: Package,
+                                        PH_DrugFormName: DrugFormName,
+                                        PH_ITEM_DRUG_FORMId: parseFloat(DrugForm),
+                                        PH_ITEM_DRUG_QTY: parseFloat(Qty),
+                                        PH_ITEM_HSNCODE: HSN,
+                                        PH_ITEM_GST: GST,
+                                        PH_ITEM_MANUFACTURENAME: Manufacture,
+                                        PH_ITEM_MANUFACTURE: parseFloat(ManufactureId),
+                                        PH_ITEM_SCHEDULETYPE: ScheduleType,
+                                        PH_ITEM_STRENGTH: Strength,
+                                        PH_ITEM_RACK: Rack,
+                                        PH_ITEM_NOTES: notes,
+                                        PH_ITEM_DRUG_CatID: parseFloat(drugCategoryId),
+                                        PH_ITEM_DRUG_CATEGORY: drugCategory,
+                                        substanceMappings: SubstanceMappingarray
+                                    }
+                                    $('#btnDrugUpdate').prop("disabled", false);
+
+
+                                    $.ajax({
+                                        url: rootUrl + "/api/DrugMastersApi/UpdateDrugsMasters",
+                                        type: "POST",
+                                        contentType: "application/json; charset=utf-8",
+                                        data: JSON.stringify(DrugMaster),
+                                        dataType: 'json',
+                                        beforeSend: function () { $("#loading").css("display", "block"); },
+                                        success: function (data) {
+                                            if (data > 0) {
+                                                alert("Updated Sucessfully");
+                                                GetDrugdetails();
+                                                closeDrugMaster();
+                                                $('#btnDrugUpdate').prop("disabled", false);
+                                                /*   window.location.href = "/Pharmacy/DrugMasters/DrugMasters";*/
+                                            }
+                                        },
+                                        complete: function () { $("#loading").css("display", "none") },
+                                        failure: function (response) {
+                                            alert(response);
+                                        },
+                                        error: function (response) {
+                                            alert(response);
+                                        }
+
+                                    });
+                                }
+
+                            }
+                        });
+
+                    }
+
+                },
+                complete: function () { $("#loading").css("display", "none") },
+
+            });
+        }
+
+    }
+
+    //var Disposable = new Array();
+    //function AddDisposable() {
+
+    //    var name = $('#txtSDisposeName').val();
+    //    var spec = $('#txtSDisposeSpec').val();
+    //    var package = $('#txtSDisposePackage').val();
+    //    var drugQty = $('#txtSDisposeDrugQty').val();
+    //    var qty = parseFloat(drugQty).toFixed(2);
+    //    var manufactureName = $('#txtManufactureDis').val();
+    //    var manufactureId = $('#txtManufactureDisId').val();
+    //    var brandName = $('#txtSDisposeBrandName').val();
+    //    var hsn = $('#txtSDisponseHSN').val();
+    //    var Gst = $('#txtSDisponseGst').val();
+    //    var rack = $('#txtSDisponseRack').val();
+    //    var notes = $('#txtSDisponseNotes').val();
+
+    //    var SDisposable = {
+    //        PH_Name: name,
+    //        PH_Spec: spec,
+    //        PH_Package: package,
+    //        PH_Qty: parseFloat(drugQty).toFixed(2),
+    //        PH_ManufactureName: manufactureName,
+    //        PH_Manufacture: parseFloat(manufactureId),
+    //        PH_BrandName: brandName,
+    //        PH_HSNCode: hsn,
+    //        PH_Gst: Gst,
+    //        PH_Rack: rack,
+    //        PH_Notes: notes
+    //    }
+    //    Disposable.push(SDisposable);
+    //    clearDisposable();
+    //}
+    function saveSurgicalDisposable() {
+
+        var name = $('#txtSDisposeName').val();
+        if (name == "" || name == null) {
+            alert("Enter the Name");
+        }
+        else {
+            var spec = $('#txtSDisposeSpec').val();
+            var package = $('#txtSDisposePackage').val();
+            var drugQty = $('#txtSDisposeDrugQty').val();
+            if (drugQty == "" || drugQty == null) {
+                drugQty = 0;
+            }
+            var qty = parseFloat(drugQty).toFixed(2);
+            var manufactureName = $('#txtManufactureDis').val();
+            var manufactureId = $('#txtManufactureDisId').val();
+            if (manufactureId == "" || manufactureId == null) {
+                manufactureId = 0;
+            }
+            var brandName = $('#txtSDisposeBrandName').val();
+            var hsn = $('#txtSDisponseHSN').val();
+            var Gst = $('#txtSDisponseGst').val();
+            var rack = $('#txtSDisponseRack').val();
+            var notes = $('#txtSDisponseNotes').val();
+
+            var SDisposable = {
+                PH_Name: name,
+                PH_Spec: spec,
+                PH_Package: package,
+                PH_Qty: parseFloat(drugQty).toFixed(2),
+                PH_ManufactureName: manufactureName,
+                PH_Manufacture: parseFloat(manufactureId),
+                PH_BrandName: brandName,
+                PH_HSNCode: hsn,
+                PH_Gst: Gst,
+                PH_Rack: rack,
+                PH_Notes: notes
+            }
+            /*  Disposable.push(Disposable);*/
+            $.ajax({
+                url: rootUrl + "/api/DrugMastersApi/CreateSurgicalDisposable",
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(SDisposable),
+                dataType: 'json',
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    if (data > 0) {
+                        alert("Saved Sucessfully");
+                        clearDisposable();
+                        GetSurgicalDisposableData();
+                        //$(function () {
+                        //    $('#modal-SurgicalDisposable').modal('toggle');
+                        //});
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none") },
+                failure: function (response) {
+                    alert(response);
+                },
+                error: function (response) {
+                    alert(response);
+                }
+            });
+        }
+
+        //else {
+        //    $.ajax({
+        //        url: rootUrl + "/api/DrugMastersApi/CreateSurgicalDisposable",
+        //        type: "POST",
+        //        contentType: "application/json; charset=utf-8",
+        //        data: JSON.stringify(Disposable),
+        //        dataType: 'json',
+        //        success: function (data) {
+        //            if (data > 0) {
+        //                alert("Saved Sucessfully");
+        //                clearDisposable();
+        //                $(function () {
+        //                    $('#modal-SurgicalDisposable').modal('toggle');
+        //                });
+        //                BindSurgicalDisposableData();
+
+
+        //            }
+        //        },
+        //        failure: function (response) {
+        //            alert(response);
+        //        },
+        //        error: function (response) {
+        //            alert(response);
+        //        }
+        //    });
+        //}
+
+    }
+
+    function closeSurgicalPopup() {
+        $('#modal-SurgicalDisposable').modal('toggle');
+        $('#btnSDisSave').attr("hidden", false);
+        $('#btnSDisUpdate').attr("hidden", true);
+        clearDisposable();
+    }
+
+    function clearDisposable() {
+        $('#txtSDisposeName').val('');
+        $('#txtSDisposeSpec').val('');
+        $('#txtSDisposePackage').val('');
+        $('#txtSDisposeDrugQty').val('');
+        $('#txtManufactureDis').val('');
+        $('#txtManufactureDisId').val('');
+        $('#txtSDisposeBrandName').val('');
+        $('#txtSDisponseHSN').val('');
+        $('#txtSDisponseGst').val('');
+        $('#txtSDisponseRack').val('');
+        $('#txtSDisponseRack').val('');
+        $('#txtSDisponseNotes').val('');
+    }
+    function UpdateSurgicalDisposable() {
+
+        var Id = $('#txtDisId').val();
+        var seqId = parseFloat(Id);
+        var name = $('#txtSDisposeName').val();
+        if (name == "") {
+            alert("Enter the Name");
+        }
+        var spec = $('#txtSDisposeSpec').val();
+        var package = $('#txtSDisposePackage').val();
+        var drugQty = $('#txtSDisposeDrugQty').val();
+        var qty = parseFloat(drugQty).toFixed(2);
+        var manufactureId = $('#txtManufactureDisId').val();
+        if (manufactureId == "" || manufactureId == null) {
+            manufactureId = 0;
+        }
+        var manufactureName = $('#txtManufactureDis').val();
+        if (manufactureName == "" || manufactureName == null) {
+            manufactureId = 0;
+        }
+        var brandName = $('#txtSDisposeBrandName').val();
+        var hsn = $('#txtSDisponseHSN').val();
+        var Gst = $('#txtSDisponseGst').val();
+        var rack = $('#txtSDisponseRack').val();
+        var notes = $('#txtSDisponseNotes').val();
+
+        var SDisposable = {
+            SeqId: seqId,
+            PH_Name: name,
+            PH_Spec: spec,
+            PH_Package: package,
+            PH_Qty: parseFloat(drugQty).toFixed(2),
+            PH_ManufactureName: manufactureName,
+            PH_Manufacture: parseFloat(manufactureId),
+            PH_BrandName: brandName,
+            PH_HSNCode: hsn,
+            PH_Gst: Gst,
+            PH_Rack: rack,
+            PH_Notes: notes
+        }
+
+
+        $.ajax({
+            url: rootUrl + "/api/DrugMastersApi/UpdateSurgicalDisposable",
+            type: "POST",
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(SDisposable),
+            dataType: 'json',
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (data) {
+                if (data > 0) {
+                    alert("Updated Sucessfully");
+                    GetSurgicalDisposableData();
+                    closeSurgicalPopup();
+                    //$('#modal-SurgicalDisposable').modal('toggle');
+
+                }
+            },
+            complete: function () { $("#loading").css("display", "none") },
+            failure: function (response) {
+                alert(response);
+            },
+            error: function (response) {
+                alert(response);
+            }
+        });
+    }
+    //var Instruments = new Array();
+    //function AddInstruments() {
+
+    //    var name = $('#txtSInstrumentName').val();
+    //    var model = $('#txtSInstrumentModel').val();
+    //    var modelNo = $('#txtSInstrumentModelNo').val();
+    //    var brandName = $('#txtSInstrumentBrandName').val();
+    //    var package = $('#txtSInstrumentPackageType').val();
+    //    var qty = $('#txtSInstrumentQty').val();
+    //    var hsn = $('#txtSInstrumentHsn').val();
+    //    var gst = $('#txtSInstrumentGst').val();
+    //    var manufactureName = $('#txtManufactureIns').val();
+    //    var manufactureId = $('#txtManufactureInsId').val();
+    //    var notes = $('#txtSInstrumentNotes').val();
+
+    //    var SInstruments = {
+    //        PH_Name: name,
+    //        PH_Model: model,
+    //        PH_ModelNo: modelNo,
+    //        PH_Package: package,
+    //        PH_Qty: parseFloat(qty).toFixed(2),
+    //        PH_ManufactureName: manufactureName,
+    //        PH_Manufacture: parseFloat(manufactureId),
+    //        PH_BrandName: brandName,
+    //        PH_HSNCode: hsn,
+    //        PH_Gst: gst,
+    //        PH_Notes: notes
+    //    }
+    //    Instruments.push(SInstruments);
+    //    clearInstruments();
+
+    //}
+    function saveSurgicalInstruments() {
+        var name = $('#txtSInstrumentName').val();
+        if (name == "") {
+            alert("Enter the Name");
+        }
+        var model = $('#txtSInstrumentModel').val();
+        var modelNo = $('#txtSInstrumentModelNo').val();
+        var brandName = $('#txtSInstrumentBrandName').val();
+        var package = $('#txtSInstrumentPackageType').val();
+        var qty = $('#txtSInstrumentQty').val();
+        if (qty == "" || qty == null) {
+            qty = 0;
+        }
+        var hsn = $('#txtSInstrumentHsn').val();
+        var gst = $('#txtSInstrumentGst').val();
+        var manufactureName = $('#txtManufactureIns').val();
+        var manufactureId = $('#txtManufactureInsId').val();
+        if (manufactureId == "" || manufactureId == null) {
+            manufactureId = 0;
+        }
+        var rack = $('#txtSInstrumentRack').val();
+        var notes = $('#txtSInstrumentNotes').val();
+
+        var SInstruments = {
+            PH_Name: name,
+            PH_Model: model,
+            PH_ModelNo: modelNo,
+            PH_Package: package,
+            PH_Qty: parseFloat(qty).toFixed(2),
+            PH_ManufactureName: manufactureName,
+            PH_Manufacture: parseFloat(manufactureId),
+            PH_BrandName: brandName,
+            PH_HSNCode: hsn,
+            PH_Gst: gst,
+            PH_Rack: rack,
+            PH_Notes: notes
+        }
+        /*Instruments.push(SInstruments);*/
+
+
+        $.ajax({
+            url: rootUrl + "/api/DrugMastersApi/CreateSurgicalInstruments",
+            type: "POST",
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(SInstruments),
+            dataType: 'json',
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (data) {
+                if (data > 0) {
+                    alert("Saved Sucessfully");
+                    GetSurgicalInstrumentsData();
+                    clearInstruments();
+                    /*$('#modal-SurgicalInstrument').modal('toggle');*/
+                }
+            },
+            complete: function () { $("#loading").css("display", "none") },
+            failure: function (response) {
+                alert(response);
+            },
+            error: function (response) {
+                alert(response);
+            }
+        });
+        /* }*/
+        //else {
+        //    $.ajax({
+        //        url: rootUrl + "/api/DrugMastersApi/CreateSurgicalInstruments",
+        //        type: "POST",
+        //        contentType: "application/json; charset=utf-8",
+        //        data: JSON.stringify(Instruments),
+        //        dataType: 'json',
+        //        success: function (data) {
+        //            if (data > 0) {
+        //                alert("Saved Sucessfully");
+        //                $('#modal-Instruments').modal('toggle');
+        //                BindSurgicalInstrumentsData();
+        //            }
+        //        },
+        //        failure: function (response) {
+        //            alert(response);
+        //        },
+        //        error: function (response) {
+        //            alert(response);
+        //        }
+        //    });
+        //}
+    }
+    function closeSurgicalInstruments() {
+        $('#modal-SurgicalInstrument').modal('toggle');
+        clearInstruments();
+        $('#btnSIntSave').attr("hidden", false);
+        $('#btnSIntUpdate').attr("hidden", true);
+    }
+
+    function clearInstruments() {
+        $('#txtSInstrumentName').val('');
+        $('#txtSInstrumentModel').val('');
+        $('#txtSInstrumentModelNo').val('');
+        $('#txtSInstrumentBrandName').val('');
+        $('#txtSInstrumentPackageType').val('');
+        $('#txtSInstrumentQty').val('');
+        $('#txtSInstrumentHsn').val('');
+        $('#txtSInstrumentGst').val('');
+        $('#txtManufactureIns').val('');
+        $('#txtManufactureInsId').val('');
+        $('#txtSInstrumentNotes').val('');
+    }
+    function UpdateSurgicalInstruments() {
+        var id = $('#txtInsId').val();
+        var seqId = parseFloat(id);
+        var name = $('#txtSInstrumentName').val();
+        if (name == "" || name == null) {
+            alert("Enter the Name");
+        }
+        var model = $('#txtSInstrumentModel').val();
+        var modelNo = $('#txtSInstrumentModelNo').val();
+        var brandName = $('#txtSInstrumentBrandName').val();
+        var package = $('#txtSInstrumentPackageType').val();
+        var qty = $('#txtSInstrumentQty').val();
+        if (qty == "" || qty == null) {
+            qty = 0;
+        }
+        var hsn = $('#txtSInstrumentHsn').val();
+        var gst = $('#txtSInstrumentGst').val();
+
+        var manufactureId = $('#txtManufactureInsId').val();
+        if (manufactureId == "" || manufactureId == null) {
+            manufactureId = 0;
+        }
+        var manufactureName = $('#txtManufactureIns').val();
+        if (manufactureName == "" || manufactureName == null) {
+            manufactureId = 0;
+        }
+
+        var rack = $('#txtSInstrumentRack').val();
+        var notes = $('#txtSInstrumentNotes').val();
+
+        var SInstruments = {
+            SeqId: seqId,
+            PH_Name: name,
+            PH_Model: model,
+            PH_ModelNo: modelNo,
+            PH_Package: package,
+            PH_Qty: parseFloat(qty).toFixed(2),
+            PH_ManufactureName: manufactureName,
+            PH_Manufacture: parseFloat(manufactureId),
+            PH_BrandName: brandName,
+            PH_HSNCode: hsn,
+            PH_Gst: gst,
+            PH_Rack: rack,
+            PH_Notes: notes
+        }
+
+
+        $.ajax({
+            url: rootUrl + "/api/DrugMastersApi/UpdateSurgicalInstruments",
+            type: "POST",
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(SInstruments),
+            dataType: 'json',
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (data) {
+                if (data > 0) {
+                    alert("Updated Sucessfully");
+                    closeSurgicalInstruments();
+                    GetSurgicalInstrumentsData();
+                    /*  window.location.href = "/Pharmacy/DrugMasters/DrugMasters";*/
+                }
+            },
+            complete: function () { $("#loading").css("display", "none") },
+            failure: function (response) {
+                alert(response);
+            },
+            error: function (response) {
+                alert(response);
+            }
+        });
+    }
+    ////var others = new Array();
+    //function AddSurgicalOthers() {
+
+    //    var name = $('#txtOtherName').val();
+    //    var brandName = $('#txtOtherBrandName').val();
+    //    var package = $('#txtOtherPacakage').val();
+    //    var qty = $('#txtOtherQty').val();
+    //    var hsn = $('#txtOtherHsn').val();
+    //    var gst = $('#txtOtherGst').val();
+    //    var manufactureId = $('#txtManufactureOthrsId').val();
+    //    var manufactureName = $('#txtManufactureOthrs').val();
+    //    var notes = $('#txtOtheNotes').val();
+
+    //    var SOthers = {
+    //        PH_Name: name,
+    //        PH_Package: package,
+    //        PH_Qty: parseFloat(qty).toFixed(2),
+    //        PH_ManufactureName: manufactureName,
+    //        PH_Manufacture: parseFloat(manufactureId),
+    //        PH_BrandName: brandName,
+    //        PH_HSNCode: hsn,
+    //        PH_Gst: gst,
+    //        PH_Notes: notes
+    //    }
+
+    //    others.push(SOthers);
+    //    clearOthers();
+    //}
+    function saveSurgicalOthers() {
+        var brandName = $('#txtOtherBrandName').val();
+        var name = $('#txtOtherName').val();
+        if (name == "" || name == null) {
+            alert("Enter the Name");
+        }
+        else {
+            var package = $('#txtOtherPacakage').val();
+            var qty = $('#txtOtherQty').val();
+            if (qty == "" || qty == null) {
+                qty = 0;
+            }
+            var hsn = $('#txtOtherHsn').val();
+            var gst = $('#txtOtherGst').val();
+            var manufactureId = $('#txtManufactureOthrsId').val();
+            if (manufactureId == "" || manufactureId == null) {
+                manufactureId = 0;
+            }
+            var manufactureName = $('#txtManufactureOthrs').val();
+            var rack = $('#txtOtheRack').val();
+            var notes = $('#txtOtheNotes').val();
+
+            var SOthers = {
+                PH_Name: name,
+                PH_Package: package,
+                PH_Qty: parseFloat(qty).toFixed(2),
+                PH_ManufactureName: manufactureName,
+                PH_Manufacture: parseFloat(manufactureId),
+                PH_BrandName: brandName,
+                PH_HSNCode: hsn,
+                PH_Gst: gst,
+                PH_Rack: rack,
+                PH_Notes: notes
+            }
+            /*   others.push(SOthers);*/
+            clearOthers();
+            $.ajax({
+                url: rootUrl + "/api/DrugMastersApi/CreateSurgicalOthers",
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(SOthers),
+                dataType: 'json',
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    if (data > 0) {
+                        alert("Saved Sucessfully");
+                        GetSurgicalOthersData();
+                        /*window.location.href = "/Pharmacy/DrugMasters/DrugMasters";*/
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none") },
+                failure: function (response) {
+                    alert(response);
+                },
+                error: function (response) {
+                    alert(response);
+                }
+            });
+
+        }
+
+        //}
+        //else {
+        //    $.ajax({
+        //        url: rootUrl + "/api/DrugMastersApi/CreateSurgicalOthers",
+        //        type: "POST",
+        //        contentType: "application/json; charset=utf-8",
+        //        data: JSON.stringify(others),
+        //        dataType: 'json',
+        //        success: function (data) {
+        //            if (data > 0) {
+        //                alert("Saved Sucessfully");
+        //                $(function () {
+        //                    $('#modal-Others').modal('toggle');
+        //                });
+        //                BindSurgicalOthersData();
+        //            }
+        //        },
+        //        failure: function (response) {
+        //            alert(response);
+        //        },
+        //        error: function (response) {
+        //            alert(response);
+        //        }
+        //    });
+        //}
+
+
+    }
+
+    function closeSurgicalOthers() {
+        clearOthers();
+        $('#modal-Others').modal('toggle');
+        $('#btnSothrSave').attr("hidden", false);
+        $('#btnSothrUpdate').attr("hidden", true);
+    }
+    function clearOthers() {
+        $('#txtOtherName').val('');
+        $('#txtOtherBrandName').val('');
+        $('#txtOtherPacakage').val('');
+        $('#txtOtherQty').val('');
+        $('#txtOtherHsn').val('');
+        $('#txtOtherGst').val('');
+        $('#txtManufactureOthrsId').val('');
+        $('#txtManufactureOthrs').val('');
+        $('#txtOtheRack').val('');
+        $('#txtOtheNotes').val('');
+    }
+    function UpdateSurgicalOthers() {
+        var id = $('#OthersId').val();
+        var seqId = parseFloat(id);
+        var name = $('#txtOtherName').val();
+        if (name == "" || name == null) {
+            alert("Enter the Name");
+        }
+        else {
+            var brandName = $('#txtOtherBrandName').val();
+            var package = $('#txtOtherPacakage').val();
+            var qty = $('#txtOtherQty').val();
+            if (qty == "" || qty == null) {
+                qty = 0;
+            }
+            var hsn = $('#txtOtherHsn').val();
+            var gst = $('#txtOtherGst').val();
+            var manufactureId = $('#txtManufactureOthrsId').val();
+            if (manufactureId == "" || manufactureId == null) {
+                manufactureId = 0;
+            }
+            var manufactureName = $('#txtManufactureOthrs').val();
+            if (manufactureName == "" || manufactureName == null) {
+                manufactureId = 0;
+            }
+
+            var rack = $('#txtOtheRack').val();
+            var notes = $('#txtOtheNotes').val();
+
+            var SOthers = {
+                SeqId: seqId,
+                PH_Name: name,
+                PH_Package: package,
+                PH_Qty: parseFloat(qty).toFixed(2),
+                PH_Manufacture: parseFloat(manufactureId),
+                PH_ManufactureName: manufactureName,
+                PH_BrandName: brandName,
+                PH_HSNCode: hsn,
+                PH_Gst: gst,
+                PH_Rack: rack,
+                PH_Notes: notes
+            }
+
+
+            $.ajax({
+                url: rootUrl + "/api/DrugMastersApi/UpdateSurgicalOthers",
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(SOthers),
+                dataType: 'json',
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    if (data > 0) {
+                        alert("Updated Sucessfully");
+                        GetSurgicalOthersData();
+                        closeSurgicalOthers();
+                        /* window.location.href = "/Pharmacy/DrugMasters/DrugMasters";*/
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none") },
+                failure: function (response) {
+                    alert(response);
+                },
+                error: function (response) {
+                    alert(response);
+                }
+            });
+        }
+    }
+
+
+
+    function onChangeDrugMenu() {
+
+        var ItemName = $('#drpItemMaster').val();
+        if (ItemName == "Medicines") {
+            $('#tblDrug').attr("hidden", false);
+            $('#tblSurgicalOthers').attr("hidden", true);
+            $('#tblSurgicalInstrument').attr("hidden", true);
+            $('#tblSurgicalDisposable').attr("hidden", true);
+            $('#btnMedicines').attr("hidden", false);
+            $('#btnDisposable').attr("hidden", true);
+            $('#btnInstruments').attr("hidden", true);
+            $('#btnOthers').attr("hidden", true);
+            $('#txtItemSearch').val('');
+            GetDrugdetails();
+
+        }
+        if (ItemName == "SurgicalDisposable") {
+            $('#tblSurgicalDisposable').attr("hidden", false);
+            $('#tblDrug').attr("hidden", true);
+            $('#tblSurgicalInstrument').attr("hidden", true);
+            $('#tblSurgicalOthers').attr("hidden", true);
+            $('#btnDisposable').attr("hidden", false);
+            $('#btnMedicines').attr("hidden", true);
+            $('#btnInstruments').attr("hidden", true);
+            $('#btnOthers').attr("hidden", true);
+            $('#txtItemSearch').val('');
+            GetSurgicalDisposableData();
+
+        }
+        if (ItemName == "SurgicalInstruments") {
+            $('#tblSurgicalInstrument').attr("hidden", false);
+            $('#tblSurgicalDisposable').attr("hidden", true);
+            $('#tblDrug').attr("hidden", true);
+            $('#tblSurgicalOthers').attr("hidden", true);
+            $('#btnInstruments').attr("hidden", false);
+            $('#btnOthers').attr("hidden", true);
+            $('#btnMedicines').attr("hidden", true);
+            $('#btnDisposable').attr("hidden", true);
+            $('#txtItemSearch').val('');
+            GetSurgicalInstrumentsData();
+
+
+        }
+        if (ItemName == "Others") {
+            $('#tblSurgicalOthers').attr("hidden", false);
+            $('#tblSurgicalInstrument').attr("hidden", true);
+            $('#tblSurgicalDisposable').attr("hidden", true);
+            $('#tblDrug').attr("hidden", true);
+            $('#btnOthers').attr("hidden", false);
+            $('#btnMedicines').attr("hidden", true);
+            $('#btnDisposable').attr("hidden", true);
+            $('#btnInstruments').attr("hidden", true);
+            $('#txtItemSearch').val('');
+            GetSurgicalOthersData();
+
+        }
+
+    }
+    function GetSurgicalDisposableData() {
+        $.ajax({
+            url: rootUrl + "/api/DrugMastersApi/GetSurgicalDisposableByHospitalId",
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                BindSurgicalDisposableData(response)
+            }
+
+
+        });
+    }
+
+    function BindSurgicalDisposableData(response) {
+
+        var html = "";
+        $("#tblSurgicalDisposable tbody").empty();
+        for (i = 0; i < response.length; i++) {
+            var name = response[i].PH_Name;
+            if (name == "" || name == null) {
+                name = ""
+            }
+            var brandName = response[i].PH_BrandName;
+            if (brandName == "" || brandName == null) {
+                brandName = "";
+            }
+            var spec = response[i].PH_Spec;
+            if (spec == "" || spec == null) {
+                spec = "";
+            }
+            var hsn = response[i].PH_HSNCode;
+            if (hsn == "" || hsn == null) {
+                hsn = "";
+            }
+            var rack = response[i].PH_Rack;
+            if (rack == "" || rack == null) {
+                rack = "";
+            }
+
+            var manufacture = response[i].PH_ManufactureName;
+            if (manufacture == "" || manufacture == null) {
+                manufacture = "";
+            }
+            var gst = response[i].PH_Gst;
+            if (gst == "" || gst == null) {
+                gst = "";
+            }
+            html += "<tr  style='font-size:13px;font-family:sans-serif'>";
+            html += "<td style='display:none'>" + response[i].SeqId + "</td>";
+            html += "<td>" + name + "</td>";
+            html += "<td>" + brandName + "</td>";
+            html += "<td>" + spec + "</td>";
+            html += "<td>" + hsn + "</td>";
+            html += "<td>" + gst + "</td>";
+            html += "<td>" + manufacture + "</td>";
+            html += "<td>" + rack + "</td>";
+
+            html += "<td> <input type='image' src='/images/Edit1.png' style='height:20px' onclick = 'GetDisposableSelect(this);' />" +
+                "<input type='image' src='/images/Delete1.jpg' style='height:25px;margin-left:3px;margin-left: 12px;' onclick='DeleteSurgicalDisposable(this);' /></td >";
+            html += "<tr>";
+        }
+        $("#tblSurgicalDisposable tbody").append(html);
+
+
+
+    }
+    function GetDisposableSelect(selectedRow) {
+        var row = selectedRow.parentNode.parentNode;
+        var id = row.cells[0].innerHTML;
+        var seqId = parseFloat(id);
+        $('#txtDisId').val(seqId);
+
+
+
+        $.ajax({
+            url: rootUrl + "/api/DrugMastersApi/GetDisposableBySeqId?seqId=" + seqId,
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                SurgicalDisposablePopup();
+
+                $('#txtSDisposeName').val(response[0].PH_Name);
+                $('#txtSDisposeSpec').val(response[0].PH_Spec);
+                $('#txtSDisposePackage').val(response[0].PH_Package);
+                $('#txtSDisposeDrugQty').val(response[0].PH_Qty);
+                $('#txtManufactureDis').val(response[0].PH_ManufactureName);
+                $('#txtManufactureDisId').val(response[0].PH_Manufacture);
+                $('#txtSDisposeBrandName').val(response[0].PH_BrandName);
+                $('#txtSDisponseHSN').val(response[0].PH_HSNCode);
+                $('#txtSDisponseGst').val(response[0].PH_Gst);
+                $('#txtSDisponseRack').val(response[0].PH_Rack);
+                $('#txtSDisponseNotes').val(response[0].PH_Notes);
+                $('#btnSDisSave').prop("hidden", true);
+                $('#btnSDisUpdate').prop("hidden", false);
+                $('#btnSDisAdd').prop("hidden", true);
+
+
+            }
+        });
+
+    }
+    function GetSurgicalInstrumentsData() {
+        $.ajax({
+            url: rootUrl + "/api/DrugMastersApi/GetSurgicalInstrumentsByHospitalId",
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                BindSurgicalInstrumentsData(response);
+            }
+        });
+    }
+    function BindSurgicalInstrumentsData(response) {
+
+        var html = "";
+        $("#tblSurgicalInstrument tbody").empty();
+        for (i = 0; i < response.length; i++) {
+            var name = response[i].PH_Name;
+            if (name == "" || name == null) {
+                name = ""
+            }
+            var model = response[i].PH_Model;
+            if (model == "" || model == null) {
+                model = "";
+            }
+            var modelNo = response[i].PH_ModelNo;
+            if (modelNo == "" || modelNo == null) {
+                modelNo = "";
+            }
+
+            var brandName = response[i].PH_BrandName;
+            if (brandName == "" || brandName == null) {
+                brandName = "";
+            }
+            var hsn = response[i].PH_HSNCode;
+            if (hsn == "" || hsn == null) {
+                hsn = "";
+            }
+            var gst = response[i].PH_Gst;
+            if (gst == "" || gst == null) {
+                gst = "";
+            }
+
+            var manufacture = response[i].PH_ManufactureName;
+            if (manufacture == "" || manufacture == null) {
+                manufacture = "";
+            }
+            html += "<tr  style='font-size:13px;font-family:sans-serif'>";
+            html += "<td style='display:none'>" + response[i].SeqId + "</td>";
+            html += "<td>" + name + "</td>";
+            html += "<td>" + model + "</td>";
+            html += "<td>" + modelNo + "</td>";
+            html += "<td>" + brandName + "</td>";
+            html += "<td>" + hsn + "</td>";
+            html += "<td>" + gst + "</td>";
+            html += "<td>" + manufacture + "</td>";
+            html += "<td> <input type='image' src='/images/Edit1.png' style='height:20px' onclick = 'GetInstrumentSelect(this);' />" +
+                "<input type='image' src='/images/Delete1.jpg' style='height:25px;margin-left:3px;margin-left: 12px;' onclick='DeleteSurgicalInstruments(this);' /></td >";
+            html += "<tr>";
+        }
+        $("#tblSurgicalInstrument tbody").append(html);
+
+
+    }
+    function GetInstrumentSelect(selectedRow) {
+        var row = selectedRow.parentNode.parentNode;
+        var id = row.cells[0].innerHTML;
+        var seqId = parseFloat(id);
+        $('#txtInsId').val(seqId);
+
+
+        $.ajax({
+            url: rootUrl + "/api/DrugMastersApi/GetInstrumentsBySeqId?seqId=" + seqId,
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                SurgicalInstrumentPopup();
+                $('#txtSInstrumentName').val(response[0].PH_Name);
+                $('#txtSInstrumentModel').val(response[0].PH_Model);
+                $('#txtSInstrumentModelNo').val(response[0].PH_ModelNo);
+                $('#txtSInstrumentBrandName').val(response[0].PH_BrandName);
+                $('#txtSInstrumentPackageType').val(response[0].PH_Package);
+                $('#txtSInstrumentQty').val(response[0].PH_Qty);
+                $('#txtSInstrumentHsn').val(response[0].PH_HSNCode);
+                $('#txtSInstrumentGst').val(response[0].PH_Gst);
+                $('#txtManufactureIns').val(response[0].PH_ManufactureName);
+                $('#txtManufactureInsId').val(response[0].PH_Manufacture);
+                $('#txtSInstrumentNotes').val(response[0].PH_Notes);
+                $('#txtSInstrumentRack').val(response[0].PH_Rack);
+                $('#btnSIntSave').prop("hidden", true);
+                $('#btnSIntUpdate').prop("hidden", false);
+                $('#btnSIntAdd').prop("hidden", true);
+
+
+
+            }
+        });
+
+    }
+    function GetSurgicalOthersData() {
+        $.ajax({
+            url: rootUrl + "/api/DrugMastersApi/GetSurgicalOthersByHospitalId",
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                BindSurgicalOthersData(response);
+            }
+        });
+
+    }
+    function BindSurgicalOthersData(response) {
+        var html = "";
+        $("#tblSurgicalOthers tbody").empty();
+        for (i = 0; i < response.length; i++) {
+            var name = response[i].PH_Name;
+            if (name == "" || name == null) {
+                name = ""
+            }
+            var brandName = response[i].PH_BrandName;
+            if (brandName == "" || brandName == null) {
+                brandName = ""
+            }
+            var hsn = response[i].PH_HSNCode;
+            if (hsn == "" || hsn == null) {
+                hsn = ""
+            }
+            var gst = response[i].PH_Gst;
+            if (gst == "" || gst == null) {
+                gst = ""
+            }
+            var manufacture = response[i].PH_ManufactureName;
+            if (manufacture == "" || manufacture == null) {
+                manufacture = ""
+            }
+
+            html += "<tr  style='font-size:13px;font-family:sans-serif'>";
+            html += "<td style='display:none'>" + response[i].SeqId + "</td>";
+            html += "<td>" + name + "</td>";
+            html += "<td>" + brandName + "</td>";
+            html += "<td>" + hsn + "</td>";
+            html += "<td>" + gst + "</td>";
+            html += "<td>" + manufacture + "</td>";
+            html += "<td> <input type='image' src='/images/Edit1.png' style='height:20px' onclick = 'GetOthersSelect(this);' />" +
+                "<input type='image' src='/images/Delete1.jpg' style='height:25px;margin-left:3px;margin-left: 12px;' onclick='DeleteSurgicalOthers(this);' /></td >";
+            html += "<tr>";
+        }
+        $("#tblSurgicalOthers tbody").append(html);
+
+    }
+    function GetOthersSelect(selectedRow) {
+        var row = selectedRow.parentNode.parentNode;
+        var id = row.cells[0].innerHTML;
+        var seqId = parseFloat(id);
+
+
+        $.ajax({
+            url: rootUrl + "/api/DrugMastersApi/GetOthersBySeqId?seqId=" + seqId,
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                Others();
+                $('#txtOtherName').val(response[0].PH_Name);
+                $('#txtOtherBrandName').val(response[0].PH_BrandName);
+                $('#txtOtherPacakage').val(response[0].PH_Package);
+                $('#txtOtherQty').val(response[0].PH_Qty);
+                $('#txtOtherHsn').val(response[0].PH_HSNCode);
+                $('#txtOtherGst').val(response[0].PH_Gst);
+                $('#txtManufactureOthrs').val(response[0].PH_ManufactureName);
+                $('#txtManufactureOthrsId').val(response[0].PH_Manufacture);
+                $('#txtOtheNotes').val(response[0].PH_Notes);
+                $('#txtOtheRack').val(response[0].PH_Rack);
+                $('#OthersId').val(seqId);
+                $('#btnSothrSave').prop("hidden", true);
+                $('#btnSothrUpdate').prop("hidden", false)
+                $('#btnSothrAdd').prop("hidden", true)
+
+
+
+            }
+        });
+
+    }
+    function DeleteSurgicalDisposable(selectedRow) {
+        DeleteDisposablePopup();
+        var row = selectedRow.parentNode.parentNode;
+        var seqId = row.cells[0].innerHTML;
+        $('#DisposableSeqId').val(seqId)
+
+    }
+    function DeleteSurgicalDisposableRow() {
+        var id = $('#DisposableSeqId').val();
+        var seqId = parseFloat(id);
+        $.ajax({
+            url: rootUrl + "/api/DrugMastersApi/DeleteSurgicalDisposableBySeqId?SeqId=" + seqId,
+            type: 'Post',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                if (response = true) {
+                    alert("Deleted Sucessfully");
+                    GetSurgicalDisposableData();
+                }
+            }
+        });
+    }
+    function DeleteSurgicalInstruments(selectedRow) {
+        DeleteInstrumentsPopup();
+        var row = selectedRow.parentNode.parentNode;
+        var seqId = row.cells[0].innerHTML;
+        $('#InstrumentsSeqId').val(seqId);
+
+    }
+    function DeleteSurgicalInstrumentsRow() {
+        var id = $('#InstrumentsSeqId').val();
+        var seqId = parseFloat(id);
+        $.ajax({
+            url: rootUrl + "/api/DrugMastersApi/DeleteSurgicalInstrumentsBySeqId?SeqId=" + seqId,
+            type: 'Post',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                if (response = true) {
+                    alert("Deleted Sucessfully");
+                    GetSurgicalInstrumentsData();
+                }
+            }
+        });
+    }
+    function DeleteSurgicalOthers(selectedRow) {
+        DeleteOthersPopup();
+        var row = selectedRow.parentNode.parentNode;
+        var seqId = row.cells[0].innerHTML;
+        $('#OthersSeqId').val(seqId)
+
+    }
+    function DeleteSurgicalOthersRow() {
+        var id = $('#OthersSeqId').val();
+        var seqId = parseFloat(id);
+        $.ajax({
+            url: rootUrl + "/api/DrugMastersApi/DeleteSurgicalOthersBySeqId?SeqId=" + seqId,
+            type: 'Post',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                if (response = true) {
+                    alert("Deleted Sucessfully");
+                    GetSurgicalOthersData();
+                }
+            }
+        });
+    }
+    function ManufactureMasterDisClick() {
+        var Manufacture = $("#txtManufactureDis").val();
+        if (Manufacture != null && Manufacture != "")
+            $("#txtManufactureDis").autocomplete("Search", Manufacture);
+        else
+            $("#txtManufactureDis").autocomplete("Search", "");
+    }
+    function SearchManufactureMasterDis() {
+        $("#txtManufactureDis").autocomplete({
+
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/DrugMastersApi/ManufactureSearch",
+                    type: "GET",
+                    data: {
+                        Search: request.term
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_ManufactureName,
+                                value: el.PH_ManufactureID
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                //$("#txtCity").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#txtManufactureDis").val(ui.item.label);
+                $("#txtManufactureDis").val(ui.item.label);
+                $("#txtManufactureDisId").val(ui.item.value);
+                //$("#txtCustomerName").val(ui.item.label);
+                //$("#txtContactSearch").val('');
+            },
+            minLength: 0
+        });
+        $(".dispicker").autocomplete("option", "appendTo", ".eventDisForm");
+    }
+    function ManufactureMasterInsClick() {
+
+        var Manufacture = $("#txtManufactureIns").val();
+        if (Manufacture != null && Manufacture != "")
+            $("#txtManufactureIns").autocomplete("Search", Manufacture);
+        else
+            $("#txtManufactureIns").autocomplete("Search", "");
+    }
+    function SearchManufactureMasterIns() {
+        $("#txtManufactureIns").autocomplete({
+
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/DrugMastersApi/ManufactureSearch",
+                    type: "GET",
+                    data: {
+                        Search: request.term
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_ManufactureName,
+                                value: el.PH_ManufactureID
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                //$("#txtCity").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#txtManufactureIns").val(ui.item.label);
+                $("#txtManufactureIns").val(ui.item.label);
+                $("#txtManufactureInsId").val(ui.item.value);
+                //$("#txtCustomerName").val(ui.item.label);
+                //$("#txtContactSearch").val('');
+            },
+            minLength: 0
+        });
+        $(".inspicker").autocomplete("option", "appendTo", ".eventForm");
+    }
+    function ManufactureMasterOthrsClick() {
+
+        var Manufacture = $("#txtManufactureOthrs").val();
+        if (Manufacture != null && Manufacture != "")
+            $("#txtManufactureOthrs").autocomplete("Search", Manufacture);
+        else
+            $("#txtManufactureOthrs").autocomplete("Search", "");
+    }
+    function SearchManufactureMasterOthrs() {
+        $("#txtManufactureOthrs").autocomplete({
+
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/DrugMastersApi/ManufactureSearch",
+                    type: "GET",
+                    data: {
+                        Search: request.term
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_ManufactureName,
+                                value: el.PH_ManufactureID
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                //$("#txtCity").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#txtManufactureOthrs").val(ui.item.label);
+                $("#txtManufactureOthrs").val(ui.item.label);
+                $("#txtManufactureOthrsId").val(ui.item.value);
+                //$("#txtCustomerName").val(ui.item.label);
+                //$("#txtContactSearch").val('');
+            },
+            minLength: 0
+        });
+        $(".othrspicker").autocomplete("option", "appendTo", ".eventOthrsForm");
+    }
+
+    function getItemMasterBySearch() {
+        var itemName = $('#drpItemMaster').val();
+        var Search = $('#txtItemSearch').val();
+
+        $.ajax({
+            url: rootUrl + "/api/DrugMastersApi/GetItemMasterBySearch?ItemMaster=" + itemName + '&Search=' + Search,
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+
+                if (itemName == "Medicines") {
+                    BindDrugDetails(response);
+                }
+                if (itemName == "SurgicalDisposable") {
+                    BindSurgicalDisposableData(response);
+                }
+                if (itemName == "SurgicalInstruments") {
+                    BindSurgicalInstrumentsData(response);
+                }
+                if (itemName == "Others") {
+                    BindSurgicalOthersData(response);
+                }
+
+            }
+
+
+
+
+        });
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+    //function OnDrugCategoryClick() {
+    //    var DrugForm = $("#txtDrugCategory").val();
+    //    if (DrugForm != null && DrugForm != "")
+    //        $("#txtDrugCategory").autocomplete("search", DrugForm);
+    //    else
+    //        $("#txtDrugCategory").autocomplete("search", "");
+    //}
+    //function SearchDrugCategory() {
+
+    //    $("#txtDrugCategory").autocomplete({
+
+    //        source: function (request, response) {
+    //            $.ajax({
+    //                url: rootUrl + "/api/DrugMastersApi/GetDrugsFormsbySearch",
+    //                type: "GET",
+    //                data: {
+    //                    Search: request.term
+    //                },
+    //                dataType: "json",
+    //                success: function (data) {
+    //                    response($.map(data, function (el) {
+    //                        return {
+    //                            label: el.PH_UOMDESC,
+    //                            value: el.PH_UOMID
+    //                        };
+    //                    }));
+    //                }
+    //            });
+    //        },
+    //        focus: function (event, ui) {
+    //            event.preventDefault();
+    //            //$("#txtCity").val(ui.item.label);
+    //        },
+    //        select: function (event, ui) {
+    //            event.preventDefault();
+    //            $("#txtDrugCategory").val(ui.item.label);
+    //            $("#txtDrugCategory").val(ui.item.label);
+    //            $("#txtPH_UOMID").val(ui.item.value);
+    //            //$("#txtCustomerName").val(ui.item.label);
+    //            //$("#txtContactSearch").val('');
+    //        },
+    //        minLength: 0
+    //    });
+    //    $(".DrugForm").autocomplete("option", "appendTo", ".eventInsForm");
+    //}
+    function DCMasterClick() {
+        var DrugCategory = $("#txtDrugCategory").val();
+        if (DrugCategory != null && DrugCategory != "")
+            $("#txtDrugCategory").autocomplete("Search", DrugCategory);
+        else
+            $("#txtDrugCategory").autocomplete("Search", "");
+    }
+    function SearchDcMaster() {
+
+        $("#txtDrugCategory").autocomplete({
+
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/DrugMastersApi/GetDrugCategoriesBySearch",
+                    type: "GET",
+                    data: {
+                        Search: request.term
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_ItemCatName,
+                                value: el.PH_ItemCatID
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                //$("#txtCity").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#txtDrugCategory").val(ui.item.label);
+                $("#txtDrugCategoryId").val(ui.item.value);
+                //$("#txtCustomerName").val(ui.item.label);
+                //$("#txtContactSearch").val('');
+            },
+            minLength: 0
+        });
+        $(".DrugCategory").autocomplete("option", "appendTo", ".eventInsForm");
+    }
+    function RackMasterClick() {
+        var Rack = $("#txtRack").val();
+        if (Rack != null && Rack != "")
+            $("#txtRack").autocomplete("Search", Rack);
+        else
+            $("#txtRack").autocomplete("Search", "");
+    }
+    function RackMasterSearch() {
+
+        $("#txtRack").autocomplete({
+
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/DrugMastersApi/GetRackMasterDetailsBySearch",
+                    type: "GET",
+                    data: {
+                        Search: request.term
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_Rack_Name,
+                                value: el.PH_Rack_SeqId
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                //$("#txtCity").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#txtRack").val(ui.item.label);
+                $("#txtRackId").val(ui.item.value);
+                //$("#txtCustomerName").val(ui.item.label);
+                //$("#txtContactSearch").val('');
+            },
+            minLength: 0
+        });
+        $(".Rack").autocomplete("option", "appendTo", ".eventInsForm");
+    }
+
+    function DFormMasterClick() {
+        var drugForm = $("#txtDrugForm").val();
+        if (drugForm != null && drugForm != "")
+            $("#txtDrugForm").autocomplete("Search", drugForm);
+        else
+            $("#txtDrugForm").autocomplete("Search", "");
+    }
+    function SearchDFormMaster() {
+
+        $("#txtDrugForm").autocomplete({
+
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/DrugMastersApi/GetDrugFormDetailsBySearch",
+                    type: "GET",
+                    data: {
+                        Search: request.term
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_DrugFormName,
+                                value: el.PH_DrugFormSeqid
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                //$("#txtCity").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#txtDrugForm").val(ui.item.label);
+                $("#txtDrugFormId").val(ui.item.value);
+                //$("#txtCustomerName").val(ui.item.label);
+                //$("#txtContactSearch").val('');
+            },
+            minLength: 0
+        });
+        $(".DrugForm").autocomplete("option", "appendTo", ".eventInsForm");
+    }
+    function OnDisRackClick() {
+        var Rack = $("#txtSDisponseRack").val();
+        if (Rack != null && Rack != "")
+            $("#txtSDisponseRack").autocomplete("search", Rack);
+        else
+            $("#txtSDisponseRack").autocomplete("search", "");
+    }
+    function SearcDisRackMaster() {
+
+        $("#txtSDisponseRack").autocomplete({
+
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/DrugMastersApi/GetRackMasterDetailsBySearch",
+                    type: "GET",
+                    data: {
+                        Search: request.term
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_Rack_Name,
+                                value: el.PH_Rack_SeqId
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                //$("#txtCity").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#txtSDisponseRack").val(ui.item.label);
+                $("#txtSDisponseRack").val(ui.item.label);
+                /* $("#txtRackId").val(ui.item.value);*/
+                //$("#txtCustomerName").val(ui.item.label);
+                //$("#txtContactSearch").val('');
+            },
+            minLength: 0
+        });
+        $(".RackDis").autocomplete("option", "appendTo", ".eventDisForm");
+    }
+    function OnInsRackClick() {
+        var Rack = $("#txtSInstrumentRack").val();
+        if (Rack != null && Rack != "")
+            $("#txtSInstrumentRack").autocomplete("search", Rack);
+        else
+            $("#txtSInstrumentRack").autocomplete("search", "");
+    }
+    function SearcInsRackMaster() {
+
+        $("#txtSInstrumentRack").autocomplete({
+
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/DrugMastersApi/GetRackMasterDetailsBySearch",
+                    type: "GET",
+                    data: {
+                        Search: request.term
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_Rack_Name,
+                                value: el.PH_Rack_SeqId
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                //$("#txtCity").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#txtSInstrumentRack").val(ui.item.label);
+                $("#txtSInstrumentRack").val(ui.item.label);
+                /*$("#txtRackId").val(ui.item.value);*/
+                //$("#txtCustomerName").val(ui.item.label);
+                //$("#txtContactSearch").val('');
+            },
+            minLength: 0
+        });
+        $(".RackIns").autocomplete("option", "appendTo", ".eventForm");
+    }
+    function OnInsRackClick() {
+        var Rack = $("#txtSInstrumentRack").val();
+        if (Rack != null && Rack != "")
+            $("#txtSInstrumentRack").autocomplete("search", Rack);
+        else
+            $("#txtSInstrumentRack").autocomplete("search", "");
+    }
+    function SearcInsRackMaster() {
+
+        $("#txtSInstrumentRack").autocomplete({
+
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/DrugMastersApi/GetRackMasterDetailsBySearch",
+                    type: "GET",
+                    data: {
+                        Search: request.term
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_Rack_Name,
+                                value: el.PH_Rack_SeqId
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                //$("#txtCity").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#txtSInstrumentRack").val(ui.item.label);
+                $("#txtSInstrumentRack").val(ui.item.label);
+                /*$("#txtRackId").val(ui.item.value);*/
+                //$("#txtCustomerName").val(ui.item.label);
+                //$("#txtContactSearch").val('');
+            },
+            minLength: 0
+        });
+        $(".RackIns").autocomplete("option", "appendTo", ".eventForm");
+    }
+    function OnOthrRackClick() {
+        var Rack = $("#txtOtheRack").val();
+        if (Rack != null && Rack != "")
+            $("#txtOtheRack").autocomplete("search", Rack);
+        else
+            $("#txtOtheRack").autocomplete("search", "");
+    }
+    function SearcOthrRackMaster() {
+
+        $("#txtOtheRack").autocomplete({
+
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/DrugMastersApi/GetRackMasterDetailsBySearch",
+                    type: "GET",
+                    data: {
+                        Search: request.term
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_Rack_Name,
+                                value: el.PH_Rack_SeqId
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                //$("#txtCity").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#txtOtheRack").val(ui.item.label);
+                $("#txtOtheRack").val(ui.item.label);
+                /*$("#txtRackId").val(ui.item.value);*/
+                //$("#txtCustomerName").val(ui.item.label);
+                //$("#txtContactSearch").val('');
+            },
+            minLength: 0
+        });
+        $(".RackOthrs").autocomplete("option", "appendTo", ".eventOthrsForm");
+    }
+    function OnDisPackTypeClick() {
+        var DrugForm = $("#txtSDisposePackage").val();
+        if (DrugForm != null && DrugForm != "")
+            $("#txtSDisposePackage").autocomplete("search", DrugForm);
+        else
+            $("#txtSDisposePackage").autocomplete("search", "");
+    }
+    function SearchDisPackType() {
+
+        $("#txtSDisposePackage").autocomplete({
+
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/DrugMastersApi/GetDrugsUombySearch",
+                    type: "GET",
+                    data: {
+                        Search: request.term
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_UOMDESC,
+                                value: el.PH_UOMID
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                //$("#txtCity").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#txtSDisposePackage").val(ui.item.label);
+                $("#txtSDisposePackage").val(ui.item.label);
+                /*$("#txtPH_UOMID").val(ui.item.value);*/
+                //$("#txtCustomerName").val(ui.item.label);
+                //$("#txtContactSearch").val('');
+            },
+            minLength: 0
+        });
+        $(".PackTypeDis").autocomplete("option", "appendTo", ".eventDisForm");
+    }
+    function OnInsPackTypeClick() {
+        var DrugForm = $("#txtSInstrumentPackageType").val();
+        if (DrugForm != null && DrugForm != "")
+            $("#txtSInstrumentPackageType").autocomplete("search", DrugForm);
+        else
+            $("#txtSInstrumentPackageType").autocomplete("search", "");
+    }
+    function SearchInsPackType() {
+
+
+        $("#txtSInstrumentPackageType").autocomplete({
+
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/DrugMastersApi/GetDrugsUombySearch",
+                    type: "GET",
+                    data: {
+                        Search: request.term
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_UOMDESC,
+                                value: el.PH_UOMID
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                //$("#txtCity").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#txtSInstrumentPackageType").val(ui.item.label);
+                $("#txtSInstrumentPackageType").val(ui.item.label);
+                /*$("#txtPH_UOMID").val(ui.item.value);*/
+                //$("#txtCustomerName").val(ui.item.label);
+                //$("#txtContactSearch").val('');
+            },
+            minLength: 0
+        });
+        $(".InsPackType").autocomplete("option", "appendTo", ".eventForm");
+    }
+    function OnOthrsPackTypeClick() {
+
+        var DrugForm = $("#txtOtherPacakage").val();
+        if (DrugForm != null && DrugForm != "")
+            $("#txtOtherPacakage").autocomplete("search", DrugForm);
+        else
+            $("#txtOtherPacakage").autocomplete("search", "");
+    }
+    function SearchOthrsPackType() {
+
+
+        $("#txtOtherPacakage").autocomplete({
+
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/DrugMastersApi/GetDrugsUombySearch",
+                    type: "GET",
+                    data: {
+                        Search: request.term
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_UOMDESC,
+                                value: el.PH_UOMID
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                //$("#txtCity").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#txtOtherPacakage").val(ui.item.label);
+                $("#txtOtherPacakage").val(ui.item.label);
+                /*$("#txtPH_UOMID").val(ui.item.value);*/
+                //$("#txtCustomerName").val(ui.item.label);
+                //$("#txtContactSearch").val('');
+            },
+            minLength: 0
+        });
+        $(".OthrsPackType").autocomplete("option", "appendTo", ".eventOthrsForm");
+
+    }
+
+    function BindDisplayName() {
+        var drugCategory = $('#txtDrugCategory').val();
+        var category = drugCategory.substring(0, 3)
+        var drugName = $('#txtDrugName').val();
+        var drug = drugName.toUpperCase();
+        var strength = $('#txtStrength').val();
+        var str = strength.toUpperCase();
+        var cat = category + "."
+        if (drugCategory == "" || drugCategory == null) {
+            cat = "";
+        }
+        var displayName = cat + drug + " " + str;
+        $('#lblDisplayDrugName').html(displayName);
+    }
+    function fkey(e) {
+
+        e = e || window.event;
+        if (wasPressed) return;
+
+        if (e.keyCode == 116) {
+            console.log("f5 pressed");
+            alert("f5 pressed");
+            wasPressed = true;
+        }
+    }
+
+</script>
+
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div id="loading">
+            <div id="loadingcontent">
+                <p id="loadingspinner">
+                    Please Wait...
+                </p>
+                <div id="loadingspinner">
+                    <img src="~/images/loading.gif" style="width: 100px; height: 100px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@*<div class="content-wrapper" style=" font-family: arial, sans-serif;">
+    <div class="content">
+        <div class="container-fluid">*@
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div class="panel panel-default DivBox" style="background-color: white;">
+            @*<div class="panel-heading" style="background-color: #007bff;color: white;margin-top: 6px;height:50px;">
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12">
+                            <h3 class="card-title" style="padding-top: 11px;padding-left: 7px;">Item Master</h3>
+                            <img src="~/images/ShutdownWhite.png" style="padding-top:11px;padding-right:7px;float:right;cursor:pointer;" onclick="GotoLogin();" />
+                        </div>
+                    </div>
+                </div>*@
+
+
+            @*<br />*@
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-xs-4 col-sm-4 col-md-4">
+                        <input type="text" id="txtItemSearch" class="form-control" onkeyup="getItemMasterBySearch();" placeholder="Search" />
+                    </div>
+                    <div class="col-xs-3 col-sm-3 col-md-3">
+                        <select class="form-control" onchange="onChangeDrugMenu();" id="drpItemMaster">
+                            <option value="Medicines">Medicines</option>
+                            <option value="SurgicalDisposable">Surgical Disposable</option>
+                            <option value="SurgicalInstruments">Surgical Instruments</option>
+                            <option value="Others">Others</option>
+                        </select>
+
+                    </div>
+                    <div class="col-xs-3 col-sm-3 col-md-3"></div>
+                    <div class="col-xs-2 col-sm-2 col-md-2">
+
+                        @*<button onclick="CategoryUOMPopup();" class="btn btn-primary " style="margin-top: 4px;margin-right:22px;float:right">
+                                <i class="fas fa-plus"></i>
+                                Add Drug
+                            </button>*@
+
+                        <button class="btn btn-primary" onclick=" CategoryUOMPopup();" style="margin-top: 4px;margin-right:22px;float:right" id="btnMedicines" hidden>
+                            <i class="fas fa-plus"></i>
+                            Medicines
+                        </button>
+                        <button class="btn btn-primary" onclick="SurgicalDisposablePopup();" style="margin-top: 4px;margin-right:22px;float:right" id="btnDisposable" hidden>
+                            <i class="fas fa-plus"></i>
+                            Disposable
+                        </button>
+                        <button class="btn btn-primary" onclick="SurgicalInstrumentPopup();" style="margin-top: 4px;margin-right:22px;float:right" id="btnInstruments" hidden>
+                            <i class="fas fa-plus"></i>
+                            Instruments
+                        </button>
+                        <button class="btn btn-primary" onclick="Others();" style="margin-top: 4px;margin-right:22px;float:right" id="btnOthers" hidden>
+                            <i class="fas fa-plus"></i>
+                            Others
+                        </button>
+                    </div>
+                </div>
+
+
+                <div class="modal fade" id="modal-Substance">
+                    <div class="modal-dialog  ">
+                        <div class="modal-content">
+                            <div class="modal-header" style="height: 50px;">
+                                <h4 class="modal-title">Add Substance</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body ">
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
+                                            <label>
+                                                Substance(Formula)
+                                            </label>
+                                            <input type="text" id="txtAddSubstance" placeholder="Substance" class="form-control" />
+                                        </div>
+                                    </div>
+
+
+                                </div>
+
+                            </div>
+
+                            <div class="modal-footer justify-content-between">
+                                <button type="button" class="btn btn-primary" onclick="SaveFormula();" data-dismiss="modal">Save</button>
+                                <button data-target="#myModal" data-toggle="modal" data-backdrop="static" data-keyboard="false" type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+
+
+                            </div>
+                        </div>
+                        <!-- /.modal-content -->
+                    </div>
+                    <!-- /.modal-dialog -->
+                </div>
+                <div class="modal fade" id="modal-Category">
+
+                    <div class="modal-dialog ">
+                        <div class="modal-content">
+                            <div class="modal-header" style="height: 50px;">
+                                <h4 class="modal-title">Delete</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body ">
+                                <h6>Are You Sure you want to delete this row?</h6>
+                            </div>
+
+                            <div class="modal-footer justify-content-between">
+                                <button type="button" class="btn btn-primary" style="margin-left: 145px;" onclick="DeleteDrugDetailsByDrugCode();" data-dismiss="modal">Yes</button>
+                                <button type="button" class="btn btn-default" style="margin-right: 160px;" data-dismiss="modal">No</button>
+                                <input type="hidden" id="txtDrugCode" />
+
+
+                            </div>
+                        </div>
+                        <!-- /.modal-content -->
+                    </div>
+                    <!-- /.modal-dialog -->
+                </div>
+                <div class="modal fade" id="modal-CategoryUOM">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <div class="row">
+                                        <h4 class="modal-title">ADD DRUG</h4>
+                                        @*<h5 style="font-family: sans-serif; color: #fb0b0b; font-weight: 700; margin-top: 11px; margin-left: 130px;">Display Name :</h5>*@
+                                        <h5 id="lblDisplayDrugName" style="font-family: sans-serif; color: #fb0b0b; font-weight: 700; margin-top: 8px; margin-left: 270px;"></h5>
+                                  
+
+                                </div>
+                                
+                                @*<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>*@
+                            </div>
+                            <div class="modal-body eventInsForm ">
+                                <div class="row">
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group">
+                                            <label>Brand Name</label><span style="color:red;">*</span>
+                                            <input type="text" id="txtDrugName" placeholder="Brand Name" class="form-control" onchange="BindDisplayName();" />
+                                            <input type="hidden" id="txtDrugCode" />
+                                        </div>
+                                    </div>
+                                    @*<div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group">
+                <label>
+                    Generic Name
+                </label>
+                <div>
+                    <input type="text" id="txtGenericName" class="form-control GenericName" onclick="GenericNameClick();" placeholder="Generic Name" />
+                    <input type="hidden" id="txtPH_DRUG_GENERICSEQID" />
+                </div>
+            </div>
+        </div>*@
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <label>
+                                            Strength
+                                        </label>@*<span style="color:red;">*</span>*@
+                                        <input type="text" id="txtStrength" placeholder="Strength" onchange="BindDisplayName();" class="form-control" />
+                                    </div>
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group">
+                                            <label>
+                                                Drug Category
+                                            </label><span style="color:red;">*</span>
+                                            <input type="text" id="txtDrugCategory" onchange="BindDisplayName();" class="form-control DrugCategory " onkeyup="DCMasterClick();" onchange="CheckExistData();" placeholder="Drug Category" />
+                                            <input type="hidden" id="txtDrugCategoryId" />
+
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+
+                                    @*<div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group">
+                <label>
+                    Drug Form
+                </label>
+                <input type="text" id="txtDrugForm" class="form-control DrugForm" onclick="OnDrugFormClick();" placeholder="Drug Form" />
+                <input type="hidden" id="txtPH_UOMID" />
+            </div>
+        </div>*@
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="row">
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <label>
+                                                    Pack Type
+                                                </label>
+                                                <input type="text" id="txtPackage" class="form-control PackType" onclick="OnPackTypeClick();" placeholder="Package" onkeypress="return (event.charCode > 64 && event.charCode < 91) || (event.charCode > 96 && event.charCode < 123)" />
+                                                <input type="hidden" id="txtPH_UOMID" />
+                                            </div>
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <label>
+                                                    Pack  Qty
+                                                </label>
+                                                <input type="text" id="txtDrugQty" class="form-control" placeholder="Qty" />
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group">
+                                            <label>
+                                                Schedule Type
+                                            </label>
+                                            <input type="text" id="txtScheduleType" placeholder="Schedule Type" class="form-control" />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group">
+                                            <label>
+                                                Generic Name
+                                            </label>
+                                            <div>
+                                                <input type="text" id="txtGenericName" class="form-control GenericName" onclick="GenericNameClick();" placeholder="Generic Name" />
+                                                <input type="hidden" id="txtPH_DRUG_GENERICSEQID" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="row">
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <label>
+                                                    Drug Form
+                                                </label>
+                                                <input type="text" id="txtDrugForm" onkeyup="DFormMasterClick();" class="form-control DrugForm " placeholder="Drug Form" />
+                                                <input type="hidden" id="txtDrugFormId" />
+
+                                            </div>
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <div class="form-group">
+                                                    <label>
+                                                        HSN Code
+                                                    </label>
+                                                    <input type="text" id="txtHSN" placeholder=" HSN Code" class="form-control" />
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="row">
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <label>GST</label>
+                                                <input type="number" class="form-control" placeholder="Gst" id="txtGST" maxlength="4" />
+                                            </div>
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <div class="form-group">
+                                                    <label>
+                                                        Manufacture
+                                                    </label>
+                                                    <input type="text" id="txtManufacture" placeholder="Manufacture" onkeyup="ManufactureMasterClick();" class="form-control addresspicker" />
+                                                    <input type="hidden" id="txtManufactureId" />
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <label>Rack</label>
+                                        <input type="text" class="form-control Rack" placeholder="Rack" id="txtRack" onkeyup="RackMasterClick();" />
+                                    </div>
+                                </div>
+
+                                <div class="row">
+
+                                    <div class="col-xs-4 col-sm-4 col-md-4">
+                                        <div class="form-group">
+                                            <label>
+                                                Substance(Formula)
+                                            </label>
+                                            <div class="row">
+                                                <div class="col-xs-10 col-sm-10 col-md-10">
+                                                    <select id="txtSubstanceName" class="form-control SubstanceName " multiple></select>
+                                                </div>
+                                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                                    <img src="~/images/ADD ITEM.png" style=" height: 40px;" onclick="GenricPopup();" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                   
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <label>
+                                            Notes
+                                        </label>
+                                        <textarea placeholder="Notes" style="height:90px" id="txtNotes" class="form-control"></textarea>
+                                    </div>
+                                </div>
+
+                                <br />
+                                <div class="row">
+                                    <div class="col">
+                                        @*<button class="btn btn-primary" id="btnAdd" onclick="AddDrugMaster();">Add New</button>*@
+                                        <button class="btn btn-primary" id="btnDrugSave" onclick="SaveDrugMaster();">Save</button>
+                                        @*<button class="btn btn-primary" id="btnEdit" hidden onclick="EditDrugs();">Edit</button>*@
+                                        <button class="btn btn-primary" id="btnDrugUpdate" hidden onclick="UpdateDrugMaster();">Update</button>
+                                        <button class="btn btn-primary" onclick="closeDrugMaster();">Cancel</button>
+                                    </div>
+                                </div>
+                            </div>
+                            @*<div class="modal-footer justify-content-between">
+                                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                                    <button type="button" id="btndocverify" onclick="SaveSampleNotes();" class="btn btn-primary">Save</button>
+                                </div>*@
+                        </div>
+                        <!-- /.modal-content -->
+                    </div>
+                    <!-- /.modal-dialog -->
+                </div>
+
+                <div class="table-wrap ">
+                    <table class="table table-bordered" id="tblDrug">
+                        <thead>
+                            <tr style="font-size:13px;font-weight:700;font-family:sans-serif;">
+                                <th>Drug Name</th>
+                                <th>Strength</th>
+                                <th>Drug Category</th>
+                                <th style="display:none;">Generic Name</th>
+                                <th>HSN Code</th>
+                                <th>GST</th>
+                                <th>Manufacture</th>
+                                <th>Schedule Type</th>
+                                <th>Rack</th>
+                                <th>Pack Type</th>
+                                <th>Pack Qty</th>
+                                <th style="width:85px;">Action</th>
+                            </tr>
+
+
+
+
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    <table class="table table-bordered" id="tblSurgicalDisposable" hidden>
+                        <thead>
+                            <tr style="font-size:13px;font-weight:700;font-family:sans-serif;">
+                                <th>Name</th>
+                                <th>Brand Name</th>
+                                <th>Spec</th>
+                                <th>HSN Code</th>
+                                <th>GST</th>
+                                <th>Manufacture</th>
+                                <th>Rack</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    <table class="table table-bordered" id="tblSurgicalInstrument" hidden>
+                        <thead>
+                            <tr style="font-size:13px;font-weight:700;font-family:sans-serif;">
+                                <th>Name</th>
+                                <th>Model</th>
+                                <th>Model No</th>
+                                <th>Brand Name</th>
+                                <th>HSN Code</th>
+                                <th>GST</th>
+                                <th>Manufacture</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    <table class="table table-bordered" id="tblSurgicalOthers" hidden>
+                        <thead>
+                            <tr style="font-size:13px;font-weight:700;font-family:sans-serif;">
+                                <th>Name</th>
+                                <th>Brand Name</th>
+                                <th>HSN Code</th>
+                                <th>GST</th>
+                                <th>Manufacture</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+
+
+                </div>
+                <div class="modal fade" id="modal-SurgicalDisposable">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Surgical Disposable</h4>
+                                @*<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>*@
+                            </div>
+                            <div class="modal-body eventDisForm ">
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <label>Name</label>
+                                        <input type="text" class="form-control" placeholder="Name" id="txtSDisposeName" />
+                                        <input type="hidden" id="txtDisId" />
+
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <label>Spec</label>
+                                        <input type="text" class="form-control" placeholder="Spec" id="txtSDisposeSpec" />
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="row">
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <label>
+                                                    Pack Type
+                                                </label>
+                                                <input type="text" id="txtSDisposePackage" class="form-control PackTypeDis" placeholder="Package" onkeyup="OnDisPackTypeClick();" />
+                                            </div>
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <label>
+                                                    Pack Qty
+                                                </label>
+                                                <input type="text" id="txtSDisposeDrugQty" class="form-control" placeholder="Qty" />
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <label>
+                                                Manufacture
+                                            </label>
+                                            <input type="text" id="txtManufactureDis" placeholder="Manufacture" onkeyup="ManufactureMasterDisClick();" class="form-control dispicker" />
+                                            <input type="hidden" id="txtManufactureDisId" />
+                                        </div>
+                                    </div>
+
+                                </div>
+                                <div class="row">
+
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <label>Brand Name</label>
+                                        <input type="text" class="form-control" placeholder="Brand Name" id="txtSDisposeBrandName" />
+                                    </div>
+
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="row">
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <div class="form-group">
+                                                    <label>HSN Code</label>
+                                                    <input type="text" class="form-control" placeholder="HSN Code" id="txtSDisponseHSN" />
+                                                </div>
+
+                                            </div>
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <label>GST</label>
+                                                <input type="number" class="form-control" placeholder="Gst" id="txtSDisponseGst" />
+                                            </div>
+
+                                        </div>
+
+
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <label>Rack</label>
+                                        <input type="text" class="form-control RackDis" placeholder="Rack" id="txtSDisponseRack" onkeyup="OnDisRackClick();" />
+                                    </div>
+
+
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <label>Notes</label>
+                                        <textarea class="form-control" placeholder="Notes" style="height:100px;" id="txtSDisponseNotes"></textarea>
+                                    </div>
+                                </div>
+                                <br />
+                                <div class="row">
+                                    <div class="col">
+
+                                        @*<button class="btn btn-primary" id="btnSDisAdd" onclick="AddDisposable();">Add New</button>*@
+                                        <button class="btn btn-primary" id="btnSDisSave" onclick="saveSurgicalDisposable();">Save</button>
+                                        <button class="btn btn-primary" id="btnSDisUpdate" hidden onclick="UpdateSurgicalDisposable();">Update</button>
+                                        <button class="btn btn-primary" onclick="closeSurgicalPopup();">Cancel</button>
+                                    </div>
+                                </div>
+
+                                <!-- /.modal-content -->
+                            </div>
+                            <!-- /.modal-dialog -->
+                        </div>
+
+                    </div>
+
+                </div>
+                <div class="modal fade" id="modal-SurgicalInstrument">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Surgical Instruments</h4>
+                                @*<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>*@
+                            </div>
+                            <div class="modal-body eventForm ">
+
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <label>Name</label>
+                                        <input type="text" class="form-control" id="txtSInstrumentName" placeholder="Name" />
+                                        <input type="hidden" id="txtInsId" />
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="row">
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <label>
+                                                    Model
+                                                </label>
+                                                <input type="text" id="txtSInstrumentModel" class="form-control" placeholder="Model" />
+                                            </div>
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <label>
+                                                    Model No
+                                                </label>
+                                                <input type="text" id="txtSInstrumentModelNo" class="form-control" placeholder="Model No" />
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <label>Brand Name</label>
+                                        <input type="text" class="form-control" placeholder="Brand Name" id="txtSInstrumentBrandName" />
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="row">
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <label>
+                                                    Pack type
+                                                </label>
+                                                <input type="text" id="txtSInstrumentPackageType" class="form-control InsPackType" placeholder="Package" onclick="OnInsPackTypeClick();" />
+                                            </div>
+
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <label>
+                                                    Pack Qty
+                                                </label>
+                                                <input type="text" id="txtSInstrumentQty" class="form-control" placeholder="Qty" />
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <label>HSN Code</label>
+                                        <input type="text" class="form-control" placeholder="HSN Code" id="txtSInstrumentHsn" />
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <label>GST</label>
+                                        <input type="number" class="form-control" placeholder="Gst" id="txtSInstrumentGst" />
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <label>
+                                                Manufacture
+                                            </label>
+                                            <input type="text" id="txtManufactureIns" placeholder="Manufacture" onkeyup="ManufactureMasterInsClick();" class="form-control inspicker" />
+                                            <input type="hidden" id="txtManufactureInsId" />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <label>Rack</label>
+                                        <input class="form-control RackIns" placeholder="Rack" id="txtSInstrumentRack" onkeyup="OnInsRackClick();" />
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <label>Notes</label>
+                                        <textarea class="form-control" placeholder="Notes" style="height:100px;" id="txtSInstrumentNotes"></textarea>
+                                    </div>
+                                </div>
+                                <br />
+                                <div class="row">
+                                    <div class="col">
+
+                                        @*<button class="btn btn-primary" id="btnSIntAdd" onclick="AddInstruments();">Add New</button>*@
+                                        <button class="btn btn-primary" id="btnSIntSave" onclick="saveSurgicalInstruments();">Save</button>
+                                        <button class="btn btn-primary" id="btnSIntUpdate" hidden onclick="UpdateSurgicalInstruments();">Update</button>
+                                        <button class="btn btn-primary" onclick="closeSurgicalInstruments();">Cancel</button>
+
+                                    </div>
+                                </div>
+
+                                <!-- /.modal-content -->
+                            </div>
+                            <!-- /.modal-dialog -->
+                        </div>
+
+                    </div>
+
+                </div>
+                <div class="modal fade" id="modal-Others">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Others</h4>
+                                @*<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>*@
+                            </div>
+                            <div class="modal-body eventOthrsForm ">
+
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <label>Name</label>
+                                        <input type="text" class="form-control" id="txtOtherName" placeholder="Name" />
+                                        <input type="hidden" id="OthersId" />
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <label>Brand Name</label>
+                                        <input type="text" class="form-control" placeholder="Brand Name" id="txtOtherBrandName" />
+                                    </div>
+                                </div>
+                                <div class="row">
+
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="row">
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <label>
+                                                    Pack Type
+                                                </label>
+                                                <input type="text" id="txtOtherPacakage" class="form-control OthrsPackType" placeholder="Package" onclick="OnDisPackTypeClick();" />
+                                            </div>
+                                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                                <label>
+                                                    Pack Qty
+                                                </label>
+                                                <input type="text" id="txtOtherQty" class="form-control" placeholder="Qty" />
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <label>HSN Code</label>
+                                        <input type="text" class="form-control" placeholder="HSN Code" id="txtOtherHsn" />
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <label>GST</label>
+                                        <input type="number" class="form-control" placeholder="Gst" id="txtOtherGst" />
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <label>
+                                                Manufacture
+                                            </label>
+                                            <input type="text" id="txtManufactureOthrs" placeholder="Manufacture" onkeyup="ManufactureMasterOthrsClick();" class="form-control othrspicker" />
+                                            <input type="hidden" id="txtManufactureOthrsId" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <label>Rack</label>
+                                        <input class="form-control RackOthrs" placeholder="Rack" id="txtOtheRack" onkeyup="OnOthrRackClick();">
+                                    </div>
+
+
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <label>Notes</label>
+                                        <textarea class="form-control" placeholder="Notes" style="height:100px;" id="txtOtheNotes"></textarea>
+                                    </div>
+                                </div>
+                                <br />
+                                <div class="row">
+                                    <div class="col">
+
+                                        @*<button class="btn btn-primary" id="btnSothrAdd" onclick="AddSurgicalOthers();">Add New</button>*@
+                                        <button class="btn btn-primary" id="btnSothrSave" onclick="saveSurgicalOthers();">Save</button>
+                                        <button class="btn btn-primary" id="btnSothrUpdate" hidden onclick="UpdateSurgicalOthers();">Update</button>
+                                        <button class="btn btn-primary" onclick="closeSurgicalOthers();">Cancel</button>
+
+                                    </div>
+                                </div>
+
+                                <!-- /.modal-content -->
+                            </div>
+                            <!-- /.modal-dialog -->
+                        </div>
+
+                    </div>
+
+                </div>
+                <div class="modal fade" id="modal-DeleteDisposable">
+
+                    <div class="modal-dialog ">
+                        <div class="modal-content">
+                            <div class="modal-header" style="height: 50px;">
+                                <h4 class="modal-title">Delete</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body ">
+                                <h6>Are You Sure you want to delete this row?</h6>
+                            </div>
+
+                            <div class="modal-footer justify-content-between">
+                                <button type="button" class="btn btn-primary" style="margin-left: 145px;" onclick="DeleteSurgicalDisposableRow();" data-dismiss="modal">Yes</button>
+                                <button type="button" class="btn btn-default" style="margin-right: 160px;" data-dismiss="modal">No</button>
+                                <input type="hidden" id="DisposableSeqId" />
+
+
+
+                            </div>
+                        </div>
+                        <!-- /.modal-content -->
+                    </div>
+                    <!-- /.modal-dialog -->
+                </div>
+                <div class="modal fade" id="modal-DeleteInstruments">
+
+                    <div class="modal-dialog ">
+                        <div class="modal-content">
+                            <div class="modal-header" style="height: 50px;">
+                                <h4 class="modal-title">Delete</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body ">
+                                <h6>Are You Sure you want to delete this row?</h6>
+                            </div>
+
+                            <div class="modal-footer justify-content-between">
+                                <button type="button" class="btn btn-primary" style="margin-left: 145px;" onclick="DeleteSurgicalInstrumentsRow();" data-dismiss="modal">Yes</button>
+                                <button type="button" class="btn btn-default" style="margin-right: 160px;" data-dismiss="modal">No</button>
+                                <input type="hidden" id="InstrumentsSeqId" />
+
+
+
+                            </div>
+                        </div>
+                        <!-- /.modal-content -->
+                    </div>
+                    <!-- /.modal-dialog -->
+                </div>
+                <div class="modal fade" id="modal-DeleteOthers">
+
+
+                    <div class="modal-dialog ">
+                        <div class="modal-content">
+                            <div class="modal-header" style="height: 50px;">
+                                <h4 class="modal-title">Delete</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body ">
+                                <h6>Are You Sure you want to delete this row?</h6>
+                            </div>
+
+                            <div class="modal-footer justify-content-between">
+                                <button type="button" class="btn btn-primary" style="margin-left: 145px;" onclick="DeleteSurgicalOthersRow();" data-dismiss="modal">Yes</button>
+                                <button type="button" class="btn btn-default" style="margin-right: 160px;" data-dismiss="modal">No</button>
+                                <input type="hidden" id="OthersSeqId" />
+
+
+                            </div>
+
+                        </div>
+                        <!-- /.modal-content -->
+                    </div>
+                    <!-- /.modal-dialog -->
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@*</div>
+        </div>
+    </div>*@

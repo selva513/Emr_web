@@ -1,0 +1,231 @@
+﻿<script type="text/javascript">
+    $(document).ready(function () {
+        dateStockMoveFunction();
+        GetStockMoveStoreName();
+    });
+    function dateStockMoveFunction() {
+        var objDate = new Date();
+        var Presentyear = objDate.getFullYear();
+        $("#txtStockMoveFromDate").datepicker({
+            // yearRange: '1900:' + Presentyear,
+            changeMonth: true,
+            changeYear: true,
+            // dateFormat: "mm/dd/yy"
+            dateFormat: "dd/mm/yy"
+            //maxDate: '0d'
+        });
+        $("#txtStockMoveToDate").datepicker({
+            // yearRange: '1900:' + Presentyear,
+            changeMonth: true,
+            changeYear: true,
+            // dateFormat: "mm/dd/yy"
+            dateFormat: "dd/mm/yy"
+          //  minDate: '-0D',
+           // maxDate: '+48M',
+        });
+    }
+    function SearchStockmoveDrug() {
+        $("#txtStockMoveBrandName").autocomplete({
+            source: function (request, response) {
+                $.ajax({
+                    url: "/Pharma/Invoice/GetDrugFromDrugMaster",
+                    type: "GET",
+                    data: {
+                        SearchTearm: request.term
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_CUR_DRUGBRANDNAME,
+                                value: el.PH_CUR_DRUGCODE
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                $("#txtStockMoveBrandName").val(ui.item.label);
+               
+
+            },
+            select: function (event, ui) {
+                // $("#txtDrugSearch").prop('disabled', true);
+                $("#txtStockMoveBrandName").val(ui.item.label);
+                $("#hidDrugCode").val(ui.item.value);
+                return false;
+            },
+            minLength: 0
+        });
+    }
+    function GetStockMoveStoreName() {
+        $.ajax({
+            url: "/Pharma/Invoice/GetStoreName",
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.length > 0) {
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var HIS_PH_STOREMASTER = response[PCHeader].HIS_PH_STOREMASTER;
+                        var HIS_PH_STORENAME = response[PCHeader].HIS_PH_STORENAME;
+                        $('#ddlStockMoveWherHouse')
+                            .append($("<option></option>").val(HIS_PH_STORENAME).html(HIS_PH_STORENAME));
+                    }
+                }
+            }
+        });
+    }
+    function SearchStockMovemnts() {
+        var FromDate = $("#txtStockMoveFromDate").val();
+        var ToDate = $("#txtStockMoveToDate").val();
+        var DrugCode = $("#hidDrugCode").val();
+        if (DrugCode !== "")
+            DrugCode = parseInt($("#hidDrugCode").val());
+        else
+            DrugCode = 0;
+        var DrugName = $("#txtStockMoveBrandName").val();
+        var WaherHouse = $("#ddlStockMoveWherHouse").val();
+        if (DrugName !== "" && WaherHouse !== "0") {
+            $.ajax({
+                url: "/api/CurrentStockApi/GetStockMovementByDate",
+                type: "GET",
+                data: {
+                    Start: FromDate,
+                    To: ToDate,
+                    DrugCode: DrugCode,
+                    Waherhoues: WaherHouse
+                },
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    var html = "";
+                    $("#tblDrugStockMovementDtl tbody").empty();
+                    if (response.length > 0) {
+                        for (var dtl = 0; dtl < response.length; dtl++) {
+                            var sno = dtl + 1;
+                            var DrugName = response[dtl].DrugName;
+                            var StockMovementId = response[dtl].ID;
+                            var DrugCode = response[dtl].DrugCode;
+                            var BatchNo = response[dtl].BatchNum;
+                            var InWard = response[dtl].InWard;
+                            var OutWard = response[dtl].OutWard;
+                            var NewStock = response[dtl].NewStock;
+                            var StoreName = response[dtl].StoreName;
+                            var Action = response[dtl].Action;
+                            var Createdatetime = response[dtl].Createdatetime;
+                            var Reference = response[dtl].Reference;
+                            if (InWard === 0)
+                                InWard = "-";
+                            if (OutWard === 0)
+                                OutWard = "-";
+                                html += "<tr>";
+                                html += "<td style='display:none;'>" + StockMovementId + "</td>";
+                                html += "<td style='display:none;'>" + DrugCode + "</td>";
+                                html += "<td style='text-align:center;'>" + sno + "</td>";
+                                html += "<td style='text-align:center;'>" + Createdatetime + "</td>";
+                                html += "<td style='text-align:center;'>" + DrugName + "</td>";
+                                html += "<td style='text-align:center;'>" + BatchNo + "</td>";
+                                html += "<td style='text-align:center;'>" + Action + "</td>";
+                                html += "<td style='text-align:center;'>" + Reference + "</td>";
+                                html += "<td style='text-align:right;'>" + InWard + "</td>";
+                                html += "<td style='text-align:right;'>" + OutWard + "</td>";
+                                html += "<td style='text-align:right;'>" + NewStock + "</td>";
+                                html += "</tr>";
+                           
+
+                        }
+                        $("#tblDrugStockMovementDtl tbody").append(html);
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        else {
+            if (DrugName == "") {
+                alert('Please Enter Brand Name');
+            }
+            else {
+                alert('Please Enter WareHouse');
+            }
+                
+
+        }
+    }
+</script>
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="panel panel-default DivBox" style="background-color: white;">
+                    <br />
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div class="form-group">
+                                    <label>
+                                        From Date
+                                    </label>
+                                    <input type="text" id="txtStockMoveFromDate" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div class="form-group">
+                                    <label>
+                                        To Date
+                                    </label>
+                                    <input type="text" id="txtStockMoveToDate" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <div class="form-group">
+                                    <label>
+                                        Warehouse
+                                    </label>
+                                    <select class="form-control" id="ddlStockMoveWherHouse" style="margin-left: 5px;">
+                                        <option value="0">--Select--</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <div class="form-group">
+                                    <label>
+                                        Brand Name
+                                    </label>
+                                    <input type="text" id="txtStockMoveBrandName" class="form-control" onkeypress="SearchStockmoveDrug();" />
+                                    <input type="hidden" id="hidDrugCode" />
+                                </div>
+                            </div>
+
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <div class="form-group">
+                                    <button class="btn btn-primary" style="margin-top: 31px;" onclick="SearchStockMovemnts();">Search</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <table id="tblDrugStockMovementDtl" class="table table-bordered table-striped dataTable table-reflow tableHB">
+                                    <thead>
+                                        <tr>
+                                            <th>S.No</th>
+                                            <th>Date & Time</th>
+                                            <th>Drug Name</th>
+                                            <th>Batch</th>
+                                            <th>Transaction Type</th>
+                                            <th>Reference</th>
+                                            <th style="text-align:right">Inward</th>
+                                            <th style="text-align:right">Outward</th>
+                                            <th style="text-align:right">Stock Qty</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

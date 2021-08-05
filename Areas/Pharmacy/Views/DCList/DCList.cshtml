@@ -1,0 +1,304 @@
+﻿<script type="text/javascript">
+    $(document).ready(function () {
+        GetDCListSupplierMaster();
+    });
+
+    function GetTop100DcList() {
+        $.ajax({
+            url: "/Pharma/DcPurchase/GetTop100DcPurchase",
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                BindTop100DcList(response);
+            }
+        });
+    }
+    function BindTop100DcList(response) {
+        $("#tblDCList tbody").empty();
+        if (response.length > 0) {
+            var html = "";
+            var Sno = 0;
+            for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                Sno = PCHeader + 1;
+                var PH_DC_SEQID = response[PCHeader].PH_DC_SEQID;
+                var PH_DC_DOCNO = response[PCHeader].PH_DC_DOCNO;
+                var PH_SupplierName = response[PCHeader].PH_SupplierName;
+                var PH_DC_ENTRYDATE = response[PCHeader].PH_DC_ENTRYDATE;
+                var PH_DC_ITEMCOUNT = response[PCHeader].PH_DC_ITEMCOUNT;
+                var PH_DC_InvoiceTotalAmt = response[PCHeader].PH_DC_InvoiceTotalAmt;
+                var PH_DC_SUPID = response[PCHeader].PH_DC_SUPID;
+                html += "<tr>";
+                html += "<td><input type='image' style='width:21px;height:21px;' src='" + rootUrl + "/Images/details_open.png' onclick='javascript:return CheckDCListSelect(this)'></td>";
+                html += "<td>" + Sno + "</td>";
+                html += "<td style='display:none;'>" + PH_DC_SEQID + "</td>";
+                html += "<td>" + PH_SupplierName + "</td>";
+                html += "<td>" + PH_DC_DOCNO + "</td>";
+                html += "<td>" + PH_DC_ENTRYDATE + "</td>";
+                html += "<td>" + PH_DC_InvoiceTotalAmt + "</td>";
+                html += "<td style='text-align: center;'><input type='checkbox' class='case'  id='Check' style='text-align: center;' /></td>";
+                html += "<td style='display:none;'>" + PH_DC_SUPID + "</td>";
+                html += "<td style='text-align: center;display:none;'>";
+                html += "<img src='" + rootUrl + "/Images/DELETE-32.png'  onclick='return DeleteInvoiceRow(this)' style='cursor:pointer;width: 30px !important;height:30px !important;'></td>";
+                html += "</tr>";
+            }
+            $("#tblDCList tbody").append(html);
+        }
+    }
+    function CheckDCListSelect(SelectedRow) {
+        var row = SelectedRow.parentNode.parentNode;
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = row.rowIndex - 1;
+        var PSeqID = row.cells[2].innerHTML;
+
+        var className = myrow.cells[0].getElementsByTagName("input")[0].className;
+        if (className === "shown") {
+            var imgUrl = rootUrl + "/Images/details_open.png";
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', imgUrl);
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'abc');
+            $('#tblDCList > tbody > tr').eq(rowIndex).next().remove();
+        }
+        else {
+            var imgUrl = rootUrl + "/Images/details_close.png";
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', imgUrl);
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'shown');
+
+            var arg = parseFloat(PSeqID);
+            $.ajax({
+                url: "/Pharma/DcPurchase/GetDcDrugDeatilsBySeqID/?SeqID=" + arg + "",
+                type: 'Get',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    var html = "<table id='myTable1' class='table table-striped table-bordered table-hover table-full-width dataTable no-footer'>";
+                    html += "<tr>";
+                    html += "<thead><th>Brand Name</th><th>Batch</th><th>Expiry DT</th>";
+                    html += "<th>Order Qty</th><th>Free Qty</th>";
+                    html += "<th>Purchase Cost</th><th>GST</th><th></th>";
+                    html += "</thead>";
+                    html += "</tr>";
+                    for (SymCount = 0; SymCount < response.Deatils.length; SymCount++) {
+                        var IsMovedInvoice = response.Deatils[SymCount].IsMovedInvoice;
+                        var drugQty = response.Deatils[SymCount].PH_ITEM_DRUG_QTY;
+                        var dcRecQty = response.Deatils[SymCount].PH_DCDTL_RECVDQTY;
+                        var orderQty = dcRecQty / drugQty;
+
+                        html += "<tr>";
+                        html += "<td>" + response.Deatils[SymCount].PH_ITEM_DRUGNAME_BRAND + "</td>";
+                        html += "<td>" + response.Deatils[SymCount].PH_DCDTL_DRUGBATCHNO + "</td>";
+                        html += "<td>" + response.Deatils[SymCount].PH_DCDTL_DRUGEXPIRY + "</td>";
+                        html += "<td>" + orderQty + "</td>";
+                        html += "<td>" + response.Deatils[SymCount].PH_DCDTL_BONUSQTY + "</td>";
+                        html += "<td>" + response.Deatils[SymCount].PH_DCDTL_RATEEACH + "</td>";
+                        html += "<td>" + response.Deatils[SymCount].GST + "</td>";
+                        if (IsMovedInvoice === false)
+                            html += "<td>DC</td>"
+                        else
+                            html += "<td>Invoiced</td>"
+                        html += "</tr>";
+                    }
+                    html += "</table></br>";
+                    var newRow = $('<tr><td></td><td colspan="11">' + html + '</td></tr>');
+                    $('#tblDCList > tbody > tr').eq(rowIndex).after(newRow);
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        return false;
+    }
+    function SelectAll(SelectedRow) {
+        var checkAll = SelectedRow.checked;
+        if (checkAll) {
+            $('#tblDCList tbody tr td input[type="checkbox"]').each(function () {
+                $(this).prop('checked', true);
+            });
+        } else {
+            $('#tblDCList tbody tr td input[type="checkbox"]').each(function () {
+                $(this).prop('checked', false);
+            });
+        }
+        //var checkAll = $("#SelectAll").prop('checked');
+        //if (checkAll) {
+        //    $(".case").prop("checked", true);
+        //} else {
+        //    $(".case").prop("checked", false);
+        //}
+    }
+    //$(".case").click(function () {
+    //    if ($(".case").length == $(".case:checked").length) {
+    //        $("#SelectAll").prop("checked", true);
+    //    } else {
+    //        $("#SelectAll").prop("checked", false);
+    //    }
+    //});
+    function SaveInvoicepickList() {
+        var tbl12 = document.getElementById("tblDCList");
+        var PickArray = new Array();
+        var row12 = tbl12.rows.length;
+        for (k = 1; k < row12; k++) {
+            var sval12 = tbl12.rows[k];
+            var checkbox = sval12.cells[7].getElementsByTagName("input");
+            if ($(checkbox).is(':checked')) {
+                var SeqID = parseFloat(sval12.cells[2].innerHTML);
+                var SupplierID = parseFloat(sval12.cells[8].innerHTML);
+                sessionStorage.setItem("SupplierID", SupplierID);
+                PickArray.push(SeqID);
+            }
+        }
+        var ListSeqID = PickArray.join(',');
+        sessionStorage.setItem("ListSeqIDList", ListSeqID);
+        if (PickArray.length > 0) {
+            var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+            var url = rootUrl + '/Pharmacy/DcInvoice/DcInvoice';
+            window.open(url, '_self');
+        }
+        else {
+            alert("Please Select DC");
+        }
+        return false;
+    }
+    function GetSupplierTop100DcPurchase(SupplierID) {
+        $.ajax({
+            url: "/Pharma/DcPurchase/GetSupplierTop100DcPurchase",
+            type: "GET",
+            data: {
+                SupplierID: SupplierID
+            },
+            dataType: "json",
+            success: function (response) {
+                if (response.length > 0) {
+                    var html = "";
+                    var Sno = 0;
+                    $("#tblDCList tbody").empty();
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        Sno = PCHeader + 1;
+                        var PH_DC_SEQID = response[PCHeader].PH_DC_SEQID;
+                        var PH_DC_DOCNO = response[PCHeader].PH_DC_DOCNO;
+                        var PH_SupplierName = response[PCHeader].PH_SupplierName;
+                        var PH_DC_ENTRYDATE = response[PCHeader].PH_DC_ENTRYDATE;
+                        var PH_DC_ITEMCOUNT = response[PCHeader].PH_DC_ITEMCOUNT;
+                        var PH_DC_InvoiceTotalAmt = response[PCHeader].PH_DC_InvoiceTotalAmt;
+                        var PH_DC_SUPID = response[PCHeader].PH_DC_SUPID;
+                        html += "<tr>";
+                        html += "<td><input type='image' style='width:21px;height:21px;' src='" + rootUrl + "/Images/details_open.png' onclick='javascript:return CheckDCListSelect(this)'></td>";
+                        html += "<td>" + Sno + "</td>";
+                        html += "<td style='display:none;'>" + PH_DC_SEQID + "</td>";
+                        html += "<td>" + PH_SupplierName + "</td>";
+                        html += "<td>" + PH_DC_DOCNO + "</td>";
+                        html += "<td>" + PH_DC_ENTRYDATE + "</td>";
+                        html += "<td>" + PH_DC_InvoiceTotalAmt + "</td>";
+                        html += "<td style='text-align: center;'><input type='checkbox' class='case'  id='Check' style='text-align: center;' /></td>";
+                        html += "<td style='display:none;'>" + PH_DC_SUPID + "</td>";
+                        html += "<td style='text-align: center;display:none;'>";
+                        html += "<img src='" + rootUrl + "/Images/DELETE-32.png'  onclick='return DeleteInvoiceRow(this)' style='cursor:pointer;width: 30px !important;height:30px !important;'></td>";
+                        html += "</tr>";
+                    }
+                    $("#tblDCList tbody").append(html);
+                }
+                else {
+                    $("#tblDCList tbody").empty();
+                }
+            }
+        });
+    }
+    function OnChangeDCListSupplier() {
+        var SupplierID = $("#ddlDCListSuplier").val();
+        if (SupplierID == 0) {
+            GetTop100DcList();
+        }
+        else {
+            GetSupplierTop100DcPurchase(SupplierID);
+        }
+    }
+    function GetDCListSupplierMaster() {
+        $.ajax({
+            url: "/Pharma/Invoice/GetAllSupplierMaster",
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.length > 0) {
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var PH_SupplierID = response[PCHeader].PH_SupplierID;
+                        var PH_SupplierName = response[PCHeader].PH_SupplierName;
+                        $('#ddlDCListSuplier')
+                            .append($("<option></option>").val(PH_SupplierID).html(PH_SupplierName));
+                    }
+                }
+            }
+        });
+    }
+    function GetDcNumberDetailsBySearch() {
+        var dcNumber = $('#txtdcNumber').val();
+        var SupplierID = parseFloat($("#ddlDCListSuplier").val());
+        $.ajax({
+            url: "/Pharma/DcPurchase/GetDcNumberDetailsBySearch?Search=" + dcNumber + "&SupplierId=" + SupplierID,
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                BindTop100DcList(response);
+            }
+        });
+    }
+    function DCListCancelClick() {
+        try {
+            $("#ddlDCListSuplier").val(0);
+            GetTop100DcList();
+        } catch (e) {console.log(e);}
+    }
+</script>
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="panel panel-default DivBox" style="background-color: white;">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                <label>Search DcNumber</label>
+                                <input type="text" class="form-control" id="txtdcNumber" placeholder="Search DCNumber" onkeyup="GetDcNumberDetailsBySearch();" />
+                              
+                            </div>
+                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                <label>Suppiler Name </label>
+                                <select class="form-control" id="ddlDCListSuplier" onchange="OnChangeDCListSupplier();">
+                                    <option value="0">--Select--</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <table class="table table-bordered table-striped dataTable table-reflow tableHB" id="tblDCList" style="color: black;margin-left: 5px;">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th>S.NO</th>
+                                            <th>Supplier Name</th>
+                                            <th>DC Number</th>
+                                            <th>Dc Date</th>
+                                            <th>Net Amount</th>
+                                            <th style="text-align: center;">
+                                                <input type="checkbox" id="SelectAll" name="select-all" onclick="SelectAll(this);" />
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <label style="margin-left: 5px;"></label>
+                                <div class="form-group">
+                                    <button style="margin-left:7px;margin-top:7px;" class="btn btn-primary" onclick="SaveInvoicepickList();">Convert Invoice</button>
+                                    <button style="margin-left:7px;margin-top:7px;" class="btn btn-primary" onclick="DCListCancelClick();">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

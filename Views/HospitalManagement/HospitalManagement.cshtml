@@ -1,0 +1,521 @@
+﻿
+@{
+    ViewData["Title"] = "HospitalManagement";
+}
+@using Syncfusion.EJ2
+@using Newtonsoft.Json
+@model Emr_web.Models.HospitalView
+<link href="~/AutoComplete/jquery-ui_1.11.4.css" rel="stylesheet" />
+<script src="~/AutoComplete/jquery-1.10.2.js"></script>
+<script src="~/AutoComplete/jquery-ui_1.11.4.js"></script>
+<style>
+    .fileupload {
+        margin: 20px auto;
+        width: 400px;
+    }
+
+    #dropareahos {
+        padding: 50px 25px;
+        margin: 30px auto;
+        border: 1px solid #c3c3c3;
+        text-align: center;
+        width: 20%;
+        display: inline-flex;
+    }
+
+    #dropareaot {
+        padding: 50px 25px;
+        margin: 30px auto;
+        border: 1px solid #c3c3c3;
+        text-align: center;
+        width: 20%;
+        display: inline-flex;
+    }
+
+    .e-file-select,
+    .e-file-drop {
+        display: none;
+    }
+
+    body .e-upload-drag-hover {
+        outline: 2px dashed brown;
+    }
+
+    #uploadfile {
+        width: 60%;
+        display: inline-flex;
+        margin-left: 5%;
+    }
+</style>
+<style>
+    .main-page {
+        background: linear-gradient(-141deg, #FBFAFF 14%, #FBFAFF 100%);
+        margin: 0;
+    }
+
+    body,
+    text {
+        font-family: "Helvetica Neue", "Helvetica", "Arial", sans-serif, "-apple-system", "BlinkMacSystemFont";
+    }
+
+    .form-group.required .control-label:after {
+        content: "*";
+        color: red;
+    }
+</style>
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+     $(document).ready(function () {
+         GetHospitalName();
+         //document.getElementById('hospitalmob').disabled = true;
+         //document.getElementById('landline').disabled = true;
+         //document.getElementById('landline1').disabled = true;
+         //document.getElementById('hospitaladd').disabled = true;
+         //document.getElementById('hospitaladd1').disabled = true;
+         //document.getElementById('hospitaladd2').disabled = true;
+         //document.getElementById('city').disabled = true;
+         //document.getElementById('country').disabled = true;
+         //document.getElementById('pin').disabled = true;
+         //document.getElementById('btnhospital').disabled = true;
+     });
+    function GetHospitalName() {
+        try {
+             $.ajax({
+                    type: "GET",
+                    url: rootUrl + "/api/Patient/GetHospitalname",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    success: function (response) {
+                        var data = response;
+                        if (data != "" && data != null) {
+                            var Hospitalname = data[0].HospitalName;
+                            $("#lblhosname").text(Hospitalname);
+                            if (data[0].HospitalMobileNo != 0)
+                                document.getElementById('hospitalmob').ej2_instances[0].value = data[0].HospitalMobileNo;
+                            if (data[0].HospitalLandlineNo != 0)
+                                document.getElementById('landline').ej2_instances[0].value = data[0].HospitalLandlineNo;
+                            if (data[0].HospitalLandlineNo1 != 0)
+                                document.getElementById('landline1').ej2_instances[0].value = data[0].HospitalLandlineNo1;
+                            document.getElementById('hospitaladd').ej2_instances[0].value = data[0].HospitalAddress;
+                            document.getElementById('hospitaladd1').ej2_instances[0].value = data[0].HospitalAddress1;
+                            document.getElementById('hospitaladd2').ej2_instances[0].value = data[0].HospitalAddress2;
+                            if (data[0].Cityid != 0) {
+                                document.getElementById('city').ej2_instances[0].text = data[0].City;
+                                document.getElementById('city').ej2_instances[0].value = data[0].Cityid;
+                            }
+                            if (data[0].Countryid != 0) {
+                                document.getElementById('country').ej2_instances[0].text = data[0].Country;
+                                document.getElementById('country').ej2_instances[0].value = data[0].Countryid;
+                            }
+                            if (data[0].TimezoneSeqID != 0) {
+                                document.getElementById('timezone').ej2_instances[0].value = data[0].TimezoneSeqID;
+                            }
+                            document.getElementById('pin').ej2_instances[0].value = data[0].Pin;
+                            document.getElementById('prefix').ej2_instances[0].value = data[0].Prefix;
+                            var hosplogo = data[0].HospitalLogo;
+                            var otherlogo = data[0].OtherLogo;
+                            $("#Imgotherdiv").css("display", "block");
+                            $("#Imghospdiv").css("display", "block");
+                            $("#Imghosp").attr("src", "data:image/png;base64," + hosplogo + "");
+                            $("#Imgother").attr("src", "data:image/png;base64," + otherlogo + "");
+                        }
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+        }
+        catch (e) {
+        }
+    }
+    function CheckExistHospital() {
+        try {
+            var hosname = document.getElementById('hospitalname').ej2_instances[0].value;
+            if (hosname == '')
+                alert('Please Enter Hospital Name');
+            else {
+                $.ajax({
+                    type: "GET",
+                    url: rootUrl + "/api/Patient/CheckHospitalname/?HosName=" + hosname,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    success: function (response) {
+                        var data = response;
+                        if (data == 'success') {
+                            alert('Hospital Name Exist.Please Enter Other Hospital Name');
+                            document.getElementById('hospitalname').ej2_instances[0].value = "";
+                        }
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+            }
+        }
+        catch (e) {
+        }
+    }
+    function CheckPrefixExist() {
+        try {
+            var Prefix = document.getElementById('prefix').ej2_instances[0].value;
+            if (Prefix != "") {
+                $.ajax({
+                    type: "GET",
+                    url: rootUrl + "/api/Patient/CheckPrefixExist/?Prefix=" + Prefix,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    success: function (response) {
+                        var data = response;
+                        if (data == 'success') {
+                            alert('Patientid Prefix Exist.Please Enter Other Patientid Prefix');
+                            document.getElementById('prefix').ej2_instances[0].value = "";
+                        }
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function Cityonfiltering(e) {
+        var query = new ej.data.Query();
+        query = (e.text !== '') ? query.where('CityName', 'Contains', e.text, true) : query;
+        e.updateData(@Html.Raw(JsonConvert.SerializeObject(ViewBag.City)), query);
+    }
+    function Countryonfiltering(e) {
+        var query = new ej.data.Query();
+        query = (e.text !== '') ? query.where('CountryName', 'Contains', e.text, true) : query;
+        e.updateData(@Html.Raw(JsonConvert.SerializeObject(ViewBag.Country)), query);
+    }
+    function Timezoneonfiltering(e) {
+        var query = new ej.data.Query();
+        query = (e.text !== '') ? query.where('TimezoneName', 'Contains', e.text, true) : query;
+        e.updateData(@Html.Raw(JsonConvert.SerializeObject(ViewBag.Timezone)), query);
+    }
+    function Countryblur() {
+        try {
+            var countryname = document.getElementById('country').ej2_instances[0].text;
+            var countryid = document.getElementById('country').ej2_instances[0].value;
+            if (countryid == countryname) {
+                alert('Please Enter Valid Country Name');
+                document.getElementById('country').ej2_instances[0].value = "";
+            }
+        }
+        catch (e) {
+
+        }
+    }
+    function Cityblur() {
+        try {
+            var cityname = document.getElementById('city').ej2_instances[0].text;
+            var cityid = document.getElementById('city').ej2_instances[0].value;
+            if (cityid == cityname) {
+                alert('Please Enter Valid City Name');
+                document.getElementById('city').ej2_instances[0].value = "";
+            }
+        }
+        catch (e) {
+
+        }
+    }
+</script>
+<script>
+    function rowSelected(args) {
+        try {
+            document.getElementById('hospitalmob').disabled = false;
+            document.getElementById('landline').disabled = false;
+            document.getElementById('landline1').disabled = false;
+            document.getElementById('hospitaladd').disabled = false;
+            document.getElementById('hospitaladd1').disabled = false;
+            document.getElementById('hospitaladd2').disabled = false;
+            document.getElementById('city').disabled = false;
+            document.getElementById('country').disabled = false;
+            document.getElementById('pin').disabled = false;
+            document.getElementById('btnhospital').disabled = false;
+            var selectedrecords = this.getSelectedRecords();
+            document.getElementById('hospitalmob').ej2_instances[0].value = selectedrecords[0].HospitalMobileNo;
+            document.getElementById('landline').ej2_instances[0].value = selectedrecords[0].HospitalLandlineNo;
+            document.getElementById('landline1').ej2_instances[0].value = selectedrecords[0].HospitalLandlineNo1;
+            document.getElementById('hospitaladd').ej2_instances[0].value = selectedrecords[0].HospitalAddress;
+            document.getElementById('hospitaladd1').ej2_instances[0].value = selectedrecords[0].HospitalAddress1;
+            document.getElementById('hospitaladd2').ej2_instances[0].value = selectedrecords[0].HospitalAddress2;
+            document.getElementById('city').ej2_instances[0].value = args.data.Cityid;
+            document.getElementById('country').ej2_instances[0].value = args.data.Countryid;
+            document.getElementById('pin').ej2_instances[0].value = selectedrecords[0].Pin;
+            var hosplogo = selectedrecords[0].HospitalLogo;
+            var otherlogo = selectedrecords[0].OtherLogo;
+            $("#Imgotherdiv").css("display", "block");
+            $("#Imghospdiv").css("display", "block");
+            $("#Imghosp").attr("src", "data:image/png;base64," + hosplogo + "");
+            $("#Imgother").attr("src", "data:image/png;base64," + otherlogo + "");
+        }
+        catch (e) {
+        }
+    }
+    function CancelClick() {
+        try {
+            window.location.href = "/HospitalManagement/HospitalManagement";
+        }
+        catch (e) {
+        }
+    }
+    function Otherlogoclick() {
+        try {
+            $("#Imgotherdiv").css("display", "none");
+        }
+        catch (e) {
+        }
+    }
+    function Hospitallogoclick() {
+        try {
+            $("#Imghospdiv").css("display", "none");
+        }
+        catch (e) {
+        }
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-primary">
+                        <div class="card-header" style="margin-top:15px;">
+                            <h3 class="card-title">Hospital Master</h3>
+                            <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                        </div>
+                        <form role="form" autocomplete="off" method="post" style="font-size:small;"  asp-controller="HospitalManagement" asp-action="HospitalMaster" data-toggle="validator">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
+                                            <label class="control-label" id="lblhosname" asp-for="HospitalName" style="color: black;font-size:25px;font-family:'Times New Roman'">
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group required">
+                                            <label class="control-label" style="color: black;">
+                                                Mobile No
+                                            </label>
+                                            <ejs-textbox id="hospitalmob" placeholder="Mobile No" ejs-for="HospitalMobileNo" autofocus required></ejs-textbox>
+                                            <div class="help-block with-errors"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <label class="control-label" style="color: black;">
+                                                Landline No 1
+                                            </label>
+                                            <ejs-textbox id="landline" placeholder="Landline No 1" ejs-for="HospitalLandlineNo"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <label class="control-label" style="color: black;">
+                                                Landine No 2
+                                            </label>
+                                            <ejs-textbox id="landline1" placeholder="Landline No 2" ejs-for="HospitalLandlineNo1"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <label class="control-label" style="color: black;">
+                                                Address 1
+                                            </label>
+                                            <ejs-textbox id="hospitaladd" placeholder="Hospital Address 1" ejs-for="HospitalAddress"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <label class="control-label" style="color: black;">
+                                                Address 2
+                                            </label>
+                                            <ejs-textbox id="hospitaladd1" placeholder="Hospital Address 2" ejs-for="HospitalAddress1"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <label class="control-label" style="color: black;">
+                                                Area
+                                            </label>
+                                            <ejs-textbox id="hospitaladd2" placeholder="Area" ejs-for="HospitalAddress2"></ejs-textbox>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group required ">
+                                            <label class="control-label" style="color: black;">
+                                                City
+                                            </label>
+                                            <ejs-combobox id="city" autofill="true" ejs-for="City" allowFiltering="true" filtering="Cityonfiltering" blur="Cityblur"
+                                                          dataSource="@ViewBag.City" placeholder="City" popupHeight="230px" required>
+                                                <e-combobox-fields text="CityName" value="CitySeqID"></e-combobox-fields>
+                                            </ejs-combobox>
+                                            <div class="help-block with-errors"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group required">
+                                            <label class="control-label" style="color: black;">
+                                                Country
+                                            </label>
+                                            <ejs-combobox id="country" autofill="true" ejs-for="Country" allowFiltering="true" filtering="Countryonfiltering" blur="Countryblur"
+                                                          dataSource="@ViewBag.Country" placeholder="Country" popupHeight="230px" required>
+                                                <e-combobox-fields text="CountryName" value="CountrySeqId"></e-combobox-fields>
+                                            </ejs-combobox>
+                                            <div class="help-block with-errors"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group required">
+                                            <label class="control-label" style="color: black;">
+                                                PIN Code
+                                            </label>
+                                            <ejs-textbox id="pin" placeholder="PIN/Zip" ejs-for="Pin" required></ejs-textbox>
+                                            <div class="help-block with-errors"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group required">
+                                            <label class="control-label" style="color: black;">
+                                                Patient ID Prefix
+                                            </label>
+                                            <ejs-textbox id="prefix" placeholder="Patient ID Prefix" ejs-for="Prefix" required></ejs-textbox>
+                                            <div class="help-block with-errors"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group required ">
+                                            <label class="control-label" style="color: black;">
+                                                Timezone
+                                            </label>
+                                            <ejs-combobox id="timezone" autofill="true" ejs-for="TimezoneSeqID" allowFiltering="true" filtering="Timezoneonfiltering" 
+                                                          dataSource="@ViewBag.Timezone" placeholder="Timezone" popupHeight="230px" required>
+                                                <e-combobox-fields text="TimezoneName" value="Seqno"></e-combobox-fields>
+                                            </ejs-combobox>
+                                            <div class="help-block with-errors"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <div id="Imghospdiv" style="display:none;">
+                                                <div class="form-group">
+                                                    <image id="Imghosp"  style="width:40%;"></image>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="control-label" style="color: black;">
+                                                    Hospital Logo
+                                                </label>
+                                            </div>
+                                            <ejs-uploader id="FileHospital" multiple="false"
+                                                          autoUpload="false" onchange="Hospitallogoclick();" allowedExtensions=".jpg,.png,.jpeg'"></ejs-uploader>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <div id="Imgotherdiv" style="display:none;">
+                                                <div class="form-group">
+                                                    <image id="Imgother" style="width:40%;"></image>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="control-label" style="color: black;">
+                                                    Other Logo
+                                                </label>
+                                            </div>
+                                            <ejs-uploader id="FileHospital1" multiple="false"
+                                                          autoUpload="false" onchange="Otherlogoclick();" allowedExtensions=".jpg,.png,.jpeg'"></ejs-uploader>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="col-xs-6 col-sm-6 col-md-6">
+                                            <div class="form-group">
+                                                <button type="submit" id="btnhospital" style="background-color:blue;" class="btn btn-info Save">
+                                                    Update
+                                                </button>
+                                                <button type="button" id="btnhosCancel" style="background-color:blue;" onclick="CancelClick();"
+                                                        class="btn btn-info">
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row" style="display:none;">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
+                                            <ejs-grid id="GridMainmenu" width="98%" style="padding:0px 20px;" dataSource="ViewBag.HospitalDetails"
+                                                      allowPaging="true" toolbar="@(new List<string>() { "Search"})" rowSelected="rowSelected">
+                                                <e-grid-searchsettings fields="@(new string[] { "HospitalID","HospitalName","HospitalAddress","City",
+                                                                         "Country","HospitalMobileNo"})"
+                                                                       operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                                <e-grid-selectionsettings type="Single"></e-grid-selectionsettings>
+                                                <e-grid-pagesettings pageSize="5" pageCount="10"></e-grid-pagesettings>
+                                                <e-grid-columns>
+                                                    <e-grid-column field="HospitalID" headerText="SNO"></e-grid-column>
+                                                    <e-grid-column field="HospitalName" headerText="Hospital Name"></e-grid-column>
+                                                    <e-grid-column field="HospitalAddress" headerText="Hospital Address"></e-grid-column>
+                                                    <e-grid-column field="City" headerText="City"></e-grid-column>
+                                                    <e-grid-column field="Country" headerText="Country"></e-grid-column>
+                                                    <e-grid-column field="HospitalMobileNo" headerText="Mobile"></e-grid-column>
+                                                    <e-grid-column visible="false" field="HospitalAddress1" headerText="Address1"></e-grid-column>
+                                                    <e-grid-column visible="false" field="HospitalAddress2" headerText="Address2"></e-grid-column>
+                                                    <e-grid-column visible="false" field="HospitalLandlineNo" headerText="Landline"></e-grid-column>
+                                                    <e-grid-column visible="false" field="HospitalLandlineNo1" headerText="Landline1"></e-grid-column>
+                                                    <e-grid-column visible="false" field="Pin" headerText="Pin"></e-grid-column>
+                                                    <e-grid-column visible="false" field="HospitalLogo" headerText="Hospital Logo"></e-grid-column>
+                                                    <e-grid-column visible="false" field="OtherLogo" headerText="Other Logo"></e-grid-column>
+                                                    <e-grid-column visible="false" field="Cityid" headerText="City Id"></e-grid-column>
+                                                    <e-grid-column visible="false" field="Countryid" headerText="Country Id"></e-grid-column>
+                                                </e-grid-columns>
+                                            </ejs-grid>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+
+
+

@@ -1,0 +1,101 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using BizLayer.Utilities;
+using BizLayer.Interface;
+using BizLayer.Domain;
+using System.Text.RegularExpressions;
+using System.Data;
+using Emr_web.Common;
+
+
+namespace Emr_web.Controllers.Api
+{
+    [Produces("application/json")]
+    [Route("api/OrderApi")]
+    public class OrderApiController : Controller
+    {
+        private readonly IDBConnection _IDBConnection;
+        private readonly IErrorlog _errorlog;
+        private readonly IOrderRepo _orderRepo; 
+        public OrderApiController(IDBConnection dBConnection,IErrorlog errorlog,IOrderRepo orderRepo)
+        {
+            _IDBConnection = dBConnection;
+            _errorlog = errorlog;
+            _orderRepo = orderRepo;
+        }
+        [HttpGet("GetOrderStatus")]
+        public OrderStatus[] GetOrderStatus()
+        {
+            List<OrderStatus> lstorderstatus = new List<OrderStatus>();
+            try
+            {
+                lstorderstatus = _orderRepo.GetOrderStatus();
+            }
+            catch (Exception ex)
+            {
+                _errorlog.WriteErrorLog(ex.ToString());
+            }
+            return lstorderstatus.ToArray();
+        }
+        [HttpGet("GetOrderTestBySearch")]
+        public List<TestBinding> GetOrderTestBySearch()
+        {
+            List<TestBinding> lstResult = new List<TestBinding>();
+            string EnteredName = GetEnteredData();
+            if (EnteredName == "tolower")
+                EnteredName = null;
+            long HospitalId = Convert.ToInt64(HttpContext.Session.GetString("Hospitalid"));
+            lstResult = _orderRepo.GetOrderTestBySearch(EnteredName, HospitalId);
+            return lstResult;
+        }
+
+        [HttpGet("GetPackageBySearch")]
+        public List<PackageHeader> GetPackageBySearch()
+        {
+            List<PackageHeader> lstResult = new List<PackageHeader>();
+            string EnteredName = GetEnteredData();
+            if (EnteredName == "tolower")
+                EnteredName = null;
+            long HospitalId = Convert.ToInt64(HttpContext.Session.GetString("Hospitalid"));
+            lstResult = _orderRepo.GetPackageBySearch(EnteredName, HospitalId);
+            return lstResult;
+        }
+        public string GetEnteredData()
+        {
+            string Data = "";
+            try
+            {
+                var query = Request.Query;
+                string filter = query["$filter"];
+                Match matchString = Regex.Match(filter, @"'(.*)',tolower");
+                string[] seperators = { "(", ")", ",", "'", "'" };
+                string[] split = matchString.Value.Split(seperators, StringSplitOptions.RemoveEmptyEntries);
+                string QueryString = split[0];
+                Data = QueryString;
+            }
+            catch (Exception ex)
+            {
+                _errorlog.WriteErrorLog(ex.ToString());
+            }
+            return Data;
+        }
+        [HttpGet("CancelService")]
+        public string CancelService(long TestID, long OrderID, string Reason, decimal TestAmount)
+        {
+            string result = "";
+            try
+            {
+                _orderRepo.UpdateTestCancelDetails(OrderID, TestID, Reason, TestAmount);
+            }
+            catch (Exception ex)
+            {
+                _errorlog.WriteErrorLog(ex.ToString());
+            }
+            return result;
+        }
+    }
+}

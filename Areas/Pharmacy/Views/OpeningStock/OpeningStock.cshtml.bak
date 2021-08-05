@@ -1,0 +1,1313 @@
+﻿
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+
+    $(document).ready(function () {
+        //GetOSProductList();
+        //sessionStorage.setItem('Iscomplete', 'true');
+        GetItemOSCategoryList();
+    });
+    function OpenConfirmDraftToOpStock() {
+        $('#modal-ConfirmConvertToOP').modal({ backdrop: 'static', keyboard: false });
+    }
+
+    function GetItemOSCategoryList() {
+        try {
+            var Urlpath = rootUrl + "/api/DrugMastersApi/GetItemCategoryList";
+
+            $.ajax({
+                url: Urlpath,
+                type: "GET",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    if (response.length > 0) {
+                        for (var i = 0; i < response.length; i++) {
+                            var ItemSeqId = response[i].ItemSeqId;
+                            var ItemName = response[i].ItemName;
+                            $('#drpOSItemCat').append($("<option></option>").val(ItemSeqId).html(ItemName));
+                        }
+                        GetOSWareHouseList();
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        } catch (e) {
+            console.log(e);
+        }
+    }
+    function GetOSWareHouseList() {
+        try {
+            var Urlpath = rootUrl + "/api/SalesReturnApi/GetStoreDeatailsByHospitalId";
+            $.ajax({
+                url: Urlpath,
+                type: "GET",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    if (response.length > 0) {
+                        $("#ddlOSWarehouse").empty();
+                        for (var i = 0; i < response.length; i++) {
+                            var SeqId = response[i].HIS_PH_STOREMASTER;
+                            var Name = response[i].HIS_PH_STORENAME;
+                            $('#ddlOSWarehouse').append($("<option></option>").val(SeqId).html(Name));
+                        }
+                        GetOSProductList();
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+
+        } catch (e) {
+            console.log(e);
+        }
+    }
+    function GetOSProductList() {
+        try {
+            var ItemCatId = $("#drpOSItemCat").val();
+            var StoreId = $("#ddlOSWarehouse").val();
+            var Search = $("#txtOSSearch").val();
+            if (isNumeric(ItemCatId)) {
+                ItemCatId = parseInt(ItemCatId);
+            }
+            if (isNumeric(StoreId)) {
+                StoreId = parseInt(StoreId);
+            }
+
+            var Urlpath = rootUrl + "/api/OpeningStockApi/GetProductListByCategory?CategoryId=" + ItemCatId + "&Search=" + Search + "&StoreId=" + StoreId;
+            $.ajax({
+                url: Urlpath,
+                type: "GET",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: BindProductOSOnSuccess,
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        catch (e) { console.log(e); }
+    }
+
+    function BindProductOSOnSuccess(result) {
+        try {
+            var ItemCatId = $("#drpOSItemCat").val();
+            var ItemCatName = $("#drpOSItemCat option:selected").text();
+            if (isNumeric(ItemCatId)) { ItemCatId = parseInt(ItemCatId); }
+
+            var lbltext = "";
+            var htmlHead = "";
+            var html = "";
+            var response = result.lstProduct;
+            $("#tblDrugOpeningStock thead").empty();
+            $("#tblDrugOpeningStock tbody").empty();
+            if (response.length > 0) {
+                $("#lblNoRowDrugOpeningStock").prop('hidden', true);
+                switch (ItemCatName) {
+                    case 'Medicines':
+                        htmlHead += "<tr>";
+                        htmlHead += "<th>S.No</th>";
+                        htmlHead += "<th style='display: none;'>Brand Name</th>";
+                        htmlHead += "<th>Brand Name</th>";
+                        htmlHead += "<th style='display: none;'>Strength</th>";
+                        htmlHead += "<th>Batch</th>";
+                        htmlHead += "<th>Expiry Date</th>";
+                        htmlHead += "<th>Stock Quantity</th>";
+                        htmlHead += "<th>Rate</th>";
+                        htmlHead += "<th>Value</th>";
+                        htmlHead += "<th>MRP</th>";
+                        htmlHead += "<th>Action</th>";
+                        htmlHead += "</tr>";
+                        var sno = 0;
+                        for (var i = 0; i < response.length; i++) {
+                            sno = i + 1;
+                            var Warehouse = "<select class='form-control ddlOSWarehouse'></select>";
+                            var PH_ItemCatShortCode = response[i].PH_ItemCatShortCode;
+                            var PH_DRUGBRANDNAME = response[i].PH_DRUGBRANDNAME;
+                            var DrugStrength = response[i].PH_Drug_Strength;
+                            var StockQty_val = response[i].PH_StockQty;
+                            var StockRate_val = response[i].PH_StockRate;
+                            var StockValue_val = response[i].PH_StockValue;
+                            var MRP_val = response[i].PH_MRP;
+                            var ExpiryDate_val = response[i].PH_DRUG_EXPIRYDT;
+                            var BatchNo_val = response[i].PH_DRUG_BATCHNO;
+                            if (DrugStrength == null) {
+                                DrugStrength = "";
+                            }
+
+                            var PackingType = "<input type='textbox' class='form-control' />";
+                            var PackingQuantity = "";
+                            if (BatchNo_val == null || BatchNo_val == "") {
+                                var BatchNo = "<input type='textbox' class='form-control' style='width:160px;'  />";
+                            }
+                            else {
+                                var BatchNo = "<input type='textbox' class='form-control' value=" + BatchNo_val + " style='width:160px;'  />";
+                            }
+                            var StockQty = "";
+                            //if (i == 0 || i % 2 == 0) {
+                            //StockQty = "<input type='textbox' class='form-control' style='background-color:#f1f1f3;width:110px;' onkeypress='return isNumberAndDecimal(this,event)'/>";
+                            if (StockQty_val == null || StockQty_val == 0) {
+                                StockQty = "<input type='textbox' class='form-control' style='width:110px;' onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event)' onkeyup='ValueCalculation(this);' />";
+                            }
+                            else {
+                                StockQty = "<input type='textbox' class='form-control' style='width:110px;' value=" + StockQty_val + " onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event)' onkeyup='ValueCalculation(this);' />";
+                            }
+                            //}
+                            //else {
+                            //    StockQty = "<input type='textbox' class='form-control' style='width:110px;' value=" + StockQty_val + " onkeypress='return isNumberAndDecimal(this,event)' onkeyup='ValueCalculation(this);' />";
+                            //}
+
+                            var Saveonclick = "SaveDraftOpeningStock(this,'Save')";
+                            if (StockRate_val == null || StockRate_val == 0) {
+                                var Rate = "<input type='textbox' class='form-control' style='width:80px;' onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event);' onkeyup='ValueCalculation(this);' />";
+                            }
+                            else {
+                                var Rate = "<input type='textbox' class='form-control' style='width:80px;' value=" + StockRate_val + " onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event);' onkeyup='ValueCalculation(this);' />";
+                            }
+                            var ExpiryDt = "";
+                            if (ExpiryDate_val != null) {
+                                var value_expiry_dt = "";
+                                ExpiryDt = "<input type='date' id='dtExpiryDate' class='form-control dtExpiryDate' style='height:30px;width:170px;' value='" + ExpiryDate_val + "'/>";
+                            }
+                            else {
+                                ExpiryDt = "<input type='date' id='dtExpiryDate' class='form-control dtExpiryDate' style='height:30px;width:170px;'/>";
+                            }
+                            if (MRP_val == null || MRP_val == 0) {
+                                var MRP = "<input type='textbox' class='form-control' style='width:80px;' onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event);' onfocusout=" + Saveonclick + " />";
+                            }
+                            else {
+                                var MRP = "<input type='textbox' class='form-control' style='width:80px;' value=" + MRP_val + " onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event);' onfocusout=" + Saveonclick + " />";
+                            }
+                            //var SaveButton = "<button class='btn btn-primary' onclick='SaveOpeningStock(this);'>Save</button>";
+                            var InAction = "Save";
+                            //var SaveButton = "<img src='/images/Save1.png'  style='height:30px;width:30px;' title='Save' onclick='SaveOpeningStock(this,Save)' />";
+                            var SaveButton = "<img src='/images/Save1.png'  style='height:30px;width:30px;' title='Save' onclick=" + Saveonclick + " />";
+                            //var DeleteButton = "<img src='/images/Delete.png' style='height:20px;width:20px;margin-left:10px;' title='Delete' onclick='DeleterowOnDratOp(this);'/>";
+                            var DtlSeqId = response[i].Draft_DtlSeqId;
+
+                            html += "<tr>";
+                            html += "<td style='display:none;'>" + response[i].PH_DRUG_CODE + "</td>";
+                            html += "<td>" + sno + "</td>";
+                            //html += "<td >" + Warehouse + "</td>";
+                            html += "<td style='display:none;'>" + PH_DRUGBRANDNAME + "</td>";
+                            html += "<td  >" + PH_ItemCatShortCode + " " + PH_DRUGBRANDNAME + " " + DrugStrength + "</td> ";
+                            html += "<td style='display:none'>" + DrugStrength + "</td>";
+                            html += "<td >" + BatchNo + "</td>";
+                            html += "<td >" + ExpiryDt + "</td>";
+                            //html += "<td >" + PackingType+ "</td>";
+                            //html += "<td >" + PackingQuantity + "</td>";
+                            html += "<td >" + StockQty + "</td>";
+                            html += "<td >" + Rate + "</td>";
+                            if (StockValue_val == null || StockValue_val == 0) {
+                                html += "<td></td>";
+                            }
+                            else {
+                                html += "<td>" + StockValue_val + "</td>";
+                            }
+                            html += "<td>" + MRP + "</td>";
+                            if (DtlSeqId == null || DtlSeqId == "") {
+                                html += "<td >" + SaveButton + "</td>";
+                            }
+                            else {
+                                //html += "<td>" + SaveButton + DeleteButton + "</td>";
+                                html += "<td>" + SaveButton + "</td>";
+                            }
+                            html += "<td style='display:none;'>" + response[i].PH_DRUG_UOM + "</td>";
+                            html += "<td style='display:none;'>" + PH_ItemCatShortCode + "</td>";
+                            html += "<td style='display:none;'>" + response[i].Draft_HdrSeqId + "</td>";
+                            html += "<td style='display:none;'>" + DtlSeqId + "</td>";
+                            html += "</tr>";
+                        }
+
+                        break;
+                    case 'Surgical Disposable':
+                        htmlHead += "<tr>";
+                        htmlHead += "<th>S.No</th>";
+                        htmlHead += "<th>Name</th>";
+                        htmlHead += "<th>Spec</th>";
+                        htmlHead += "<th>Brand Name</th>";
+                        htmlHead += "<th>Expiry Date</th>";
+                        htmlHead += "<th>Stock Quantity</th>";
+                        htmlHead += "<th>Rate</th>";
+                        htmlHead += "<th>Value</th>";
+                        htmlHead += "<th>MRP</th>";
+                        htmlHead += "<th>Action</th>";
+                        htmlHead += "</tr>";
+                        var sno = 0;
+                        for (var i = 0; i < response.length; i++) {
+                            sno = i + 1;
+                            var SeqId = response[i].PH_DRUG_CODE;
+                            var ItemName = response[i].PH_DRUGBRANDNAME;
+                            var PH_Spec = response[i].PH_Spec;
+                            var PH_ItemBrandName = response[i].PH_ItemBrandName;
+                            var PH_ManufactureName = response[i].PH_ManufactureName;
+                            var StockQty_val = response[i].PH_StockQty;
+                            var StockRate_val = response[i].PH_StockRate;
+                            var StockValue_val = response[i].PH_StockValue;
+                            var MRP_val = response[i].PH_MRP;
+                            var ExpiryDate_val = response[i].PH_DRUG_EXPIRYDT;
+
+                            var StockQty = "";
+                            var ExpiryDt = "";
+                            var Rate = "";
+                            var MRP = "";
+                            var Value = "";
+                            var Saveonclick = "SaveDraftOpeningStock(this,'Save')";
+
+                            if (ExpiryDate_val != null) {
+                                ExpiryDt = "<input type='date' class='form-control dtExpiryDate' style='height:30px;width:170px;' value='" + ExpiryDate_val + "'/>";
+                            }
+                            else {
+                                ExpiryDt = "<input type='date' class='form-control dtExpiryDate' style='height:30px;width:170px;'/>";
+                            }
+
+                            if (StockQty_val == null || StockQty_val == 0) {
+                                StockQty = "<input type='textbox' class='form-control' style='width:110px;' onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event)' onkeyup='ValueCalculation(this);' />";
+                            }
+                            else {
+                                StockQty = "<input type='textbox' class='form-control' style='width:110px;' value=" + StockQty_val + " onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event)' onkeyup='ValueCalculation(this);' />";
+                            }
+
+                            if (StockRate_val == null || StockRate_val == 0) {
+                                Rate = "<input type='textbox' class='form-control' style='width:80px;' onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event);' onkeyup='ValueCalculation(this);' />";
+                            }
+                            else {
+                                Rate = "<input type='textbox' class='form-control' style='width:80px;' value=" + StockRate_val + " onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event);' onkeyup='ValueCalculation(this);' />";
+                            }
+
+                            if (MRP_val == null || MRP_val == 0) {
+                                MRP = "<input type='textbox' class='form-control' style='width:80px;' onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event);' onfocusout=" + Saveonclick + " />";
+                            }
+                            else {
+                                MRP = "<input type='textbox' class='form-control' style='width:80px;' value=" + MRP_val + " onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event);' onfocusout=" + Saveonclick + " />";
+                            }
+                            if (StockValue_val == null || StockValue_val == 0) {
+                                Value = "";
+                            }
+                            else {
+                                Value = StockValue_val;
+                            }
+
+                            var SaveButton = "<img src='/images/Save1.png'  style='height:30px;width:30px;' title='Save' onclick=" + Saveonclick + " />";
+                            var DtlSeqId = response[i].Draft_DtlSeqId;
+
+                            html += "<tr>";
+                            html += "<td style='display:none;'>" + SeqId + "</td>";
+                            html += "<td>" + sno + "</td>";
+                            html += "<td>" + ItemName + "</td>";
+                            html += "<td>" + PH_Spec + "</td>";
+                            html += "<td>" + PH_ItemBrandName + "</td>";
+                            html += "<td style='display:none;'></td>";
+                            html += "<td>" + ExpiryDt + "</td>";
+                            html += "<td>" + StockQty + "</td>";
+                            html += "<td>" + Rate + "</td>";
+                            html += "<td >" + Value + "</td>";
+                            html += "<td>" + MRP + "</td>";
+                            html += "<td >" + SaveButton + "</td>";
+                            html += "<td style='display:none;'></td>";
+                            html += "<td style='display:none;'></td>";
+                            html += "<td style='display:none;'>" + response[i].Draft_HdrSeqId + "</td>";
+                            html += "<td style='display:none;'>" + DtlSeqId + "</td>";
+
+                            html += "</tr>";
+
+
+                        }
+
+                        break;
+
+                    case 'Surgical Instruments':
+                        htmlHead += "<tr>";
+                        htmlHead += "<th>S.No</th>";
+                        htmlHead += "<th>Name</th>";
+                        htmlHead += "<th>Model</th>";
+                        htmlHead += "<th>Model No</th>";
+                        htmlHead += "<th>Brand Name</th>";
+                        htmlHead += "<th>Expiry Date</th>";
+                        htmlHead += "<th>Stock Quantity</th>";
+                        htmlHead += "<th>Rate</th>";
+                        htmlHead += "<th>Value</th>";
+                        htmlHead += "<th>MRP</th>";
+                        htmlHead += "<th>Action</th>";
+                        htmlHead += "</tr>";
+                        var sno = 0;
+                        for (var i = 0; i < response.length; i++) {
+                            sno = i + 1;
+                            var SeqId = response[i].PH_DRUG_CODE;
+                            var ItemName = response[i].PH_DRUGBRANDNAME;
+                            var PH_Model = response[i].PH_Model;
+                            var PH_ModelNo = response[i].PH_ModelNo;
+                            var PH_ItemBrandName = response[i].PH_ItemBrandName;
+                            var PH_ManufactureName = response[i].PH_ManufactureName;
+                            var StockQty_val = response[i].PH_StockQty;
+                            var StockRate_val = response[i].PH_StockRate;
+                            var StockValue_val = response[i].PH_StockValue;
+                            var MRP_val = response[i].PH_MRP;
+                            var ExpiryDate_val = response[i].PH_DRUG_EXPIRYDT;
+
+                            var StockQty = "";
+                            var ExpiryDt = "";
+                            var Rate = "";
+                            var MRP = "";
+                            var Value = "";
+                            var Saveonclick = "SaveDraftOpeningStock(this,'Save')";
+
+                            if (ExpiryDate_val != null) {
+                                ExpiryDt = "<input type='date' class='form-control dtExpiryDate' style='height:30px;width:170px;' value='" + ExpiryDate_val + "'/>";
+                            }
+                            else {
+                                ExpiryDt = "<input type='date' class='form-control dtExpiryDate' style='height:30px;width:170px;'/>";
+                            }
+
+                            if (StockQty_val == null || StockQty_val == 0) {
+                                StockQty = "<input type='textbox' class='form-control' style='width:110px;' onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event)' onkeyup='ValueCalculation(this);' />";
+                            }
+                            else {
+                                StockQty = "<input type='textbox' class='form-control' style='width:110px;' value=" + StockQty_val + " onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event)' onkeyup='ValueCalculation(this);' />";
+                            }
+
+                            if (StockRate_val == null || StockRate_val == 0) {
+                                Rate = "<input type='textbox' class='form-control' style='width:80px;' onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event);' onkeyup='ValueCalculation(this);' />";
+                            }
+                            else {
+                                Rate = "<input type='textbox' class='form-control' style='width:80px;' value=" + StockRate_val + " onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event);' onkeyup='ValueCalculation(this);' />";
+                            }
+
+                            if (MRP_val == null || MRP_val == 0) {
+                                MRP = "<input type='textbox' class='form-control' style='width:80px;' onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event);' onfocusout=" + Saveonclick + " />";
+                            }
+                            else {
+                                MRP = "<input type='textbox' class='form-control' style='width:80px;' value=" + MRP_val + " onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event);' onfocusout=" + Saveonclick + " />";
+                            }
+                            if (StockValue_val == null || StockValue_val == 0) {
+                                Value = "";
+                            }
+                            else {
+                                Value = StockValue_val;
+                            }
+
+                            var SaveButton = "<img src='/images/Save1.png'  style='height:30px;width:30px;' title='Save' onclick=" + Saveonclick + " />";
+                            var DtlSeqId = response[i].Draft_DtlSeqId;
+
+                            html += "<tr>";
+                            html += "<td style='display:none;'>" + SeqId + "</td>";
+                            html += "<td  >" + sno + "</td>";
+                            html += "<td  >" + ItemName + "</td>";
+                            html += "<td  >" + PH_Model + "</td>";
+                            html += "<td  >" + PH_ModelNo + "</td>";
+                            html += "<td  >" + PH_ItemBrandName + "</td>";
+                            html += "<td >" + ExpiryDt + "</td>";
+                            html += "<td>" + StockQty + "</td>";
+                            html += "<td>" + Rate + "</td>";
+                            html += "<td  >" + Value + "</td>";
+                            html += "<td>" + MRP + "</td>";
+                            html += "<td >" + SaveButton + "</td>";
+                            html += "<td style='display:none;'></td>";
+                            html += "<td style='display:none;'></td>";
+                            html += "<td style='display:none;'>" + response[i].Draft_HdrSeqId + "</td>";
+                            html += "<td style='display:none;'>" + DtlSeqId + "</td>";
+                            html += "</tr>";
+                        }
+
+                        break;
+
+                    case 'Others':
+                        htmlHead += "<tr>";
+                        htmlHead += "<th>S.No</th>";
+                        htmlHead += "<th>Name</th>";
+                        htmlHead += "<th>Brand Name</th>";
+                        htmlHead += "<th>Expiry Date</th>";
+                        htmlHead += "<th>Stock Quantity</th>";
+                        htmlHead += "<th>Rate</th>";
+                        htmlHead += "<th>Value</th>";
+                        htmlHead += "<th>MRP</th>";
+                        htmlHead += "<th>Action</th>";
+                        htmlHead += "</tr>";
+                        var sno = 0;
+                        for (var i = 0; i < response.length; i++) {
+                            sno = i + 1;
+                            var SeqId = response[i].PH_DRUG_CODE;
+                            var ItemName = response[i].PH_DRUGBRANDNAME;
+                            var PH_ItemBrandName = response[i].PH_ItemBrandName;
+                            var PH_ManufactureName = response[i].PH_ManufactureName;
+                            var StockQty_val = response[i].PH_StockQty;
+                            var StockRate_val = response[i].PH_StockRate;
+                            var StockValue_val = response[i].PH_StockValue;
+                            var MRP_val = response[i].PH_MRP;
+                            var ExpiryDate_val = response[i].PH_DRUG_EXPIRYDT;
+
+                            var StockQty = "";
+                            var ExpiryDt = "";
+                            var Rate = "";
+                            var MRP = "";
+                            var Value = "";
+                            var Saveonclick = "SaveDraftOpeningStock(this,'Save')";
+
+                            if (ExpiryDate_val != null) {
+                                ExpiryDt = "<input type='date' class='form-control dtExpiryDate' style='height:30px;width:170px;' value='" + ExpiryDate_val + "'/>";
+                            }
+                            else {
+                                ExpiryDt = "<input type='date' class='form-control dtExpiryDate' style='height:30px;width:170px;'/>";
+                            }
+
+                            if (StockQty_val == null || StockQty_val == 0) {
+                                StockQty = "<input type='textbox' class='form-control' style='width:110px;' onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event)' onkeyup='ValueCalculation(this);' />";
+                            }
+                            else {
+                                StockQty = "<input type='textbox' class='form-control' style='width:110px;' value=" + StockQty_val + " onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event)' onkeyup='ValueCalculation(this);' />";
+                            }
+
+                            if (StockRate_val == null || StockRate_val == 0) {
+                                Rate = "<input type='textbox' class='form-control' style='width:80px;' onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event);' onkeyup='ValueCalculation(this);' />";
+                            }
+                            else {
+                                Rate = "<input type='textbox' class='form-control' style='width:80px;' value=" + StockRate_val + " onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event);' onkeyup='ValueCalculation(this);' />";
+                            }
+
+                            if (MRP_val == null || MRP_val == 0) {
+                                MRP = "<input type='textbox' class='form-control' style='width:80px;' onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event);' onfocusout=" + Saveonclick + " />";
+                            }
+                            else {
+                                MRP = "<input type='textbox' class='form-control' style='width:80px;' value=" + MRP_val + " onkeypress='return IsNumberAndDecimalAndTwoDigit(this,event);' onfocusout=" + Saveonclick + " />";
+                            }
+                            if (StockValue_val == null || StockValue_val == 0) {
+                                Value = "";
+                            }
+                            else {
+                                Value = StockValue_val;
+                            }
+
+                            var SaveButton = "<img src='/images/Save1.png'  style='height:30px;width:30px;' title='Save' onclick=" + Saveonclick + "  disabled/>";
+                            var DtlSeqId = response[i].Draft_DtlSeqId;
+
+                            html += "<tr>";
+                            html += "<td style='display:none;'>" + SeqId + "</td>";
+                            html += "<td>" + sno + "</td>";
+                            html += "<td>" + ItemName + "</td>";
+                            html += "<td>" + PH_ItemBrandName + "</td>";
+                            html += "<td style='display:none;'></td>";
+                            html += "<td style='display:none;'></td>";
+                            html += "<td >" + ExpiryDt + "</td>";
+                            html += "<td>" + StockQty + "</td>";
+                            html += "<td>" + Rate + "</td>";
+                            html += "<td>" + Value + "</td>";
+                            html += "<td>" + MRP + "</td>";
+                            html += "<td >" + SaveButton + "</td>";
+                            html += "<td style='display:none;'></td>";
+                            html += "<td style='display:none;'></td>";
+                            html += "<td style='display:none;'>" + response[i].Draft_HdrSeqId + "</td>";
+                            html += "<td style='display:none;'>" + DtlSeqId + "</td>";
+                            html += "</tr>";
+                        }
+
+                        break;
+                }
+
+
+                $("#tblDrugOpeningStock thead").append(htmlHead);
+                $("#tblDrugOpeningStock tbody").append(html);
+                SetMinExpiryDate();
+            }
+            else {
+                if (result.Message == "Converted To OP") {
+                    lbltext = "Opening Stock Converted to Stock. Please visit Stock statement Page to know the stock";
+                    $("#lblNoRowDrugOpeningStock").css("color", "black");
+                }
+                else if (result.Message == "No Drug") {
+                    lbltext = "Create Master Data in the Master Page";
+                    $("#lblNoRowDrugOpeningStock").css("color", "red");
+                }
+                $("#lblNoRowDrugOpeningStock").prop('hidden', false);
+                $("#lblNoRowDrugOpeningStock").text(lbltext);
+            }
+        }
+        catch (e) { console.log(e); }
+    }
+    function SetMinExpiryDate() {
+        try {
+            var today = new Date();
+            var dd = today.getDate() + 1;
+            var mm = today.getMonth() + 1; //January is 0!
+            var yyyy = today.getFullYear();
+            if (dd < 10) {
+                dd = '0' + dd
+            }
+            if (mm < 10) {
+                mm = '0' + mm
+            }
+            var datef = new Date(yyyy, mm, dd);
+            var minDate = AddMonths(datef, 1);
+            var dd1 = minDate.getDate();
+            var mm1 = minDate.getMonth() + 1;
+            var yyyy1 = minDate.getFullYear();
+            if (dd1 < 10) {
+                dd1 = '0' + dd1
+            }
+            if (mm1 < 10) {
+                mm1 = '0' + mm1
+            }
+            today = yyyy + '-' + mm + '-' + dd;
+            minDate = yyyy1 + '-' + mm1 + '-' + dd1;
+
+            //document.getElementsByClassName("dtExpiryDate").setAttribute("min", today);
+            $(".dtExpiryDate").attr("min", today);
+
+
+        }
+        catch (e) { console.log(e); }
+    }
+    function AddMonths(date, no_of_months) {
+        try {
+            var d = date.getDate();
+            date.setMonth(date.getMonth() + +no_of_months);
+            if (date.getDate() != d) {
+                date.setDate(0);
+            }
+            return date;
+
+        } catch (e) {
+            console.log(e);
+        }
+    }
+    function SaveDraftOpeningStock(Selectedrow, Action) {
+        try {
+            //var IsComplete = sessionStorage.getItem('Iscomplete');
+            //if (IsComplete == 'true') {
+
+            //}
+
+            var row = Selectedrow.parentNode.parentNode;
+
+            if (DraftSaveValidation(row)) {
+                var ItemCatId = $("#drpOSItemCat").val();
+                var ItemCatName = $("#drpOSItemCat option:selected").text();
+                if (isNumeric(ItemCatId)) {
+                    ItemCatId = parseInt(ItemCatId);
+                }
+                var DrugCode = row.cells[0].innerHTML;
+                //var Warehouse = row.cells[2].getElementsByTagName('select')[0];
+                var WarehouseId = $("#ddlOSWarehouse").val();
+                var WarehouseName = $("#ddlOSWarehouse option:selected").text();
+                var BrandName = row.cells[2].innerHTML;
+                var ExpiryDate = row.cells[6].getElementsByTagName('input')[0].value;
+                var StockQty = row.cells[7].getElementsByTagName('input')[0].value;
+                var Rate = row.cells[8].getElementsByTagName('input')[0].value;
+                var Value = row.cells[9].innerHTML;
+                var MRP = row.cells[10].getElementsByTagName('input')[0].value;
+
+                if (ExpiryDate == "") {
+                    ExpiryDate = null;
+                }
+
+                var IsMainstore = false;
+                if (isNumeric(WarehouseId)) {
+                    WarehouseId = parseInt(WarehouseId);
+                    if (WarehouseId == 1) {
+                        IsMainstore = true;
+                    }
+                }
+
+                if (isNumeric(DrugCode)) {
+                    DrugCode = parseInt(DrugCode);
+                }
+                if (isNumeric(StockQty)) {
+                    StockQty = parseFloat(StockQty);
+                }
+                if (isNumeric(Rate)) {
+                    Rate = parseFloat(Rate);
+                }
+                if (isNumeric(MRP)) {
+                    MRP = parseFloat(MRP);
+                }
+                if (isNumeric(Value)) {
+                    Value = parseFloat(Value);
+                }
+
+                var DraftDtlInfo = new Array();
+                var ObjectDetails = new Object();
+
+                ObjectDetails.DrugCode = DrugCode;
+                ObjectDetails.DrugBrandName = BrandName;
+                ObjectDetails.DrugExpiryDt = ExpiryDate;
+                ObjectDetails.StockQty = StockQty;
+                ObjectDetails.StockRate = Rate;
+                ObjectDetails.StockValue = Value;
+                ObjectDetails.MRP = MRP;
+
+                switch (ItemCatName) {
+                    case 'Medicines':
+
+                        var BrandNameAndItemCat = row.cells[3].innerHTML;
+                        var DrugStrength = row.cells[4].innerHTML;
+                        var BatchNo = row.cells[5].getElementsByTagName('input')[0].value;
+                        var Drug_UOM = row.cells[12].innerHTML;
+                        var Drug_CatShortCode = row.cells[13].innerHTML;
+
+                        ObjectDetails.DrugBatchNo = BatchNo;
+                        ObjectDetails.DrugUOM = Drug_UOM;
+                        ObjectDetails.DrugCatName = Drug_CatShortCode;
+                        ObjectDetails.DrugStrength = DrugStrength;
+                        DraftDtlInfo.push(ObjectDetails);
+                        break;
+                    case 'Surgical Disposable':
+
+                        var DrugSpecNo = row.cells[3].innerHTML;
+                        var ItemBrandName = row.cells[4].innerHTML;
+
+                        ObjectDetails.DrugItemBrand = ItemBrandName;
+                        ObjectDetails.DrugSpecNo = DrugSpecNo;
+                        DraftDtlInfo.push(ObjectDetails);
+
+                        break;
+
+                    case 'Surgical Instruments':
+
+                        var DrugModel = row.cells[3].innerHTML;
+                        var DrugModelNo = row.cells[4].innerHTML;
+                        var ItemBrandName = row.cells[5].innerHTML;
+
+                        ObjectDetails.DrugItemBrand = ItemBrandName;
+                        ObjectDetails.DrugModel = DrugModel;
+                        ObjectDetails.DrugModelNo = DrugModelNo;
+                        DraftDtlInfo.push(ObjectDetails);
+
+                        break;
+                    case 'Others':
+
+                        var ItemBrandName = row.cells[3].innerHTML;
+
+                        ObjectDetails.DrugItemBrand = ItemBrandName;
+                        DraftDtlInfo.push(ObjectDetails);
+                        break;
+                }
+
+
+                //var sendJsonData = {
+                //    PH_DRUG_CODE: DrugCode,
+                //    PH_DRUGBRANDNAME: BrandName,
+                //    PH_DRUG_BATCHNO: BatchNo,
+                //    PH_DRUG_EXPIRYDT: ExpiryDate,
+                //    PH_DRUG_UOM: Drug_UOM,
+                //    PH_DRUG_STOREID: WarehouseId,
+                //    PH_SUBSTORENAME: WarehouseName,
+                //    PH_ISMAINSTORE: IsMainstore,
+                //    PH_StockQty: StockQty,
+                //    PH_StockRate: Rate,
+                //    PH_StockValue: Value,
+                //    PH_MRP: MRP,
+                //    Action: Action
+                //}
+
+
+
+
+                var sendJsonData = {
+                    ItemCatId: ItemCatId,
+                    StoreId: WarehouseId,
+                    StoreName: WarehouseName,
+                    draftOpStockDtl: DraftDtlInfo
+                }
+
+                console.log(sendJsonData);
+
+                //var Urlpath = rootUrl + "/api/OpeningStockApi/SaveOpeningBalance";
+                var Urlpath = rootUrl + "/api/OpeningStockApi/SaveDraftOpeningStock";
+                $.ajax({
+                    url: Urlpath,
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify(sendJsonData),
+                    dataType: "json",
+                    beforeSend: function () { $("#loading").css("display", "block"); },
+                    success: function (response) {
+                        if (response = "Success") {
+                            GetOSProductList();
+                        }
+                        //sessionStorage.setItem("Iscomplete", 'true');
+                        //   alert(response);
+                    },
+                    complete: function () { $("#loading").css("display", "none"); }
+                });
+
+            }
+
+        } catch (e) {
+            console.log(e);
+        }
+    }
+    function DraftSaveValidation(row) {
+        try {
+            var ItemCatName = $("#drpOSItemCat option:selected").text();
+            var txt = "Required to fill the following field(s)";
+            var opt = 0;
+
+            var ExpiryDate = row.cells[6].getElementsByTagName('input')[0].value;
+            var DateSplit = ExpiryDate.split('-');
+            var year = DateSplit[0];
+            var month = DateSplit[1];
+            var day = DateSplit[2];
+            var today = new Date();
+            today.setDate(new Date().getDate() + 1);
+
+            if (year.length > 4) {
+                var exdate = new Date(today);
+                exdate.setDate(today.getDate() - 1);
+
+            }
+            else {
+                var consoleddate = month + '/' + day + '/' + year + ' 23:59:59';
+                var exdate = new Date(consoleddate);
+            }
+
+            var StockQty = row.cells[7].getElementsByTagName('input')[0].value;
+            var Rate = row.cells[8].getElementsByTagName('input')[0].value;
+            var Value = row.cells[9].innerHTML;
+            var MRP = row.cells[10].getElementsByTagName('input')[0].value;
+
+            switch (ItemCatName) {
+                case 'Medicines':
+                    var BatchNo = row.cells[5].getElementsByTagName('input')[0].value;
+                    if (BatchNo == null || BatchNo == "") {
+                        txt += "\n - Please Enter Batch Number";
+                        opt = 1;
+                    }
+                    if (ExpiryDate == null || ExpiryDate == "") {
+                        txt += "\n - Please Enter Expiry Date";
+                        opt = 1;
+                    }
+
+                    break;
+
+            }
+
+            if (year.length > 4) {
+                txt += "\n - The year is wrong. Please Correct.";
+                opt = 1;
+            }
+            else if (exdate < today) {
+                txt += "\n - Expiry Date Must Be Greater Than Today's Date.";
+                opt = 1;
+            }
+
+            //else if (year.length > 4) {
+            //    txt += "\n - Please Enter Vaild Expiry Date";
+            //    opt = 1;
+            //}
+
+            if (StockQty == null || StockQty == "" || StockQty == 0) {
+                txt += "\n - Please Enter Valid Stock Quantity";
+                opt = 1;
+            }
+            if (Rate == null || Rate == "") {
+                Rate = "";
+                txt += "\n - Please Enter Valid Rate";
+                opt = 1;
+            }
+            if (MRP == null || MRP == "") {
+                MRP = "";
+                txt += "\n - Please Enter Valid MRP";
+                opt = 1;
+            }
+            if (MRP != "" && Rate != "") {
+                MRP = parseFloat(MRP);
+                Rate = parseFloat(Rate);
+                if (MRP < Rate) {
+                    txt += "\n - MRP Cannot Be Lesser Than Rate";
+                    opt = 1;
+                }
+            }
+
+            if (opt == "1") {
+                alert(txt);
+                return false;
+            }
+            return true;
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+    function ValueCalculation(selectedrow) {
+        try {
+            var row = selectedrow.parentNode.parentNode;
+            var StockQty = row.cells[7].getElementsByTagName('input')[0].value;
+            var Rate = row.cells[8].getElementsByTagName('input')[0].value;
+            var Value = 0;
+
+            if (isNumeric(StockQty) && isNumeric(Rate)) {
+                StockQty = parseFloat(StockQty);
+                Rate = parseFloat(Rate);
+
+                Value = StockQty * Rate;
+                Value = Math.round((Value + Number.EPSILON) * 1000) / 1000
+
+                //row.cells[8].getElementsByTagName(input)[0].value = Value;
+                row.cells[9].innerHTML = Value;
+            }
+            else {
+                row.cells[9].innerHTML = "";
+            }
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+
+    function OpenDraftOpeningStock() {
+        try {
+
+            //$("#ModelDraftOpStock").dialog(
+            //    {
+            //        title: "Draft",
+            //        width: 1103,
+            //        height: 500,
+            //        modal: true,
+            //        buttons: {
+            //            "Cancel": function () {
+            //                $("#ModelDraftOpStock").dialog("close");
+            //            }
+            //        }
+            //    }
+            //);
+
+            // $('#modal-DraftOP').modal('show');
+            $('#modal-DraftOP').modal({
+                backdrop: 'static',
+                keyboard: false
+            });
+
+            GetDraftOpeningStock();
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+    function GetDraftOpeningStock() {
+        var ItemCatId = $("#drpOSItemCat").val();
+        var ItemCatName = $("#drpOSItemCat option:selected").text();
+        if (isNumeric(ItemCatId)) {
+            ItemCatId = parseInt(ItemCatId);
+        }
+        var WarehouseId = $("#ddlOSWarehouse").val();
+        if (isNumeric(WarehouseId)) {
+            WarehouseId = parseInt(WarehouseId);
+        }
+        var Search = $("#txtDraftSearch").val();
+        if (Search == null) {
+            Search = "";
+        }
+
+        var Urlpath = rootUrl + "/api/OpeningStockApi/GetDraftListByItemCat_Store?ItemCatId=" + ItemCatId + "&StoreId=" + WarehouseId + "&Search=" + Search;
+
+        $.ajax({
+            url: Urlpath,
+            type: "GET",
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            //beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                var htmlHead = "";
+                var html = "";
+                $("#tblDraftOpStock thead").empty();
+                $("#tblDraftOpStock tbody").empty();
+                $("#txtDraftItemCat").val($("#drpOSItemCat option:selected").text());
+                $("#txtDraftWarehouse").val($("#ddlOSWarehouse option:selected").text());
+
+                htmlHead += "<tr>";
+                htmlHead += "<th>S.NO</th>";
+                htmlHead += "<th>Brand Name</th>";
+                switch (ItemCatName) {
+                    case 'Medicines':
+                        htmlHead += "<th style='display: none;'>Strength</th>";
+                        htmlHead += "<th>Batch</th>";
+                        break;
+
+                    case 'Surgical Disposable':
+                        htmlHead += "<th>Spec No</th>";
+                        break;
+
+                    case 'Surgical Instruments':
+                        htmlHead += "<th>Model</th>";
+                        htmlHead += "<th>Model No</th>";
+                        break;
+
+                    case 'Others':
+                        break;
+                }
+
+                htmlHead += "<th>Expiry Date</th>";
+                htmlHead += "<th>Stock Quantity</th>";
+                htmlHead += "<th>Rate</th>";
+                htmlHead += "<th>Value</th>";
+                htmlHead += "<th>MRP</th>";
+                htmlHead += "<th>Action</th>";
+                htmlHead += "</tr>";
+
+                if (response.length > 0) {
+                    $("#btnDraftToOpStock").prop('disabled', false);
+                    for (var dtl = 0; dtl < response.length; dtl++) {
+                        var sno = dtl + 1;
+                        var DrugStrength = response[dtl].DrugStrength;
+                        if (DrugStrength == null) {
+                            DrugStrength = "";
+                        }
+                        var ExpiryDate = response[dtl].DrugExpiryDt;
+                        if (ExpiryDate == null) {
+                            ExpiryDate = "";
+                        }
+                        html += "<tr>";
+                        html += "<td style='display:none;'>" + response[dtl].HdrSeqId + "</td>";
+                        html += "<td style='display:none;'>" + response[dtl].DtlSeqId + "</td>";
+                        html += "<td>" + sno + "</td>";
+                        html += "<td style='display:none;'>" + response[dtl].DrugCode + "</td>";
+
+                        switch (ItemCatName) {
+                            case 'Medicines':
+                                html += "<td>" + response[dtl].DrugCatName + " " + response[dtl].DrugBrandName + " " + DrugStrength + "</td>";
+                                html += "<td style='display:none;'>" + DrugStrength + "</td>";
+                                html += "<td>" + response[dtl].DrugBatchNo + "</td>";
+
+                                break;
+                            case 'Surgical Disposable':
+                                html += "<td>" + response[dtl].DrugBrandName + "</td>";
+                                html += "<td>" + response[dtl].DrugSpecNo + "</td>";
+                                break;
+
+                            case 'Surgical Instruments':
+                                html += "<td>" + response[dtl].DrugBrandName + "</td>";
+                                html += "<td>" + response[dtl].DrugModel + "</td>";
+                                html += "<td>" + response[dtl].DrugModelNo + "</td>";
+                                break;
+
+                            case 'Others':
+                                html += "<td>" + response[dtl].DrugBrandName + "</td>";
+                                break;
+                        }
+
+                        html += "<td>" + ExpiryDate + "</td>";
+                        html += "<td style='text-align:right;'>" + response[dtl].StockQty + "</td>";
+                        html += "<td style='text-align:right;'>" + response[dtl].StockRate + "</td>";
+                        html += "<td style='text-align:right;'>" + response[dtl].StockValue + "</td>";
+                        html += "<td style='text-align:right;'>" + response[dtl].MRP + "</td>";
+                        html += "<td style='text-align:center;'><img src='/images/Delete.png' style='height:20px;width:20px;' title='Delete' onclick='DeleterowOnDratOp(this);'/></td>";
+                        html += "</tr>";
+                    }
+
+                }
+                else {
+                    $("#btnDraftToOpStock").prop('disabled', true);
+                    html += "<tr>";
+                    html += "<td colspan='12' style='text-align:center;font-size:15px;'>No Records Found!!!</td>";
+                    html += "</tr>";
+                }
+                $("#tblDraftOpStock thead").append(htmlHead);
+                $("#tblDraftOpStock tbody").append(html);
+
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function DeleterowOnDratOp(selectedrow) {
+        try {
+            if (confirm("Do you want to delete?") == true) {
+
+                var row = selectedrow.parentNode.parentNode;
+                var HdrSeqId = row.cells[0].innerHTML;
+                var DtlSeqId = row.cells[1].innerHTML;
+
+                var Urlpath = rootUrl + "/api/OpeningStockApi/DeleteDraftByHeaderId?DraftHdrId=" + HdrSeqId + "&DtlSeqId=" + DtlSeqId;
+                $.ajax({
+                    url: Urlpath,
+                    type: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (response) {
+                        if (response != null && response != "") {
+                            if (response != "Success") {
+                                alert(response);
+                            }
+                            else {
+                                GetDraftOpeningStock();
+                                GetOSProductList();
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        catch (e) { console.log(e); }
+    }
+
+    function ConvertDraftToOpStock() {
+        try {
+            //if (confirm("The action cannot be undone and you cannot enter further list in the opening stock. Do you want to proceed?")) {
+
+            var ItemCatId = $("#drpOSItemCat").val();
+            if (isNumeric(ItemCatId)) {
+                ItemCatId = parseInt(ItemCatId);
+            }
+            var WarehouseId = $("#ddlOSWarehouse").val();
+            if (isNumeric(WarehouseId)) {
+                WarehouseId = parseInt(WarehouseId);
+            }
+            var DraftArray = new Array();
+            //var tblDraftOpStock = document.getElementById("tblDraftOpStock");
+            var tblDraftOpStock = document.getElementById("tblDrugOpeningStock");
+            var rowtblDraftOpStock = tblDraftOpStock.rows.length;
+            for (var i = 1; i < rowtblDraftOpStock; i++) {
+                var rowstock = tblDraftOpStock.rows[i];
+                var objdetails = new Object();
+                var HdrSeqId = rowstock.cells[0].innerHTML;
+                if (isNumeric(HdrSeqId)) {
+                    HdrSeqId = parseInt(HdrSeqId);
+                }
+                objdetails.HdrSeqId = HdrSeqId;
+
+                DraftArray.push(objdetails);
+            }
+
+            var sendJsonData = {
+                ItemCatId: ItemCatId,
+                StoreId: WarehouseId,
+                draftOpStockDtl: DraftArray
+            }
+
+            console.log(sendJsonData);
+            var Urlpath = rootUrl + "/api/OpeningStockApi/ConvertDraftToOpStock";
+            $.ajax({
+                url: Urlpath,
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data: JSON.stringify(sendJsonData),
+                success: function (response) {
+                    if (response != null && response != "") {
+                        if (response == "Success") {
+                            alert('Converted Successfully');
+                            //GetDraftOpeningStock();
+                            //GetOSProductList();
+                            window.location.href = '/Pharmacy/DrugStock/DrugStock';
+                        }
+                        else {
+                            alert('Logical Error');
+                        }
+                    }
+                }
+            });
+
+            //}
+
+        }
+        catch (e) { console.log(e); }
+    }
+</script>
+<script>
+    function isNumberKey(evt) {
+        var charCode = (evt.which) ? evt.which : event.keyCode
+        if (charCode > 32 && (charCode < 48 || charCode > 57) || (charCode == 32))
+
+            return false;
+
+        return true;
+    }
+    function isNumeric(n) {
+        return !isNaN(parseFloat(n)) && isFinite(n);
+    }
+    
+    function IsNumberAndDecimalAndTwoDigit(el, evt) {
+        var charCode = (evt.which) ? evt.which : event.keyCode
+        var number = el.value.split('.');
+        if (charCode != 46 && charCode > 32 && (charCode < 48 || charCode > 57) || (charCode == 32))
+
+            return false;
+
+        if (number.length > 1 && charCode == 46) {
+            return false;
+        }
+
+        if (number.length == 2 && number[1].length > 1) {
+            return false;
+        }
+        return true;
+    }
+    function isNumberanddot(evt) {
+
+        var theEvent = evt || window.event;
+        var key = theEvent.keyCode || theEvent.which;
+        key = String.fromCharCode(key);
+        if (key.length == 0) return;
+        var regex = /^[0-9.]+$/;
+        if (!regex.test(key)) {
+            theEvent.returnValue = false;
+            if (theEvent.preventDefault) theEvent.preventDefault();
+        }
+
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+</script>
+<style>
+    .modal-lg {
+        max-width: 85% !important;
+    }
+    td{
+        vertical-align:middle !important;
+    }
+    input{
+        border-color:black !important;
+    }
+</style>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="panel panel-default DivBox" style="background-color: white;">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                <input id="txtOSSearch" type="text" class="form-control" placeholder="Search" onkeyup="GetOSProductList();" />
+                                @*<input id="txtOSSearch" type="text" class="form-control" placeholder="Search" />*@
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <select id="drpOSItemCat" class="form-control" onchange="GetOSProductList();"></select>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <select class='form-control' id="ddlOSWarehouse" onchange="GetOSProductList();"></select>
+                            </div>
+                            <div class="col-xs-2 col-sm-2 col-md-2">
+                                <input type="button" value="Draft Op Stock" class="btn btn-primary" onclick="OpenDraftOpeningStock();" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <table class="table table-bordered table-striped" id="tblDrugOpeningStock"
+                                       style="font-size:13px;overflow:auto;">
+                                    <thead style="line-height: 13px;">
+
+                                    </thead>
+                                    <tbody style="line-height: 14px;"></tbody>
+                                </table>
+                                <label id="lblNoRowDrugOpeningStock" hidden></label>
+                            </div>
+                        </div>
+                        <div class="row" hidden>
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <table class="table table-bordered table-striped" id="tblSurgicalDispOPStock"
+                                       style="font-size:13px;overflow:auto;">
+                                    <thead style="line-height: 13px;">
+                                        <tr>
+                                            <th>S.No</th>
+                                            <th>Item Name</th>
+                                            <th>Brand Name</th>
+                                            <th>Batch</th>
+                                            <th>Expiry Date</th>
+                                            <th>Stock Quantity</th>
+                                            <th>Rate</th>
+                                            <th>Value</th>
+                                            <th>MRP</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody style="line-height: 13px;"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="ModelDraftOpStock" style="display: none; width: 600px;font-family:'Microsoft Sans Serif'; font-size: small;">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="panel-body">
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal fade" id="modal-DraftOP">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content" style="font-family:'Microsoft Sans Serif';">
+                                <div class="modal-header">
+                                    <h4 class="modal-title">Draft</h4>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body ">
+                                    <div class="row">
+                                        <div class="col-xs-3 col-sm-3 col-md-3">
+                                            <input type="text" placeholder="Search" class="form-control" id="txtDraftSearch" onkeyup="GetDraftOpeningStock();" />
+                                        </div>
+                                        <div class="col-xs-3 col-sm-3 col-md-3">
+                                            <input type="text" id="txtDraftItemCat" class="form-control" disabled />
+                                        </div>
+                                        <div class="col-xs-3 col-sm-3 col-md-3">
+                                            <input type="text" id="txtDraftWarehouse" class="form-control" disabled />
+                                        </div>
+                                        <div class="col-xs-3 col-sm-3 col-md-3">
+                                            <input type="button" id="btnDraftToOpStock" value="Convert To Opening Stock"
+                                                   class="btn btn-primary" onclick="OpenConfirmDraftToOpStock();" disabled />
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <table class="table table-bordered table-striped dataTable table-reflow tableHB" id="tblDraftOpStock"
+                                                   style="color: black;margin-left: 5px;font-size:13px;overflow:auto;line-height: 13px;">
+                                                <thead>
+                                                    <tr>
+                                                        <th>S.NO</th>
+                                                        <th>Brand Name</th>
+                                                        <th style="display:none;">Strength</th>
+                                                        <th>Batch</th>
+                                                        <th>Expiry Date</th>
+                                                        <th>Stock Quantity</th>
+                                                        <th>Rate</th>
+                                                        <th>Value</th>
+                                                        <th>MRP</th>
+                                                        <th>Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody style="line-height: 14px;"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                        @*/.modal-content*@
+                    </div>
+                    <div class="modal fade" id="modal-ConfirmConvertToOP">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header" style="height:50px;">
+                                    <h4 class="modal-title">Convert To Op Stock</h4>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <h6>The action cannot be undone and you cannot enter further list in the opening stock.<br /> Do you want to proceed?</h6>
+                                </div>
+
+                                <div class="modal-footer justify-content-between">
+                                    <button type="button" class="btn btn-primary" style="margin-left: 145px;" onclick="ConvertDraftToOpStock();" data-dismiss="modal">Yes</button>
+                                    <button type="button" class="btn btn-default" style="margin-right: 160px;" data-dismiss="modal">No</button>
+                                </div>
+                            </div>
+                            <!-- /.modal-content -->
+                        </div>
+                        <!-- /.modal-dialog -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

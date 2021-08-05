@@ -1,0 +1,1279 @@
+﻿
+@{
+    ViewData["Title"] = "SurgicalDispense";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style type="text/css">
+    #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loading1 {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loadingcontent {
+        display: table;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loadingspinner {
+        display: table-cell;
+        vertical-align: middle;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+        padding-top: 80px;
+    }
+</style>
+<style type="text/css">
+    .detail {
+        margin-left: 35px
+    }
+
+    .sub {
+        margin-left: -250px;
+    }
+
+    .settle {
+        width: 100%;
+        margin-top: 20px;
+        margin-left: 74px;
+        margin-bottom: 20px;
+    }
+
+    .lab {
+        width: 85px;
+    }
+
+    .head {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+        font-family: serif;
+        color: black;
+        font-size: 15px;
+        /*background-color: #7e8ae33b;*/
+    }
+
+    .head1 {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+        font-family: serif;
+        color: black;
+        font-size: 14px;
+    }
+
+    table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    th {
+        border: 1px solid #dddddd;
+        text-align: center;
+        padding: 2.5px;
+        font-size: 15px;
+        color: black;
+    }
+
+    td {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 4px;
+        /*display: contents;*/
+        font-family: serif;
+    }
+
+
+    .even:nth-child(even) {
+        background-color: #8080800d;
+    }
+
+    .container-fluid {
+        background-color: white;
+    }
+
+    .Search {
+        margin-top: 23px;
+        margin-left: 20px;
+    }
+
+
+
+    .container-fluid {
+        background-color: white;
+    }
+
+
+    .btn {
+        color: #fff;
+        background-color: #007bff;
+        border-color: #007bff;
+        box-shadow: none;
+        font-size: 14px;
+        font-style: normal;
+        font-weight: 600;
+    }
+
+    .btns {
+        width: 94px;
+        margin-left: -1px;
+        margin-top: 13px;
+        border: none;
+        padding: 8px;
+        font-weight: 600;
+        box-shadow: none;
+        font-size: 14px;
+        font-style: normal;
+        border-radius: 4px;
+    }
+
+
+    .search {
+        margin-top: 23px;
+        margin-left: 20px;
+        width: 100%;
+    }
+
+    .Tex {
+        width: 106px;
+    }
+
+    .pays {
+        margin-left: 120%;
+        margin-top: 20%;
+        border: 1px solid gray;
+        /* border-left: 20px; */
+        width: 100px;
+        margin-right: 0px;
+        padding-left: 375px;
+        padding-top: 20px;
+        box-sizing: border-box;
+    }
+
+    .lab {
+        font-size: 14px;
+        font-family: serif;
+        color: black;
+    }
+
+    .text {
+        width: 120px;
+    }
+
+    .noborders td {
+        border-top: 0px solid #dee2e6 !important;
+        border: 0px solid #dddddd !important;
+    }
+
+    .topics tr {
+        line-height: 1.5;
+    }
+
+    #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+
+    .PadingClass {
+        padding: 0px !important;
+    }
+</style>
+<script type="text/javascript">
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        GetSurgicalStoreName();
+    });
+    function SearchSurgicalInstrument() {
+        var StoreName = $("#ddlSurgicalStoreName").val();
+        $("#txtSurgicalItemSearch").autocomplete({
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/SurgicalDispense/GetSurgicalCurrentStock",
+                    type: "GET",
+                    data: {
+                        SearchTearm: request.term,
+                        Wahrehous: StoreName
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.PH_Name,
+                                value: el.PH_Name
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                $("#txtSurgicalItemSearch").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                // $("#txtDrugSearch").prop('disabled', true);
+                $("#txtSurgicalItemSearch").val(ui.item.label);
+                var ItemName = ui.item.value;
+                GetSurgicalCurrentStockByItemName(ItemName, StoreName);
+                return false;
+            },
+            minLength: 0
+        });
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+    function GetSurgicalStoreName() {
+        $.ajax({
+            url: "/Pharma/Invoice/GetStoreName",
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.length > 0) {
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var HIS_PH_STOREMASTER = response[PCHeader].HIS_PH_STOREMASTER;
+                        var HIS_PH_STORENAME = response[PCHeader].HIS_PH_STORENAME;
+                        $('#ddlSurgicalStoreName')
+                            .append($("<option></option>").val(HIS_PH_STORENAME).html(HIS_PH_STORENAME));
+                    }
+                }
+            }
+        });
+    }
+    function GetSurgicalCurrentStockByItemCode(ItemCode, StoreName) {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        $.ajax({
+            url: "/api/SurgicalDispense/GetSurgicalCurrentStockByItemCode",
+            type: "GET",
+            data: {
+                ItemCode: ItemCode,
+                Wahrehous: StoreName
+            },
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                if (response.length > 0) {
+                    var html = "";
+                    var table = document.getElementById("tblSurgicalItemBind");
+                    var tbodyRowCount = table.tBodies[0].rows.length;
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var ItemID = response[PCHeader].ItemID;
+                        var PH_Name = response[PCHeader].PH_Name;
+                        var PH_Model = response[PCHeader].PH_Model;
+                        var PH_ModelNo = response[PCHeader].PH_ModelNo;
+                        var Rate = response[PCHeader].SellingPrice;
+                        var CurrentStockQty = response[PCHeader].CurrentStockQty;
+                        var ExpiryDate = response[PCHeader].ExpiryDate;
+                        var PH_Gst = response[PCHeader].PH_Gst;
+                        var Sno = tbodyRowCount + 1;
+                        html += "<tr data-id=\"" + ItemID + "\"><td>" + Sno + "</td>";//0
+                        html += "<td style='display:none;'>" + ItemID + "</td>";//1
+                        html += "<td>" + PH_Name + "</td>";//2
+                        html += "<td>" + PH_Model + "</td>";//3
+                        html += "<td>" + PH_ModelNo + "</td>";//4
+                        html += "<td>" + Rate + "</td>";//5
+                        html += "<td><input value=''style='height:28px;width:50px;text-align: right;' type=\"Text\" onchange='SurgicalQtyValu(this)' onkeypress='return isNumberKey(event)'></td></td>";//6
+                        html += "<td>" + CurrentStockQty + "</td>";//7
+                        html += "<td  class='SurAmountCell'></td>";//8
+                        html += "<td class='SurTaxCell'></td>";//9
+                        html += "<td class='SurTotalAmountCell'></td>";//10
+                        html += "<td style='text-align: center;'>";//11
+                        html += "<img src='" + rootUrl + "/Images/DELETE-32.png'  onclick='return DeleteOrdersRow(this)' style='cursor:pointer;width: 30px !important;height:30px !important;'></td>";
+                        html += "<td style='display:none;'>" + PH_Gst + "</td>";//12
+                        html += "</tr>";
+                        $("#tblSurgicalItemBind tbody").append(html);
+                        $("#tblSurgicalItemBind").find("input[type='text']").last().focus();
+                        $("#txtSurgicalItemSearch").val('');
+                        html = "";
+                    }
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+    function GetSurgicalCurrentStockByItemName(ItemName, StoreName) {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        $.ajax({
+            url: "/api/SurgicalDispense/GetSurgicalCurrentStockByItemName",
+            type: "GET",
+            data: {
+                ItemName: ItemName,
+                Wahrehous: StoreName
+            },
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                if (response.length > 0) {
+                    var html = "";
+                    $("#tblSelectSurgicalItem tbody").empty();
+                    var table = document.getElementById("tblSelectSurgicalItem");
+                    var tbodyRowCount = table.tBodies[0].rows.length;
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var ItemID = response[PCHeader].ItemID;
+                        var PH_Name = response[PCHeader].PH_Name;
+                        var PH_Model = response[PCHeader].PH_Model;
+                        var PH_ModelNo = response[PCHeader].PH_ModelNo;
+                        var Rate = response[PCHeader].SellingPrice;
+                        var CurrentStockQty = response[PCHeader].CurrentStockQty;
+                        var Sno = tbodyRowCount + 1;
+                        html += "<tr data-id=\"" + ItemID + "\" onclick='SelectedItemChange(this)'><td>" + Sno + "</td>";//0
+                        html += "<td style='display:none;'>" + ItemID + "</td>";//1
+                        html += "<td>" + PH_Name + "</td>";//2
+                        html += "<td>" + PH_Model + "</td>";//3
+                        html += "<td>" + PH_ModelNo + "</td>";//4
+                        html += "<td>" + Rate + "</td>";//5
+                        html += "<td>" + CurrentStockQty + "</td>";//7
+                        html += "</tr>";
+                        $("#tblSelectSurgicalItem tbody").append(html);
+                        html = "";
+                        $("#ModalSurgicalSelect").dialog(
+                            {
+                                title: "Select Item",
+                                width: 806,
+                                height: 300,
+                                modal: true,
+                                buttons: {
+                                    "Cancel": function () {
+                                        $("#ModalSurgicalSelect").dialog("close");
+                                    }
+                                }
+                            });
+                    }
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+    function SurgicalQtyValu(SelectedRow) {
+        // var DrugName = $("#txtSearchDrugType").val();
+        var row = SelectedRow.parentNode.parentNode;
+        var rowIndex = SelectedRow.rowIndex;
+        var Qty = parseInt(row.cells[6].getElementsByTagName("input")[0].value);
+        var CurrentQty = parseInt(row.cells[7].innerHTML);
+        if (Qty <= CurrentQty) {
+            var Cost = parseFloat(row.cells[5].innerHTML).toFixed(2);
+            var Tax = parseFloat(row.cells[12].innerHTML).toFixed(2);
+            var amt = parseFloat(Cost * Qty).toFixed(2);
+            var vatamt = parseFloat((amt * Tax) / 100).toFixed(2);
+            var total = parseFloat(amt) + parseFloat(vatamt);
+            total = total.toFixed(2);
+            row.cells[8].innerHTML = amt;
+            row.cells[9].innerHTML = vatamt;
+            row.cells[10].innerHTML = total;
+            TotalCalculation();
+            TotalDiscountCalculation();
+            $("#txtSurgicalItemSearch").focus();
+        }
+        else {
+
+            alert("Stock Limit Exceeded");
+            row.cells[6].getElementsByTagName("input")[0].focus();
+        }
+    }
+    function TotalCalculation() {
+        var AmountCells = document.getElementsByClassName("SurAmountCell"); //returns a list with all the elements that have class 'priceCell'
+        var Amount = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < AmountCells.length; i++) {
+            if (AmountCells[i].innerHTML != "") {
+                var thisPrice = parseFloat(AmountCells[i].innerHTML); //get inner text of this cell in number format
+                Amount = Amount + thisPrice;
+            }
+        };
+        Amount = Amount.toFixed(2);
+        $("#txtTotalamt").val(Amount);
+        var TaxCells = document.getElementsByClassName("SurTaxCell"); //returns a list with all the elements that have class 'priceCell'
+        var Tax = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < TaxCells.length; i++) {
+            if (TaxCells[i].innerHTML != "") {
+                var thisPrice = parseFloat(TaxCells[i].innerHTML); //get inner text of this cell in number format
+                Tax = Tax + thisPrice;
+            }
+        };
+        Tax = Tax.toFixed(2);
+        $("#txtTotalVatmat").val(Tax);
+        var TotalAmountCells = document.getElementsByClassName("SurTotalAmountCell"); //returns a list with all the elements that have class 'priceCell'
+        var TotalAmount = 0;
+        //loop over the cells array and add to total price
+        for (var i = 0; i < TotalAmountCells.length; i++) {
+            if (TotalAmountCells[i].innerHTML != "") {
+                var thisPrice = parseFloat(TotalAmountCells[i].innerHTML); //get inner text of this cell in number format
+                TotalAmount = TotalAmount + thisPrice;
+            }
+        };
+        TotalAmount = TotalAmount.toFixed(2);
+        $("#txtGrandTotal").val(TotalAmount);
+    }
+    function DeleteOrdersRow(selectedrow) {
+        var myrow = selectedrow.parentNode.parentNode;
+        var rowIndex = myrow.rowIndex;
+        document.getElementById("tblSurgicalItemBind").deleteRow(myrow.rowIndex);
+        var table = document.getElementById("tblSurgicalItemBind");
+        var rowCount = table.rows.length;
+        var i = myrow.rowIndex;
+        regroup(i, rowCount, "tblSurgicalItemBind");
+        $("#txtRateValue").val('');
+        $("#txtDiscountAmt").val('');
+        $("#txtCurrentDue").val('');
+        $("#txtCashAmt").val('');
+        $("#txtBankAmt").val();
+        $("#txtBankRefNum").val('');
+        $("#txtChequeAmt").val('');
+        $("#txtChequeNumber").val('');
+        TotalCalculation();
+        TotalDiscountCalculation();
+    }
+    function regroup(i, rc, ti) {
+        for (j = (i + 1); j < rc; j++) {
+            if (j > 0) {
+                document.getElementById(ti).rows[j].cells[0].innerHTML = j;
+            }
+        }
+    }
+    function percentage(percent, total) {
+        return ((percent / 100) * total).toFixed(2)
+    }
+    function TotalDiscountCalculation() {
+        var CurrentDue = $("#txtCurrentDue").val();
+        if (CurrentDue == "" || CurrentDue == '' || CurrentDue == null)
+            CurrentDue = 0;
+        else
+            CurrentDue = parseFloat(CurrentDue);
+        var CalculationType = $("#ddlDiscountType").val();
+        var Amount = $("#txtTotalamt").val();
+        var PrecentageValue = $("#txtRateValue").val();
+        var Tax = parseFloat($("#txtTotalVatmat").val());
+        if (CalculationType === "PER") {
+            if (Amount.length > 0 && PrecentageValue.length > 0) {
+                if (isNumeric(Amount) && isNumeric(PrecentageValue)) {
+                    if (parseFloat(PrecentageValue) <= 100) {
+                        var PrecResult = percentage(PrecentageValue, Amount);
+                        $("#txtDiscountAmt").val(PrecResult);
+                        var NetAmount = (Amount - PrecResult) + CurrentDue + Tax;
+                        NetAmount = Math.round(NetAmount);
+                        var Roundoff = (Amount - PrecResult) + CurrentDue + Tax;
+                        Roundoff = NetAmount - Roundoff;
+                        $("#txtRoundoff").val(Roundoff.toFixed(2));
+                        $("#txtNetTotal").val(NetAmount.toFixed(2));
+                    }
+                    else {
+                        alert('Discount % shall not be more than 100% Or the total value of the Service');
+                    }
+                }
+            }
+            else {
+                var SubTot = $("#txtTotalamt").val();
+                var DueTot = $("#txtCurrentDue").val();
+                if (SubTot.length > 0 && DueTot.length > 0) {
+                    var NetTotal = parseFloat(SubTot) + parseFloat(DueTot) + Tax;
+                    NetTotal = Math.round(NetTotal);
+                    var Roundoff = parseFloat(SubTot) + parseFloat(DueTot) + Tax;
+                    Roundoff = NetTotal - Roundoff;
+                    $("#txtRoundoff").val(Roundoff.toFixed(2));
+                    $("#txtDiscountAmt").val(0);
+                    $("#txtNetTotal").val(NetTotal.toFixed(2));
+                }
+                else {
+                    if (SubTot == "" || SubTot == null || SubTot == '')
+                        SubTot = 0;
+                    if (DueTot == "" || DueTot == null || DueTot == '')
+                        DueTot = 0;
+                    var NetTotal = parseFloat(SubTot) + parseFloat(DueTot) + Tax;
+                    NetTotal = Math.round(NetTotal);
+                    var Roundoff = parseFloat(SubTot) + parseFloat(DueTot) + Tax;
+                    Roundoff = NetTotal - Roundoff;
+                    $("#txtRoundoff").val(Roundoff.toFixed(2));
+                    $("#txtDiscountAmt").val(0);
+                    $("#txtNetTotal").val(NetTotal.toFixed(2));
+                }
+            }
+        }
+        else {
+            if (Amount.length > 0 && PrecentageValue.length > 0) {
+                if (isNumeric(Amount) && isNumeric(PrecentageValue)) {
+                    if (parseFloat(PrecentageValue) <= parseFloat(Amount)) {
+                        var PrecResult = (Amount - PrecentageValue) + CurrentDue + Tax;
+                        PrecResult = Math.round(PrecResult);
+                        var Roundoff = (Amount - PrecResult) + CurrentDue + Tax;
+                        Roundoff = PrecResult - Roundoff;
+                        $("#txtRoundoff").val(Roundoff.toFixed(2));
+                        $("#txtDiscountAmt").val(PrecentageValue);
+                        $("#txtNetTotal").val(PrecResult.toFixed(2));
+                    }
+                    else {
+                        alert('Discount % shall not be more than 100% Or the total value of the Service');
+                    }
+                }
+            }
+            else {
+                var SubTot = $("#txtTotalamt").val();
+                var DueTot = $("#txtCurrentDue").val();
+                if (SubTot.length > 0 && DueTot.length > 0) {
+                    var NetTotal = parseFloat(SubTot) + parseFloat(DueTot) + Tax;
+                    NetTotal = Math.round(NetTotal);
+                    var Roundoff = parseFloat(SubTot) + parseFloat(DueTot) + Tax;
+                    Roundoff = NetTotal - Roundoff;
+                    $("#txtRoundoff").val(Roundoff.toFixed(2));
+                    $("#txtDiscountAmt").val(0);
+                    $("#txtNetTotal").val(NetTotal.toFixed(2));
+                }
+                else {
+                    if (SubTot == "" || SubTot == null || SubTot == '')
+                        SubTot = 0;
+                    if (DueTot == "" || DueTot == null || DueTot == '')
+                        DueTot = 0;
+                    var NetTotal = parseFloat(SubTot) + parseFloat(DueTot) + Tax;
+                    NetTotal = Math.round(NetTotal);
+                    var Roundoff = parseFloat(SubTot) + parseFloat(DueTot) + Tax;
+                    Roundoff = NetTotal - Roundoff;
+                    $("#txtRoundoff").val(Roundoff.toFixed(2));
+                    $("#txtDiscountAmt").val(0);
+                    $("#txtNetTotal").val(NetTotal.toFixed(2));
+                }
+            }
+        }
+    }
+    function TotalCalculationChange(ControlValue) {
+        var Currentpendingamount = 0;
+        var RECIEVEDAMT = 0;
+        var OP_Current_Refund = 0;
+        var OP_Old_Refund = parseFloat($("#lblRefundAmount").text());
+        var OP_Old_Due = parseFloat($("#lblCurrentAmount").text());
+
+        var PENDINGTOPAY = 0;
+        var Currentpendingamount = 0;
+
+
+        var OP_Current_Refund = 0;
+
+        var CashReceivedAmt = 0;
+        var DebitCardAmt = 0;
+        var CreditCardAmt = 0;
+        var ThroughBankAmt = 0;
+        var ChequeAmt = 0;
+
+        if ($("#txtCashAmt").val().length > 0)
+            CashReceivedAmt = $("#txtCashAmt").val();
+        if ($("#txtDebitCardAmt").val().length > 0)
+            DebitCardAmt = $("#txtDebitCardAmt").val();
+        if ($("#txtCreditCardAmt").val().length > 0)
+            CreditCardAmt = $("#txtCreditCardAmt").val();
+        if ($("#txtBankAmt").val().length > 0)
+            ThroughBankAmt = $("#txtBankAmt").val();
+        if ($("#txtChequeAmt").val().length > 0)
+            ChequeAmt = $("#txtChequeAmt").val();
+
+        var Ord_nettotal = $("#txtNetTotal").val();
+        var RECIEVEDAMT = parseFloat(CashReceivedAmt) + parseFloat(DebitCardAmt) + parseFloat(ThroughBankAmt) + parseFloat(ChequeAmt) + parseFloat(CreditCardAmt);
+        if (RECIEVEDAMT > Ord_nettotal) {
+            //OP_Current_Refund = RECIEVEDAMT - Ord_nettotal;
+            ////OP_Current_Refund = OP_Current_Refund.toFixed(2);
+            //OP_Current_Refund = parseFloat(OP_Current_Refund);
+            //if (OP_Old_Refund != 0) {
+            //    OP_Old_Refund = OP_Old_Refund + OP_Current_Refund;
+            //}
+            //else
+            //    OP_Old_Refund = OP_Current_Refund;
+            //OP_Old_Refund = OP_Old_Refund.toFixed(2);
+            //$("#txtCurrentRefund").val(OP_Old_Refund);
+            //$("#txtCurrentDue").val(0.00);
+            //$("#lblCurrentAmount").text(0);
+            //OP_Current_Refund = ''+OP_Current_Refund;
+            //$("#lblRefundAmount").text(OP_Old_Refund);
+            var id = $(ControlValue).attr("id");
+            document.getElementById(id).value = 0.00;
+            alert('Recieved Amount  shall not be more than Net Total Payable');
+        }
+        else {
+            Currentpendingamount = Ord_nettotal - RECIEVEDAMT;
+            //Currentpendingamount = Currentpendingamount.toFixed(2);
+            Currentpendingamount = parseFloat(Currentpendingamount).toFixed(2);
+            //if (OP_Old_Due != 0)
+            //    OP_Old_Due = OP_Old_Due + Currentpendingamount;
+            //else
+            //    OP_Old_Due = Currentpendingamount;
+            //OP_Old_Due = OP_Old_Due.toFixed(2);
+            $("#txtCurrentDue").val(Currentpendingamount);
+            //  $("#txtCurrentRefund").val(0.00);
+            $("#lblRefundAmount").text(0);
+            OP_Old_Due = '' + OP_Old_Due;
+            // $("#lblCurrentAmount").text(OP_Old_Due);
+        }
+    }
+    function isNumberAndDecimal(el, evt) {
+        var charCode = (evt.which) ? evt.which : event.keyCode
+        var number = el.value.split('.');
+        if (charCode != 46 && charCode > 32 && (charCode < 48 || charCode > 57) || (charCode == 32))
+
+            return false;
+
+        if (number.length > 1 && charCode == 46) {
+            return false;
+        }
+
+        return true;
+    }
+    function isNumeric(n) {
+        return !isNaN(parseFloat(n)) && isFinite(n);
+    }
+    function isNumberKey(evt) {
+        var charCode = (evt.which) ? evt.which : event.keyCode
+        if (charCode > 32 && (charCode < 48 || charCode > 57) || (charCode == 32))
+
+            return false;
+
+        return true;
+    }
+    function SelectedItemChange(selectedrow) {
+        var myrow = selectedrow.rowIndex;
+        var ItemCode = parseFloat(selectedrow.cells[1].innerHTML);
+        var StoreName = $("#ddlSurgicalStoreName").val();
+        GetSurgicalCurrentStockByItemCode(ItemCode, StoreName);
+        //  $('#modal-default').modal().hide();
+        $("#ModalSurgicalSelect").dialog("close");
+    }
+    function BillSave() {
+        if (validate()) {
+            var DrugInfo = new Array();
+            var tblSurgicalItemBind = document.getElementById("tblSurgicalItemBind");
+            var rowtblSurgicalItemBind = tblSurgicalItemBind.rows.length;
+            for (M = 1; M < rowtblSurgicalItemBind; M++) {
+                var rowDrug = tblSurgicalItemBind.rows[M];
+                var ObjectDetails = new Object();
+                ObjectDetails.PH_CUR_DRUGBRANDNAME = rowDrug.cells[2].innerHTML;
+                ObjectDetails.PH_CUR_STOCK_MODLNO = rowDrug.cells[4].innerHTML;
+                ObjectDetails.PH_CUR_STOCK_BILLINGPRICE = parseFloat(rowDrug.cells[5].innerHTML);
+                ObjectDetails.PH_CUR_MODELNAME = rowDrug.cells[3].innerHTML;
+                ObjectDetails.Qty = parseInt(rowDrug.cells[6].getElementsByTagName("input")[0].value);
+                ObjectDetails.PH_CUR_STOCK = 0;
+                ObjectDetails.PH_CUR_DRUGCODE = parseInt(rowDrug.cells[1].innerHTML);
+                ObjectDetails.PH_ITEM_DRUG_VAT = parseFloat(rowDrug.cells[12].innerHTML);
+                ObjectDetails.PH_CUR_STOCK_PURCHCOST = parseFloat(rowDrug.cells[8].innerHTML);
+                ObjectDetails.Amount = parseFloat(rowDrug.cells[8].innerHTML);
+                ObjectDetails.Tax = parseFloat(rowDrug.cells[9].innerHTML);
+                ObjectDetails.TotalAmount = parseFloat(rowDrug.cells[10].innerHTML);
+                ObjectDetails.ExpiryDt = "";
+                DrugInfo.push(ObjectDetails);
+            }
+
+
+            var Amount = $("#txtTotalamt").val();
+            if (Amount == "" || Amount == null || Amount == '')
+                Amount = 0;
+            else
+                Amount = parseFloat(Amount);
+
+            var Tax = $("#txtTotalVatmat").val();
+            if (Tax == "" || Tax == null || Tax == '')
+                Tax = 0;
+            else
+                Tax = parseFloat(Tax);
+
+            var TotalAmount = $("#txtGrandTotal").val();
+            if (TotalAmount == "" || TotalAmount == null || TotalAmount == '')
+                TotalAmount = 0;
+            else
+                TotalAmount = parseFloat(TotalAmount);
+
+            var DiscountType = $("#ddlDiscountType").val();
+
+            var DiscountRate = $("#txtDiscountAmt").val();
+            if (DiscountRate == "" || DiscountRate == null || DiscountRate == '')
+                TotalAmount = 0;
+            else
+                DiscountRate = parseFloat(DiscountRate);
+
+            var DueCollected = $("#txtCurrentDue").val();
+            if (DueCollected == "" || DueCollected == null || DueCollected == '')
+                DueCollected = 0;
+            else
+                DueCollected = parseFloat(DueCollected);
+
+            var NetCollected = $("#txtNetTotal").val();
+            if (NetCollected == "" || NetCollected == null || NetCollected == '')
+                NetCollected = 0;
+            else
+                NetCollected = parseFloat(NetCollected);
+
+            var Roundoff = $("#txtRoundoff").val();
+            if (Roundoff == "" || Roundoff == null || Roundoff == '')
+                Roundoff = 0;
+            else
+                Roundoff = parseFloat(Roundoff);
+
+            var Consession = $("#txtDiscountAmt").val();
+            if (Consession == "" || Consession == null || Consession == '')
+                Consession = 0;
+            else
+                Consession = parseFloat(Consession);
+            var MobileNo = $("#txtPhoneNumber").val();
+            if (MobileNo !== "") {
+                if (isNumeric(MobileNo)) {
+                    MobileNo = parseFloat($("#txtPhoneNumber").val());
+                }
+                else {
+                    MobileNo = 0;
+                }
+            }
+            else
+                MobileNo = 0;
+            var CashReceivedAmt = 0;
+            var DebitCardAmt = 0;
+            var CreditCardAmt = 0;
+            var ThroughBankAmt = 0;
+            var ChequeAmt = 0;
+
+            if ($("#txtCashAmt").val().length > 0)
+                CashReceivedAmt = parseFloat($("#txtCashAmt").val());
+            if ($("#txtDebitCardAmt").val().length > 0)
+                DebitCardAmt = parseFloat($("#txtDebitCardAmt").val());
+            if ($("#txtCreditCardAmt").val().length > 0)
+                CreditCardAmt = parseFloat($("#txtCreditCardAmt").val());
+            if ($("#txtBankAmt").val().length > 0)
+                ThroughBankAmt = parseFloat($("#txtBankAmt").val());
+            if ($("#txtChequeAmt").val().length > 0)
+                ChequeAmt = parseFloat($("#txtChequeAmt").val());
+
+            var CreditCardNumber = $("#txtCreditCardNum").val();
+            var DebitCardNumber = $("#txtDebitCardNumber").val();
+            var ChequeNo = $("#txtChequeNumber").val();
+            var BankRefNo = $("#txtBankRefNum").val();
+            var sendJsonData = {
+                CustomerName: $("#txtCustomerName").val(),
+                Address: $("#txtSurDispenseAddress").val(),
+                City: $("#txtSurDispenseCity").val(),
+                Country: $("#txtSurDispenseCountry").val(),
+                DrugInfos: DrugInfo,
+                Amount: Amount,
+                Tax: Tax,
+                TotalAmount: TotalAmount,
+                Roundoff: Roundoff,
+                Consession: Consession,
+                DiscountType: DiscountType,
+                DiscountRate: DiscountRate,
+                PendingtoPay: DueCollected,
+                NetTotlaAmount: NetCollected,
+                CashReceivedAmt: CashReceivedAmt,
+                CreditCardAmt: CreditCardAmt,
+                DebitCardAmt: DebitCardAmt,
+                ThroughBankAmt: ThroughBankAmt,
+                ChequeAmt: ChequeAmt,
+                CreditCardNumber: CreditCardNumber,
+                DebitCardNumber: DebitCardNumber,
+                ChequeNo: ChequeNo,
+                BankRefNo: BankRefNo,
+                StoreName: $("#ddlSurgicalStoreName").val()
+            };
+            $.ajax({
+                url: "/api/SurgicalDispense/BillSave",
+                type: 'post',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(sendJsonData),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    ClearAll();
+                    BillPrint(data);
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+
+    }
+    function BillPrint(response) {
+        if (response.PrintHeader.length > 0) {
+            var html = "";
+            for (PCHeader = 0; PCHeader < response.PrintHeader.length; PCHeader++) {
+                var PH_CSH_BILLNO = response.PrintHeader[PCHeader].PH_CSH_BILLNO;
+                var PH_CSH_BILLDT = response.PrintHeader[PCHeader].PH_CSH_BILLDT;
+                var PH_CSH_CUSTOMERNAME = response.PrintHeader[PCHeader].CustomerName;
+                var PH_CSH_ADDRESS = response.PrintHeader[PCHeader].Address;
+                var PH_CSH_CITY = response.PrintHeader[PCHeader].City;
+                var PH_CSH_COUNTRY = response.PrintHeader[PCHeader].Country;
+                var PH_CSH_TOTAMOUNT = response.PrintHeader[PCHeader].PH_CSH_TOTAMOUNT;
+                var PH_CSH_TAXAMOUNT = parseFloat(response.PrintHeader[PCHeader].PH_CSH_TAXAMOUNT);
+                var TotalTaxDived = parseFloat(PH_CSH_TAXAMOUNT).toFixed(2) / 2;
+                TotalTaxDived = TotalTaxDived.toFixed(2);
+                var PH_CSH_CASHRECIVEDAMT = response.PrintHeader[PCHeader].PH_CSH_CASHRECIVEDAMT;
+                var Warehouse = document.getElementById("ddlSurgicalStoreName").options[document.getElementById('ddlSurgicalStoreName').selectedIndex].text;
+                //Header
+                html += "<table style='font-family:sans-serif;font-size: 12px;font-weight: 500;'>";
+                html += "<tr><td style='width:196px !important;'>Bill number</td><td>:</td><td style='width:341px !important;'>" + PH_CSH_BILLNO + "</td>";
+                html += "<td style='width:196px !important;'>Date</td><td>:</td><td style='width:341px !important;'>" + PH_CSH_BILLDT + "</td></tr>";
+                html += "<tr><td>Customer name</td><td>:</td><td style='width:341px !important;'>" + PH_CSH_CUSTOMERNAME + "</td>";
+                html += "<td>Address:</td><td>:</td><td style='width:341px !important;'>" + PH_CSH_ADDRESS + "</td></tr>";
+                html += "<tr><td>City</td><td>:</td><td style='width:341px !important;'>" + PH_CSH_CITY + "</td>";
+                html += "<td>Country</td><td>:</td><td style='width:341px !important;'>" + PH_CSH_COUNTRY + "</td></tr>";
+                //html += "<tr><td>GST NO</td><td>:</td><td style='width:341px !important;'></td><td>ARN NO</td><td>:</td><td style='width:341px !important;'></td></tr>";
+                html += "<tr><td>Warehouse</td><td>:</td><td style='width:341px !important;'>" + Warehouse + "</td></tr></table>";
+                //Deatils
+                html += "<table border='1' style='font-family:sans-serif;font-size: 12px;font-weight: 500;border-collapse:collapse;width: 100%;'><tr>";
+                html += "<td style='width: 53px !important;'>S.no</td>";
+                html += "<td style='width: 109px !important;'>Hsn Code</td>";
+                html += "<td style='width: 275px !important;'>Particular</td>";
+                html += "<td style='width: 140px !important;'>Model Name</td>";
+                html += "<td style='width: 53px !important;'>Model No</td>";
+                html += " <td align='right' style='width: 53px !important;'>Qty</td>";
+                html += "<td align='right' style='width: 53px !important;'>Rate</td>";
+                html += "<td align='right' style='width: 63px !important;'>Amount</td>";
+                html += "<td colspan='3' align='center' style='width: 130px !important;'>Tax<table border='1' style='border-collapse:collapse;width: 100%;'>";
+                html += "<tbody><tr><td align='right'>SGST</td><td align='right'>CGST</td><td align='right'>%</td></tr></tbody></table></td>";
+                html += "<td align='right' style='width: 63px !important;'>Total</td></tr>";
+                var Sno = 0;
+                for (PCDetails = 0; PCDetails < response.PrintDeatils.length; PCDetails++) {
+                    Sno = Sno + 1;
+                    var PH_CUR_DRUGBRANDNAME = response.PrintDeatils[PCDetails].PH_CUR_DRUGBRANDNAME;
+                    var PH_CSHDTL_MODELNAME = response.PrintDeatils[PCDetails].PH_CSHDTL_MODELNAME;
+                    var PH_CSHDTL_MODELNO = response.PrintDeatils[PCDetails].PH_CSHDTL_MODELNO;
+                    var PH_CSHDTL_DRUG_QTY = response.PrintDeatils[PCDetails].PH_CSHDTL_DRUG_QTY;
+                    var PH_CSHDTL_DRUG_AMTEACH = response.PrintDeatils[PCDetails].PH_CSHDTL_DRUG_AMTEACH;
+                    var PH_CSHDTL_DRUG_ROWTOTALAMT = response.PrintDeatils[PCDetails].PH_CSHDTL_DRUG_ROWTOTALAMT;
+                    var PHCSHDTL_DRUG_TAXVALUE = response.PrintDeatils[PCDetails].PHCSHDTL_DRUG_TAXVALUE;
+                    var PH_CSHDTL_DRUG_NETTAMT = response.PrintDeatils[PCDetails].PH_CSHDTL_DRUG_NETTAMT;
+                    var Uom = response.PrintDeatils[PCDetails].Uom;
+                    var PH_CSHDTL_DRUG_TAXPERCENT = response.PrintDeatils[PCDetails].PH_CSHDTL_DRUG_TAXPERCENT;
+                    var PH_ITEM_HSNCODE = response.PrintDeatils[PCDetails].PH_ITEM_HSNCODE;
+                    var TaxDivied = parseFloat(PHCSHDTL_DRUG_TAXVALUE).toFixed(2) / 2;
+                    TaxDivied = TaxDivied.toFixed(2);
+                    html += "<tr><td style='width: 53px !important;'>" + Sno + "</td>";
+                    html += "<td style='width: 109px !important;'>" + PH_ITEM_HSNCODE + "</td>";
+                    html += "<td style='width: 275px !important;'>" + Uom + "." + PH_CUR_DRUGBRANDNAME + "</td>";
+                    html += "<td style='width: 140px !important;'>" + PH_CSHDTL_MODELNAME + "</td>";
+                    html += "<td style='width: 53px !important;'>" + PH_CSHDTL_MODELNO + "</td>";
+                    html += "<td align='right' style='width: 53px !important;'>" + PH_CSHDTL_DRUG_QTY + "</td>";
+                    html += "<td align='right' style='width: 53px !important;'>" + PH_CSHDTL_DRUG_AMTEACH + "</td>";
+                    html += "<td align='right' style='width: 63px !important;'>" + PH_CSHDTL_DRUG_ROWTOTALAMT + "</td>";
+                    html += "<td colspan='3'><table border='1' style='border-collapse:collapse;width: 100%;'><tbody><tr><td align='right'>" + TaxDivied + "</td><td align='right'>" + TaxDivied + "</td><td align='right'>" + PH_CSHDTL_DRUG_TAXPERCENT + "%</td></tr></tbody></table></td>";
+                    html += "<td align='right' style='width: 63px !important;'>" + PH_CSHDTL_DRUG_NETTAMT + "</td></tr>";
+                }
+                html += "</table>";
+                //Amount Details
+                html += "<table style='font-family:sans-serif;font-weight: 500;font-size: 12px;'><tr>";
+                html += "<td style='width: 53px !important;'></td><td style='width: 109px !important;'></td><td style='width: 275px !important;'></td><td style='width: 100px !important;'></td>";
+                html += "<td style='width: 53px !important;'></td><td style='width: 53px !important;'></td><td style='width: 63px !important;'></td>";
+                html += "<td style='width: 53px !important;'></td><td>Total:</td><td align='right' style='width: 53px !important;'>" + PH_CSH_TOTAMOUNT + "</td></tr>";
+                html += "<tr><td colspan='8' style='width: 90px !important;'></td><td style='width: 90px !important;'>SGST:</td><td align='right' style='width: 90px !important;'>" + TotalTaxDived + "</td>";
+                html += "<tr><td colspan='8' style='width: 53px !important;'></td><td>CGST:</td><td align='right' style='width: 53px !important;'>" + TotalTaxDived + "</td></tr>";
+                html += "<tr style='font-size:16px !important;'><td colspan='8' style='width: 53px !important;'></td><td>Net Total:</td><td align='right' style='width: 53px !important;'>" + PH_CSH_CASHRECIVEDAMT + "</td></tr>";
+                html += "<tr></tr><tr></tr><tr><td colspan='6'></td><td colspan='3'>SIGNATURE</td></tr></table>";
+            }
+            sessionStorage.setItem("PrintDetails", html);
+            openRequestedPopup();
+        }
+    }
+    function ClearAll() {
+        $("#txtCustomerName").val('');
+        $("#txtSurDispenseAddress").val('');
+        $("#txtSurDispenseCity").val('');
+        $("#txtSurDispenseCountry").val('');
+
+        $("#txtSurgicalItemSearch").val('');
+
+
+
+        $("#txtTotalamt").val('');
+        $("#txtTotalVatmat").val('');
+        $("#txtGrandTotal").val('');
+        $("#txtRateValue").val('');
+        $("#txtDiscountAmt").val('');
+        $("#txtCurrentDue").val('');
+        $("#txtRoundoff").val('');
+        $("#txtNetTotal").val('');
+
+        $("#txtCashAmt").val('');
+        $("#txtBankAmt").val();
+        $("#txtBankRefNum").val('');
+        $("#txtChequeAmt").val('');
+        $("#txtChequeNumber").val('');
+
+        $("#txtDebitCardAmt").val('');
+        $("#txtDebitCardNumber").val('');
+        $("#txtBankRefNum").val('');
+        $("#txtChequeAmt").val('');
+        $("#txtChequeNumber").val('');
+        $("#tblSurgicalItemBind tbody").empty();
+    }
+    function openRequestedPopup() {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        var url = rootUrl + '/Pharmacy/SurgicalDispense/print';
+        window.open(url, '_blank');
+        sessionStorage.setItem("PrintDetails", "");
+    }
+    function validate() {
+        var CustomerName = $("#txtCustomerName").val();
+
+        var RECIEVEDAMT = 0;
+        var CashReceivedAmt = 0;
+        var DebitCardAmt = 0;
+        var CreditCardAmt = 0;
+        var ThroughBankAmt = 0;
+        var ChequeAmt = 0;
+
+        if ($("#txtCashAmt").val().length > 0)
+            CashReceivedAmt = $("#txtCashAmt").val();
+
+        if ($("#txtDebitCardAmt").val().length > 0)
+            DebitCardAmt = $("#txtDebitCardAmt").val();
+        if ($("#txtCreditCardAmt").val().length > 0)
+            CreditCardAmt = $("#txtCreditCardAmt").val();
+        if ($("#txtBankAmt").val().length > 0)
+            ThroughBankAmt = $("#txtBankAmt").val();
+        if ($("#txtChequeAmt").val().length > 0)
+            ChequeAmt = $("#txtChequeAmt").val();
+
+
+        var errors = "";
+        if (CustomerName == "") {
+            errors += "* Please Fill Customer Name.\n";
+        }
+        var Ord_nettotal = $("#txtNetTotal").val();
+        var RECIEVEDAMT = parseFloat(CashReceivedAmt) + parseFloat(DebitCardAmt) + parseFloat(ThroughBankAmt) + parseFloat(ChequeAmt) + parseFloat(CreditCardAmt);
+        if (RECIEVEDAMT < Ord_nettotal) {
+            DueAmount = $("#txtCurrentDue").val();
+            //errors += "* Please do not enter Less amount.\n";*/
+            //PendingAmt();
+            //return false;
+            if (confirm('Pending to Pay Rs-' + DueAmount + ',Still you want Continue? ')) {
+                return true;
+
+            } else {
+                return false;
+            }
+        }
+        if (RECIEVEDAMT > Ord_nettotal) {
+            errors += "* Please do not enter greater amount.\n";
+        }
+        var table = document.getElementById("tblSurgicalItemBind");
+        var tbodyRowCount = table.tBodies[0].rows.length;
+        if (tbodyRowCount <= 0) {
+            errors += "* Please Select Drugs.\n";
+        }
+        if (errors.length > 0) {
+            alert('One or more errors occurred:\n\n' + errors);
+            return false;
+        }
+        else {
+            return true;
+        }
+    }
+</script>
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div id="loading">
+            <div id="loadingcontent">
+                @*<p id="loadingspinner">
+                        Please Wait...
+                    </p>*@
+                <div id="loadingspinner">
+                    <img src="~/images/loading.gif" style="width:100px;height:100px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="content-wrapper">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="card card-primary">
+                    <div class="card-header" style="margin-top:10px;">
+                        <h3 class="card-title">Dispense</h3>
+                        <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                    </div>
+                    <div class="card-body">
+                        <div class="col-xs-12 col-sm-12 col-md-12">
+                            <div class="row">
+                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                    <div>
+                                        <label>Customer Name </label>
+                                        <input type="text" id="txtCustomerName" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                    <div class="form-group">
+                                        <label>
+                                            Address
+                                        </label>
+                                        <input type="text" id="txtSurDispenseAddress" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                    <div class="form-group">
+                                        <label>
+                                            City
+                                        </label>
+                                        <input type="text" id="txtSurDispenseCity" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                    <div class="form-group">
+                                        <label>
+                                            Country
+                                        </label>
+                                        <input type="text" id="txtSurDispenseCountry" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="col-xs-2 col-sm-2 col-md-2" style="display:none;">
+                                    <div class="form-group">
+                                        <label>
+                                            Phone Number
+                                        </label>
+                                        <input type="text" id="txtSurDispensePhone" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                    <div class="form-group">
+                                        <label>
+                                            Wahrehouse
+                                        </label>
+                                        <select class="form-control" id="ddlSurgicalStoreName">
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                    <input type="text" id="txtSurgicalItemSearch" placeholder="Search Product Name" class="form-control" onkeypress="SearchSurgicalInstrument();" />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xs-9 col-sm-9 col-md-9">
+                                    <table class="table table-bordered table-striped" id="tblSurgicalItemBind">
+                                        <thead>
+                                            <tr>
+                                                <th>S.NO</th>
+                                                <th>Product Name</th>
+                                                <th>Model Name</th>
+                                                <th>Model No</th>
+                                                <th>Rate</th>
+                                                <th>Qty</th>
+                                                <th>Stock</th>
+                                                <th>Amount</th>
+                                                <th>Tax</th>
+                                                <th>Total</th>
+                                                <th>Delete</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="col-xs-3 col-sm-3 col-md-3">
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <div class="row">
+                                                <div>
+                                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                                        <table class="noborders topics">
+                                                            <tr class="form-group">
+                                                                <td><label>Total:</label></td>
+                                                                <td>
+                                                                    <input id="txtTotalamt" onkeypress='return isNumberKey(event)' disabled
+                                                                           style="border-color: #80808030;margin-bottom: 3px;width: 70px;text-align: right;" type="text" />
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><label>Tax:</label></td>
+                                                                <td>
+                                                                    <input id="txtTotalVatmat" onkeypress='return isNumberKey(event)' disabled
+                                                                           style="border-color: #80808030;margin-bottom: 3px;width: 70px;text-align: right;" type="text" />
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><label>Total amount:</label></td>
+                                                                <td>
+                                                                    <input id="txtGrandTotal" onkeypress='return isNumberKey(event)' disabled
+                                                                           style="border-color: #80808030;margin-bottom: 3px;width: 70px;text-align: right;" type="text" />
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><label>Discount:</label></td>
+                                                                <td>
+                                                                    <Select id="ddlDiscountType" class="input form-control-sm d-block" style='padding:0px' onchange="TotalDiscountCalculation();">
+                                                                        <option Value='PER'>PER</option>
+                                                                        <option Value='LS'>LS</option>
+                                                                    </Select>
+                                                                </td>
+                                                                <td>
+                                                                    <input class="input form-control-sm d-block" id="txtRateValue"
+                                                                           style='width:47px;text-align: right;' type="text" onkeypress='return isNumberKey(event)' onchange="TotalDiscountCalculation();">
+                                                                </td>
+                                                                <td>
+                                                                    <input id="txtDiscountAmt" disabled onkeypress='return isNumberKey(event)'
+                                                                           style="border-color: #80808030;width: 56px;text-align: right;" type="text" />
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><label style="width:130px">Pending To Pay:</label></td>
+                                                                <td>
+                                                                    <input id="txtCurrentDue" value=""
+                                                                           onkeypress='return isNumberKeyisNumberKey(event)' disabled onchange="DueChange();"
+                                                                           style="border-color: #80808030;margin-bottom: 0px;width: 70px;text-align: right;" type="text" />
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><label style="width:130px">Rounded Off:</label></td>
+                                                                <td>
+                                                                    <input id="txtRoundoff" value=""
+                                                                           onkeypress='return isNumberKeyisNumberKey(event)' disabled onchange="DueChange();"
+                                                                           style="border-color: #80808030;margin-bottom: 0px;width: 70px;text-align: right;margin-top: 0px;" type="text" />
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><label style="width:130px">Net Total Payable:</label></td>
+                                                                <td>
+                                                                    <input id="txtNetTotal" value="0.00" onkeypress='return isNumberKey(event)' disabled
+                                                                           style="border-color: #80808030;margin-bottom: 0px;width: 70px;text-align: right;margin-top: 0px;" type="text" />
+                                                                </td>
+                                                            </tr>
+                                                        </table>
+                                                        <br />
+                                                        <table class="noborders topics">
+                                                            <tr>
+                                                                <td><label>Cash:</label></td>
+                                                                <td>
+                                                                    <input id="txtCashAmt" onchange="TotalCalculationChange(this);" onkeypress='return isNumberAndDecimal(this,event)'
+                                                                           style="border-color: #80808030;margin-bottom: 0px;width: 70px;text-align: right;margin-left:0px" type="text" />
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+
+                                                                <td><label>Credit Card:</label></td>
+                                                                <td>
+                                                                    <input id="txtCreditCardAmt" onchange="TotalCalculationChange(this);" onkeypress='return isNumberAndDecimal(this,event)'
+                                                                           style="border-color: #80808030;margin-bottom: 0px;width: 70px;text-align: right;margin-left:0px" type="text" />
+                                                                </td>
+                                                                <td>
+                                                                    <input id="txtCreditCardNum" maxlength="4" onkeypress='return isNumberKey(event)'
+                                                                           style="border-color: #80808030;margin-bottom: 0px;width: 120px;" placeholder="Last Four Digits" type="text" />
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><label>Debit Card:</label></td>
+                                                                <td>
+                                                                    <input id="txtDebitCardAmt" onchange="TotalCalculationChange(this);" onkeypress='return isNumberAndDecimal(this,event)'
+                                                                           style="border-color: #80808030;margin-bottom: 0px;width: 70px;text-align: right;margin-left:0px" type="text" />
+                                                                </td>
+                                                                <td>
+                                                                    <input id="txtDebitCardNumber" maxlength="4" onkeypress='return isNumberKey(event)'
+                                                                           style="border-color: #80808030;margin-bottom: 0px;width: 114px;" placeholder="Last Four Digits" type="text" />
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><label>Bank:</label></td>
+                                                                <td>
+                                                                    <input id="txtBankAmt" onchange="TotalCalculationChange(this);" onkeypress='return isNumberAndDecimal(this,event)'
+                                                                           style="border-color: #80808030;margin-bottom: 0px;width: 70px;text-align: right;margin-left:0px" type="text" />
+                                                                </td>
+                                                                <td>
+                                                                    <input id="txtBankRefNum" onkeypress='return isNumberKey(event)'
+                                                                           style="border-color: #80808030;margin-bottom: 0px;width: 120px;" placeholder="Reference No" type="text" />
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><label class="lab">Cheque:</label></td>
+                                                                <td>
+                                                                    <input id="txtChequeAmt" onchange="TotalCalculationChange(this);" onkeypress='return isNumberAndDecimal(this,event)'
+                                                                           style="border-color: #80808030;margin-bottom: 0px;width: 70px;text-align: right;margin-left:0px" type="text" />
+                                                                </td>
+                                                                <td>
+                                                                    <input id="txtChequeNumber" onkeypress='return isNumberKey(event)'
+                                                                           style="border-color: #80808030;margin-bottom: 0px;width: 120px;" placeholder="Cheque No" type="text" />
+                                                                </td>
+                                                            </tr>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <br />
+                                            <div class="row" id="divPayments">
+                                                <div>
+                                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                                        <table class="noborders topics">
+                                                            <tr>
+                                                                <td></td>
+                                                                <td colspan="4">
+                                                                    <button onclick="BillSave();" class="btns btn-primary">SUBMIT</button>
+                                                                    <button class="btns btn-primary" onclick="ClearAll();">CANCEL</button>
+
+                                                                </td>
+                                                            </tr>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="ModalSurgicalSelect" style="display: none; width: 600px;font-family:'Microsoft Sans Serif'; font-size: small;">
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="panel-body">
+                                            <div class="row">
+                                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                                    <table class="table table-bordered table-striped dataTable table-reflow tableHB" id="tblSelectSurgicalItem" style="color: black;margin-left: 5px;">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>S.NO</th>
+                                                                <th>Product Name</th>
+                                                                <th>Model Name</th>
+                                                                <th>Model No</th>
+                                                                <th>Rate</th>
+                                                                <th>Stock</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

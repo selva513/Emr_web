@@ -1,0 +1,262 @@
+﻿
+@{
+    ViewData["Title"] = "IPRegstrationViews";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<style>
+    .patient {
+        padding: 15px;
+        width: 210%;
+        max-width: 100% !important;
+        margin-left: 70px;
+        margin: auto;
+    }
+
+    label {
+        font-size: 14px;
+        font-weight: 600;
+        font-style: serif;
+    }
+
+    .btn {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        transition: box-shadow 0.28s;
+    }
+
+    .btn-primary {
+        color: #fff;
+        background-color: #337ab7;
+        border-color: #337ab7;
+        box-shadow: none;
+        border-width: 0 !important;
+        overflow: hidden;
+        position: relative;
+        user-select: none;
+        padding: 9px 14px 8px 14px;
+    }
+</style>
+<script>
+    function SearchPatientPopup() {
+
+
+        $('#modal-PatientSearch').modal({
+            backdrop: 'static',
+            keyboard: false
+        })
+    }
+</script>
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="panel panel-default DivBox" style="background-color: white;">
+                    <div class="panel-body">
+                        <br />
+
+                        <div class="row">
+                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                <input type="text" class="form-control " />
+
+                            </div>
+                            <div class="col-xs-1 col-sm-1 col-md-1">
+                                <img src="~/images/search_icon.png" onclick="SearchPatientPopup();">
+                            </div>
+
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <label>UHID</label><span style="color:red">*</span>
+                                <input type="text" class="form-control" />
+
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <label>First Name </label><span style="color:red">*</span>
+                                <input type="text" class="form-control" />
+
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <label>Last Name </label><span style="color:red">*</span>
+                                <input type="text" class="form-control" />
+
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <label>
+                                    Gender
+                                </label>
+                                <input type="text" class="form-control" />
+
+                            </div>
+                        </div>
+                        <div class="row">
+
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <label>Date Of Birth </label>
+                                <input type="text" class="form-control" />
+
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <label>Age (Y-M-D)</label><span style="color:red">*</span>
+                                <input type="text" class="form-control" />
+
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <label>Address</label>
+                                <input type="text" class="form-control" />
+
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <label>
+                                    Address1
+                                </label>
+                                <input type="text" class="form-control" />
+
+                            </div>
+                        </div>
+                        <div class="row">
+
+
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <label>City </label>
+                                <input type="text" class="form-control" />
+
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <label>
+                                    State
+                                </label>
+                                <input type="text" class="form-control" />
+
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <label>Country</label>
+                                <input type="text" class="form-control" />
+
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <label>
+                                    Pincode
+                                </label>
+                                <input type="text" class="form-control" />
+
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <label>Email </label>
+                                <input type="text" class="form-control" />
+
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <label>
+                                    Phone
+                                </label>
+                                <input type="text" class="form-control" />
+
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <label>Cell</label>
+                                <input type="text" class="form-control" />
+
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3">
+                                <label>
+                                    Blood Group
+                                </label>
+                                <input type="text" class="form-control" />
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-3 col-sm-3 col-md-3">
+                            <label>
+                                Select Bed
+                            </label><span style="color:red">*</span>
+                            <select class="form-control">
+                                <option>--Select--</option>
+                            </select>
+
+                        </div>
+                    </div>
+                    <br />
+                    <div class="row">
+                        <div class="col-xs-1 col-sm-1 col-md-1">
+                            <button class="btn btn-primary">Register</button>
+                        </div>
+                        <div class="col-xs-1 col-sm-1 col-md-1">
+                            <button class="btn btn-primary" style="margin-left:-33px">Cancel</button>
+                        </div>
+                    </div>
+                    <br />
+
+
+
+                </div>
+
+                <div class="modal fade" id="modal-PatientSearch">
+                    <div class="modal-dialog modal-lg patient">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Patient Search</h4>
+                                @*<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>*@
+                            </div>
+                            <div class="modal-body eventForm " style=" height: 400px;">
+                                <div class="panel-body">
+                                    <div class="row">
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <div class="form-group">
+                                                <input type="text" id="txtPatientSearch" autocomplete="off" placeholder="Search" class="form-control" style="margin-left: 5px;" />
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-1-5 col-sm-1-5 col-md-1-5">
+                                            <label>Today Patient</label>
+                                            <input type="checkbox" />
+                                        </div>
+                                        @*<div class="col-xs-1 col-sm-1 col-md-1">
+                                                <input type="checkbox" />
+                                            </div>*@
+                                        <div class="col-xs-2 col-sm-2 col-md-2">
+                                            <label>All Patient</label>
+                                            <input type="checkbox" />
+                                        </div>
+
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <table class="table table-bordered table-striped dataTable table-reflow tableHB" id="tblHISPatient" style="color: black;margin-left: 5px;">
+                                                <thead>
+                                                    <tr>
+                                                        <th>S.No</th>
+                                                        <th>Pat ID</th>
+                                                        <th>Pat Name</th>
+                                                        <th>Gender</th>
+                                                        <th>Relation Type</th>
+                                                        <th>City</th>
+                                                        <th>Contact</th>
+                                                        <th>Visit Id</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- /.modal-content -->
+                            </div>
+                            <!-- /.modal-dialog -->
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

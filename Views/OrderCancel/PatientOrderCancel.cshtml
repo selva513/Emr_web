@@ -1,0 +1,735 @@
+﻿
+@{
+    ViewData["Title"] = "PatientOrderCancel";
+}
+@using Syncfusion.EJ2
+@using Newtonsoft.Json
+
+<link href="~/AutoComplete/jquery-ui_1.11.4.css" rel="stylesheet" />
+<script src="~/AutoComplete/jquery-1.10.2.js"></script>
+<script src="~/AutoComplete/jquery-ui_1.11.4.js"></script>
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        GetPatientOrderDetails();
+        localStorage.setItem('TotalCancelledValue', 0);
+        localStorage.setItem('SNo', 0);
+        localStorage.setItem('RowNumber', 0);
+        //var dialog = document.getElementById('myFirstDialog');    
+        //document.getElementById('show').onclick = function () {
+        //    dialog.style.display = 'block';    
+        //};    
+        //document.getElementById('hide').onclick = function() {    
+        //    dialog.style.display = 'none';
+        //};    
+    });
+    function GetReasonDialog() {
+        $('#modal-default').modal('show');
+    }
+
+    function GetPatientOrderDetails() {
+        try {
+            var html = "";
+            var response = getValues("/GetOrderDetails");
+            //var response = getValues("/OrderCancel/GetOrderDetails");
+            if (response.OrdHeader.length > 0) {
+                var Current_Refund = response.OrdHeader[0].OP_Current_Refund;
+                $("#lblPatAmount").text(Current_Refund);
+            }
+            if (response.OrdDet.length > 0) {
+                var OrdDet = response.OrdDet;
+                var GrandTotal = 0;
+                var TotalDiscount = 0;
+                $('#tbl_CancelOrdDetails tbody').empty();
+                for (var i = 0; i < OrdDet.length; i++) {
+                    var temp = "";
+                    var SNo = OrdDet[i].SNo;
+                    var OrderId = OrdDet[i].OrderId;
+                    var ServiceName = OrdDet[i].TestName;
+                    var Qty = OrdDet[i].Ordqty;
+                    var Price = OrdDet[i].Ordprice;
+                    var Discount = OrdDet[i].Orddiscount;
+                    var Total = OrdDet[i].Ordtotal;
+                    var PackageID = OrdDet[i].PackageID;
+                    var CancelReason = OrdDet[i].CancelReason;
+                    var DoctorID = OrdDet[i].DoctorID;
+                    var TestID = OrdDet[i].TestID;
+                    var IsCancelled = OrdDet[i].IsCancelled;
+                    var Stylerow = "";
+                    if (i % 2 != 0)
+                        Stylerow = "<tr onclick='RowSelected(this);' style='background-color: #8080800d;'>"
+                    else 
+                        Stylerow = "<tr onclick='RowSelected(this);' >"
+
+                    if (CancelReason == null || CancelReason == "null") {
+                        CancelReason = "";
+                    }
+                    //html += "<tr onclick='RowSelected(this);' style=''>";
+                    
+                    html += Stylerow;
+                    html += "<td>" + SNo + "</td>";
+                    html += "<td>" + ServiceName + "</td>";
+                    html += "<td>" + Qty + "</td>";
+                    html += "<td>" + Price + "</td>";
+                    html += "<td>" + Discount + "</td>";
+                    if (IsCancelled) {
+                        //html += "<td> <input type='checkbox' checked disabled/> </td>";
+                        html += "<td style='color:red'>Cancelled<input type='checkbox' checked style='display:none;'  /></td>";
+                    }
+                    else {
+                        if (TestID == "4245") {
+                            html += "<td> <input type='checkbox' disabled /> </td>";
+                        }
+                        else {
+                            html += "<td> <input type='checkbox' onchange='GetReasonDialog();' /> </td>";
+                        }
+                        GrandTotal = GrandTotal + Total;
+                        TotalDiscount = TotalDiscount + Discount; 
+                    }
+                    html += "<td>" + CancelReason + "</td>";
+                    html += "<td style='display:none;'>" + OrderId + "</td>";
+                    html += "<td style='display:none;'>" + TestID + "</td>";
+                    html += "<td style='display:none;'>" + PackageID + "</td>";
+                    html += "<td style='display:none;'>" + Total + "</td>";
+                    html += "<td style='display:none;'>" + DoctorID + "</td>";
+                    html += "</tr>";
+                }
+                $('#txtTotal').val(GrandTotal);
+                $('#txtTotalOrder').val(GrandTotal);
+                $('#txtTotalDiscount').val(TotalDiscount);
+            }
+            else {
+                $('#tbl_CancelOrdDetails tbody').empty();
+                html += "<tr>";
+                html += "<td style='text-align:center;' colspan='9'>No Records Found</td>";
+                html += "</tr>";
+                $('#txtTotal').val('');
+            }
+
+            $('#tbl_CancelOrdDetails tbody').html(html);
+        }
+        catch (e) {}
+    }
+
+    function RowSelected(SelectedRow) {
+        try {
+            //var row = SelectedRow.parentNode.parentNode;
+            var SNo = SelectedRow.cells[0].innerHTML;
+            var OrderId = SelectedRow.cells[7].innerHTML;
+            var TestID = SelectedRow.cells[8].innerHTML;
+            var RowNo = SelectedRow.rowIndex;
+
+            localStorage.setItem('SNo', SNo);
+            localStorage.setItem('RowNumber', RowNo);
+            //window.location.href = "OrderCancel/PatientOrderCancel/" + OrderId + "";
+            //window.location.href = "PatientOrderCancel?OrderId=" + OrderId + "&PatSeqID=" + PatSeqID + "";
+        }
+        catch (e) {}
+    }
+
+    //function RowDataSelected(SelectedRow) {
+    //    try {
+    //        //var row = SelectedRow.parentNode.parentNode;
+    //        var SNo = SelectedRow.cells[0].innerHTML;
+    //        var OrderId = SelectedRow.cells[7].innerHTML;
+    //        var TestID = SelectedRow.cells[8].innerHTML;
+    //        //window.location.href = "OrderCancel/PatientOrderCancel/" + OrderId + "";
+    //        //window.location.href = "PatientOrderCancel?OrderId=" + OrderId + "&PatSeqID=" + PatSeqID + "";
+    //    }
+    //    catch (e) {}
+    //}
+
+    function CancelService() {
+
+        CalculateTotal('Total');
+        var Total = 0;
+        var OrderId = sessionStorage.getItem("CancelOrderId");
+        OrderId = parseInt(OrderId);
+        var AmountToPay = parseFloat($("#txtAmountToPay").val());
+        var TotalCancelValue = parseFloat($("#txtTotalCancel").val());
+        var Cash = $("#txtCash").val();
+        var DebitCardAmt = $("#txtCard").val();
+        var DebitCardNo = $("#txtCard1").val();
+        var Bank = $("#txtBank").val();
+        var Bank1 = $("#txtBank1").val();
+        var Cheque = $("#txtCheque").val();
+        var ChequeNo = $("#txtCheque1").val();
+
+        if (Cash == null || Cash == "")
+            Cash = 0;
+        else
+            Cash = parseFloat(Cash);
+
+        if (DebitCardAmt == null || DebitCardAmt == "")
+            DebitCardAmt = 0;
+        else
+            DebitCardAmt = parseFloat(DebitCardAmt);
+
+        if (DebitCardNo == null || DebitCardNo == "")
+            DebitCardNo = 0;
+        else
+            DebitCardNo = parseInt(DebitCardNo);
+
+        if (Bank == null || Bank == "")
+            Bank = 0;
+        else
+            Bank = parseFloat(Bank);
+
+        if (Bank1 == null || Bank1 == "")
+            Bank1 = 0;
+        else
+            Bank1 = parseInt(Bank1);
+
+        if (Cheque == null || Cheque == "")
+            Cheque = 0;
+        else
+            Cheque = parseFloat(Cheque);
+
+        if (ChequeNo == null || ChequeNo == "")
+            ChequeNo = 0;
+        else
+            ChequeNo = parseInt(ChequeNo);
+
+        if (Cash == "" && DebitCardAmt == ""  && Bank == ""  && Cheque == "") {
+            alert("Please Enter A Valid Amount");
+            return;
+        }
+        else {
+            Total = Cash + DebitCardAmt + Bank + Cheque;
+        }
+
+        
+        var tblCancel = document.getElementById("tbl_CancelOrdDetails");
+        var rowCount = tblCancel.rows.length;
+        //var rowCount = $("#tbl_CancelOrdDetails").length;
+        //var rowCount = $("#tbl_CancelOrdDetails tbody tr").length;
+        var tData = $("#tbl_CancelOrdDetails tbody");
+        var OrderDetails = new Array();
+
+        for (var i = 1; i < rowCount; i++) {
+            var Details = new Object();
+            var rowOrder = tblCancel.rows[i];
+            var Cancel = rowOrder.cells[5].getElementsByTagName("input")[0].checked;
+            var Reason = rowOrder.cells[6].innerHTML;
+            var OrderId = rowOrder.cells[7].innerHTML;
+            var TestId = rowOrder.cells[8].innerHTML;
+            var Amount = rowOrder.cells[10].innerHTML;
+
+            if (Cancel) {
+
+                if(Reason == null || Reason == "") {
+                    Details.OrderId = OrderId;
+                    Details.TestID = TestId;
+                    Details.CancelReason = Reason;
+                    Details.TestAmount = Amount;
+                    //Details.AmountToPay = AmountToPay;
+                    //Details.TotalCancelAmount = TotalCancelValue;
+                    //Details.TotalRefundAmount = Total;
+                    OrderDetails.push(Details);
+                }
+            }
+        }
+
+        if (OrderDetails.length > 0) {
+            var sendJsonData = {
+                OrderDetails: OrderDetails,
+                CashReceivedAmt: Cash,
+                CreditCardAmt: 0,
+                DebitCardAmt: DebitCardAmt,
+                ThroughBankAmt: Bank,
+                ChequeAmt: Cheque,
+                CreditCardNumber: 0,
+                DebitCardNumber: DebitCardNo,
+                CreditCardTransactionID: 0,
+                DebitCardTransactionID: 0,
+                BankName: "",
+                BankTransactionID: 0,
+                ChequeNo: ChequeNo,
+                ChequeDate: "",
+                RECIEVEDAMT: Total,
+                PENDINGTOPAY: AmountToPay,
+                Ord_Grandtotal: TotalCancelValue,
+                OrderID: OrderId 
+            };
+        }
+        //var sendJsonData = OrderDetails;
+
+        $.ajax({
+            type: 'POST',
+            url: rootUrl + "/api/OrderApi/CancelService",
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(sendJsonData),
+            dataType: "json",
+            async: true,
+            success: function (data) {
+                if (data == 'Success') {
+                    alert('Cancelled Successfully');
+                    window.location.href = "/OrderCancel/PatientOrderCancel";
+                }
+            },
+            failure: function (response) {
+            },
+            error: function (response) {
+            }
+        });
+
+    }
+
+    function SaveReason() {
+        try {
+            var Reason = $("#txtCancelReason").val();
+            var tblCancel = document.getElementById("tbl_CancelOrdDetails");
+            var RowNumber = localStorage.getItem('RowNumber');
+            var CancelAmount = 0;
+            var PreviousCancelValue = 0;
+            var TotalCancelValue = 0;
+            if (Reason == null || Reason == "") {
+                alert("Please Enter Valid Reason");
+                return;
+            }
+            if (RowNumber != "" && RowNumber != null) {
+                RowNumber = parseInt(RowNumber);
+                var rowData = tblCancel.rows[RowNumber];
+                rowData.cells[6].innerHTML = Reason;
+                rowData.cells[5].getElementsByTagName("input")[0].disabled = true;
+                CancelAmount = rowData.cells[10].innerHTML;
+                if (CancelAmount == null || CancelAmount == "") {
+                    CancelAmount = 0;
+                }
+                else {
+                    CancelAmount = parseInt(CancelAmount);
+                }
+            }
+
+            PreviousCancelValue = localStorage.getItem('TotalCancelledValue');
+            if (PreviousCancelValue == null || PreviousCancelValue == "")
+                PreviousCancelValue = 0;
+            else
+                PreviousCancelValue = parseInt(PreviousCancelValue)
+
+            TotalCancelValue = parseInt(PreviousCancelValue + CancelAmount);
+            $("#txtTotalCancel").val(TotalCancelValue);
+            $("#txtAmountToPay").val(TotalCancelValue);
+            $("#txtAmountToPay").prop('disabled',false);
+            $("#btnVerify").prop('disabled',false);
+            localStorage.setItem('TotalCancelledValue', TotalCancelValue);
+            $("#txtCancelReason").val('');
+            $('#modal-default').modal('hide');
+        }
+        catch (e) {
+
+        }
+    }
+
+    function Reload() {
+        window.location.href = "/OrderCancel/PatientOrderCancel";
+    }
+
+    function UndoSelection() {
+        var RowNumber = localStorage.getItem('RowNumber');
+        var tblCancel = document.getElementById("tbl_CancelOrdDetails");
+        $("#txtCancelReason").val('');
+        if (RowNumber != "" && RowNumber != null) {
+            RowNumber = parseInt(RowNumber);
+            var rowData = tblCancel.rows[RowNumber];
+            rowData.cells[5].getElementsByTagName("input")[0].checked = false;
+        }
+    }
+
+    function DisplayCash() {
+        var CancelledAmount = $("#txtTotalCancel").val();
+        var AmountToPay = $("#txtAmountToPay").val();
+        if (CancelledAmount == null || CancelledAmount == "") {
+            alert("No Test Selected For Cancellation");
+            return;
+        }
+        else if (AmountToPay == null || AmountToPay == "") {
+            alert("Please Enter A Valid Amount");
+            return;
+        }
+        else {
+            AmountToPay = parseInt(AmountToPay);
+            $("#txtTotalCollect").val(AmountToPay);
+            $("#txtCash").val(AmountToPay);
+            $("#CashCollection").show();
+        }
+    }
+
+
+    function CalculateTotal(type) {
+        var RECIEVEDAMT = 0;
+        var PENDINGTOPAY = 0;
+        var Currentpendingamount = 0;
+        var RECIEVEDAMT = 0;
+        var OP_Current_Refund = 0;
+        //var OP_Old_Refund = parseFloat($("#lblRefundAmount").text());
+        //var OP_Old_Due = parseFloat($("#lblCurrentAmount").text());
+        var CreditCardAmt = 0;
+        var CashReceivedAmt = 0;
+        var DebitCardAmt = 0;
+        var ThroughBankAmt = 0;
+        var ChequeAmt = 0;
+
+
+        if ($("#txtCash").val().length > 0)
+            CashReceivedAmt = $("#txtCash").val();
+        if ($("#txtCard").val().length > 0)
+            DebitCardAmt = $("#txtCard").val();
+        if ($("#txtBank").val().length > 0)
+            ThroughBankAmt = $("#txtBank").val();
+        if ($("#txtCheque").val().length > 0)
+            ChequeAmt = $("#txtCheque").val();
+
+        var AmountToPay = $("#txtAmountToPay").val();
+        AmountToPay = parseFloat(AmountToPay);
+        var RECIEVEDAMT = parseFloat(CashReceivedAmt) + parseFloat(DebitCardAmt) + parseFloat(ThroughBankAmt) + parseFloat(ChequeAmt) + parseFloat(CreditCardAmt);
+        RECIEVEDAMT = parseFloat(RECIEVEDAMT);
+        if (RECIEVEDAMT > AmountToPay) {
+            alert('Value Cannot Be Greater Than Amount To Pay');
+            if (type != null && type != "") {
+                switch (type) {
+                case 'Cash':
+                    $("#txtCash").val("");
+                    break;
+                case 'Card':
+                    $("#txtCard").val("");
+                    break;
+                case 'Bank':
+                    $("#txtBank").val("");
+                    break;
+                case 'Cheque':
+                    $("#txtCheque").val("");
+                    break;
+                }
+            }
+            
+            return;
+        }
+        else {
+            $("#txtTotalCollect").val(RECIEVEDAMT);
+        }
+    }
+
+    function isNumberKey(evt) {
+        var charCode = (evt.which) ? evt.which : event.keyCode
+        if (charCode > 32 && (charCode < 48 || charCode > 57) || (charCode == 32))
+
+            return false;
+
+        return true;
+    }
+</script>
+
+<script>
+    function getValues(url) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+    function postValues(url, jdata) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(jdata),
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+</script>
+
+<style>
+    #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loadingcontent {
+        display: table;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loadingspinner {
+        display: table-cell;
+        vertical-align: middle;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+        padding-top: 80px;
+    }
+</style>
+
+<style type="text/css">
+    /*tr:nth-child(even) {
+        background-color: #8080800d;
+    }*/
+    body {
+        font-family:serif;
+        font-size:14px;
+    }
+    .txtValue{
+        border:none;
+        text-align:right;
+    }
+</style>
+
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div id="loading">
+            <div id="loadingcontent">
+                <div id="loadingspinner">
+                    <img src="~/images/loading.gif" style="width:100px;height:100px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-primary">
+                        <div class="card-header" style="margin-top:15px;">
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <h3 class="card-title">Patient Order Cancel</h3>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="card-title" style="font-weight:400;">UHID :</label>
+                                    <label id="lbl_UHID" style="margin-left:3px;" class="card-title">SSSH/8348</label>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="card-title" style="font-weight:400;">Patient Name :</label>
+                                    <label id="lbl_PatientName" style="margin-left:3px;" class="card-title">Habibur Rahman M</label>
+                                </div>
+                                <div class="col-md-3">
+                                    <label id="lblDue" style="margin-left:3px;display:none;" class="card-title">Due Amount :</label>
+                                    <label id="lblRefund" style="margin-left:3px;" class="card-title">Refund Amount :</label>
+                                    <label id="lblPatAmount" style="margin-left:3px;" class="card-title"></label>
+                                </div>
+                                <div class="col-md-1">
+                                    <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="row" style="margin-top:20px;margin-left:10px;margin-right:10px;">
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <table id="tbl_CancelOrdDetails" class="table table-bordered table-hover">
+                                        <thead style="background-color:#7e8ae33b;font-weight:bold;">
+                                            <tr>
+                                                <td>S. No</td>
+                                                <td>SERVICE NAME</td>
+                                                <td>QTY</td>
+                                                <td>PRICE</td>
+                                                <td>DISCOUNT</td>
+                                                <td>CANCEL</td>
+                                                <td>REASON FOR CANCELLATION</td>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>1</td>
+                                                <td>Blood Test</td>
+                                                <td>1</td>
+                                                <td>200</td>
+                                                <td>10</td>
+                                                <td><input type="checkbox" oninput="GetReasonDialog();"/></td>
+                                                <td>Already taken</td>
+                                            </tr>
+                                            <tr>
+                                                <td>2</td>
+                                                <td>Corona Test</td>
+                                                <td>1</td>
+                                                <td>2000</td>
+                                                <td>100</td>
+                                                <td><input type="checkbox" oninput="GetReasonDialog();" /></td>
+                                                <td>Already taken</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <div class="row">
+                                        <div class="col-md-1">
+                                            <label class="control-label" style="float:left;margin-top:8px;">Total</label>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input id="txtTotal" type="text" class="form-control" disabled="disabled" />
+                                        </div>
+                                    </div>
+                                    <div class="row" style="margin-bottom:10px;">
+                                        <div class="col-md-2">
+                                            <input type="button" value="Cancel" class="btn btn-primary" onclick="Reload();" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" style="margin-top:20px;margin:10px;">
+                            <div class="col-xs-5 col-sm-5 col-md-5">
+                                <div id="CashCollection" style="display:none;border:solid 1px black;padding:10px;">
+                                    <div class="row">
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <label>Cash</label>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <input id="txtCash" class="form-control" type="text" style="width:120px;" placeholder="Enter Amount"
+                                                   onchange="CalculateTotal('Cash');" onkeypress='return isNumberKey(event)'  />
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <label>Card</label>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <input id="txtCard" class="form-control" type="text" style="width:120px;" onchange="CalculateTotal('Card');"
+                                                   onkeypress='return isNumberKey(event)' placeholder="Enter Amount"/>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <input id="txtCard1" class="form-control" type="text" />
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <label>Bank</label>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <input id="txtBank" class="form-control" type="text" style="width:120px;" placeholder="Enter Amount"
+                                                   onkeypress='return isNumberKey(event)' onchange="CalculateTotal('Bank');"/>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <input id="txtBank1" class="form-control" type="text" />
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <label>Cheque</label>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <input id="txtCheque" class="form-control" style="width:120px;" type="text" placeholder="Enter Amount"
+                                                   onkeypress='return isNumberKey(event)' onchange="CalculateTotal('Cheque');"/>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <input id="txtCheque1" class="form-control" type="text" />
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <label>Total</label>
+                                        </div>
+                                        <div class="col-xs-4 col-sm-4 col-md-4">
+                                            <input id="txtTotalCollect" disabled class="form-control" type="text" style="width:120px;"/>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="margin-bottom:20px;">
+                                        <div class="col-xs-3 col-sm-3 col-md-3">
+
+                                        </div>
+                                        <div class="col-xs-2 col-sm-2 col-md-2">
+                                            <input type="button" value="Submit" class="btn btn-primary" onclick="CancelService();" />
+                                        </div>
+                                        <div class="col-xs-2 col-sm-2 col-md-2">
+                                            <input type="button" value="Cancel" class="btn btn-primary" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                           
+                            <div class="col-md-2">
+
+                            </div>
+                            <div class="col-xs-5 col-sm-5 col-md-5" style="border:solid 1px black;">
+                                <div class="row" style="margin:10px;margin-top:50px;">
+                                    <table border="1" width="100%">
+                                        <tbody>
+                                            <tr>
+                                                <td><label>Total Order Value</label></td>
+                                                <td width="50%"><input id="txtTotalOrder" disabled type="text" class="form-control txtValue" style="margin:0px;" /></td>
+                                            </tr>
+                                            <tr>
+                                                <td><label>Total Discounted Value</label></td>
+                                                <td><input id="txtTotalDiscount" type="text" disabled class="form-control txtValue" style="margin:0px;" /></td>
+                                            </tr>
+                                            <tr>
+                                                <td><label>Cancelled Order Value</label></td>
+                                                <td><input id="txtTotalCancel" type="text" disabled class="form-control txtValue" style="margin:0px;" /></td>
+                                            </tr>
+                                            <tr>
+                                                <td><label>Amount to pay for Cancellation</label></td>
+                                                <td><input id="txtAmountToPay" disabled type="text" class="form-control txtValue" 
+                                                           style="margin:0px;" onkeypress='return isNumberKey(event)' /></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <div class="row" style="margin-top:10px;">
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <input type="button" class="btn btn-primary" value="Save" style="display:none;" />
+                                            <input type="button" id="btnVerify" disabled value="Save & Verify" class="btn btn-primary" onclick="DisplayCash();" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="modal fade" id="modal-default">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Reason</h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12">
+                            <div class="form-group">
+                                @*<label class="control-label" style="color: black;float:left;">
+                                    Reason For Cancellation
+                                </label>*@
+                                <textarea id="txtCancelReason" autofocus class="form-control" 
+                                          placeholder="Reason For Cancellation" autocomplete="off"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal" onclick="UndoSelection();">Cancel</button>
+                    <button type="button" id="btndocverify" onclick="SaveReason();" class="btn btn-primary">Save</button>
+                </div>
+            </div>
+            <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+    </div>
+</div>

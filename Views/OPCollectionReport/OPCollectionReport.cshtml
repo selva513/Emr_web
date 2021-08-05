@@ -1,0 +1,874 @@
+﻿@{
+    ViewData["Title"] = "OP Collection Report";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loading1 {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loadingcontent {
+        display: table;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loadingspinner {
+        display: table-cell;
+        vertical-align: middle;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+        padding-top: 80px;
+    }
+</style>
+
+<style>
+    .btn-info {
+        color: #fff;
+        background-color: #337ab7;
+        border-color: #337ab7;
+        box-shadow: none;
+        border-width: 0 !important;
+        overflow: hidden;
+        position: relative;
+        user-select: none;
+        /*padding: 9px 14px 8px 14px;*/
+    }
+</style>
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        DateBind();
+    });
+    function DateBind() {
+        try {
+            var today = new Date();
+            var currentyear = today.getFullYear();
+            var onetwentyyearback = currentyear - 120;
+            var daterange = onetwentyyearback + ':' + currentyear;
+
+            $('#txtOPfromdate').datepicker({
+                changeMonth: true,
+                changeYear: true,
+                yearRange: daterange,
+                dateFormat: 'dd/mm/yy',
+                endDate: "today",
+                maxDate: today,
+            });
+            $('#txtOPtodate').datepicker({
+                changeMonth: true,
+                changeYear: true,
+                yearRange: daterange,
+                dateFormat: 'dd/mm/yy',
+                endDate: "today",
+                maxDate: today,
+            });
+            $("#txtOPfromdate").datepicker('setDate', new Date());
+            $("#txtOPtodate").datepicker('setDate', new Date());
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+    function PrintOPCollection() {
+        try {
+            var startdate = $("#txtOPfromdate").val();
+            var enddate = $("#txtOPtodate").val();
+            if (startdate == "" || enddate == "") {
+                alert('Please Enter Date');
+            }
+            else {
+                $.ajax({
+                    url: rootUrl + "/api/OPCollectionApi/GetOPCollectionReport",
+                    type: "GET",
+                    data: {
+                        fromdate: startdate,
+                        todate: enddate
+                    },
+                    dataType: "json",
+                    beforeSend: function () { $("#loading").css("display", "block"); },
+                    success: function (response) {
+                        var AllGrandtot = 0;
+                        var AllGranddisc = 0;
+                        var AllNettot = 0;
+                        var AllRECIEVEDAMT = 0;
+                        var AllPending = 0;
+                        var AllRefund = 0;
+                        var AllCash = 0;
+                        var AllCCard = 0;
+                        var AllDCard = 0;
+                        var AllBank = 0;
+                        var AllCheque = 0;
+                        var html = "";
+                        var Sno = 0;
+
+                        var Alllen = $(response).find("dtcollectionall").length;
+                        var Duelen = $(response).find("dtcollectionallDue").length;
+                        var Refundlen = $(response).find("dtcollectionRefund").length;
+                        if (Alllen > 0 || Duelen > 0 || Refundlen > 0) {
+                            if (Alllen > 0) {
+                                html += "<div style='width: 100%;font-size:23px;text-align:center;'><span> OP Collection Report</span></div>";
+                                html += "<div style='width: 100%;text-align:center;'><span style='font-size:15px;'>From &nbsp;: &nbsp;" + startdate + " &nbsp;&nbsp;&nbsp;&nbsp;  To&nbsp;:&nbsp;" + enddate + "</span> </div>";
+                                html += "<table class='table  table-bordered table-hover dataTable table-reflow' cellpadding='0' border='0'  cellspacing='0' style='color:black;font-size: 14px; width: 100%;'>";
+                                html += "<thead><th style='Width:2%;'>S.No</th><th style='Width:8%;'>UHID</th><th style='Width:9%;'>Name</th><th style='Width:5%;'>Order ID</th><th style='Width:7%;'>Tot.Amt</th>";
+                                html += "<th style='Width:7%;'>Disc Amt</th><th style='Width:7%;'>Net Amt</th><th style='Width:7%;'>Rec Amt</th><th style='Width:7%;'>Pending Amt</th><th style='Width:7%;'>Refund Amt</th>";
+                                html += "<th style='Width:7%;'>Cash Amt</th><th style='Width:7%;'>CCard Amt</th><th style='Width:7%;'>DCard Amt</th><th style='Width:7%;'>Bank Amt</th><th style='Width:7%;'>Cheque Amt</th></thead>";
+                                html += "<tr><td colspan='16' style='font-weight: bold;border-top: solid 1px black;'> </td></tr>";
+                                $(response).find("dtcollectionall").each(function () {
+                                    Sno = Sno + 1;
+                                    var PatientID = ($(this).find("PatientID").text());
+                                    var FirstName = ($(this).find("FirstName").text());
+                                    var SecondName = ($(this).find("SecondName").text());
+                                    var OrderID = ($(this).find("OrderID").text());
+                                    var Ord_Grandtotal = ($(this).find("Ord_Grandtotal").text());
+                                    if (Ord_Grandtotal == "") {
+                                        Ord_Grandtotal = 0;
+                                    }
+                                    AllGrandtot = AllGrandtot + parseFloat(Ord_Grandtotal);
+                                    var Ord_Granddiscount = ($(this).find("Ord_Granddiscount").text());
+                                    if (Ord_Granddiscount == "") {
+                                        Ord_Granddiscount = 0;
+                                    }
+                                    AllGranddisc = AllGranddisc + parseFloat(Ord_Granddiscount);
+                                    var Ord_nettotal = ($(this).find("Ord_nettotal").text());
+                                    if (Ord_nettotal == "") {
+                                        Ord_nettotal = 0;
+                                    }
+                                    AllNettot = AllNettot + parseFloat(Ord_nettotal);
+                                    var RECIEVEDAMT = ($(this).find("RECIEVEDAMT").text());
+                                    if (RECIEVEDAMT == "") {
+                                        RECIEVEDAMT = 0;
+                                    }
+                                    AllRECIEVEDAMT = AllRECIEVEDAMT + parseFloat(RECIEVEDAMT);
+                                    var PENDINGTOPAY = ($(this).find("PENDINGTOPAY").text());
+                                    if (PENDINGTOPAY == "") {
+                                        PENDINGTOPAY = 0;
+                                    }
+                                    AllPending = AllPending + parseFloat(PENDINGTOPAY);
+                                    var Currentpendingamount = ($(this).find("Currentpendingamount").text());
+                                    if (Currentpendingamount == "") {
+                                        Currentpendingamount = 0;
+                                    }
+                                    var OP_RefundAmt = ($(this).find("OP_RefundAmt").text());
+                                    if (OP_RefundAmt == "") {
+                                        OP_RefundAmt = 0;
+                                    }
+                                    AllRefund = AllRefund + parseFloat(OP_RefundAmt);
+                                    var OP_Current_Refund = ($(this).find("OP_Current_Refund").text());
+                                    if (OP_Current_Refund == "") {
+                                        OP_Current_Refund = 0;
+                                    }
+                                    var CashReceivedAmt = ($(this).find("CashReceivedAmt").text());
+                                    if (CashReceivedAmt == "") {
+                                        CashReceivedAmt = 0;
+                                    }
+                                    AllCash = AllCash + parseFloat(CashReceivedAmt);
+                                    var CreditCardAmt = ($(this).find("CreditCardAmt").text());
+                                    if (CreditCardAmt == "") {
+                                        CreditCardAmt = 0;
+                                    }
+                                    AllCCard = AllCCard + parseFloat(CreditCardAmt);
+                                    var DebitCardAmt = ($(this).find("DebitCardAmt").text());
+                                    if (DebitCardAmt == "") {
+                                        DebitCardAmt = 0;
+                                    }
+                                    AllDCard = AllDCard + parseFloat(DebitCardAmt);
+                                    var ThroughBankAmt = ($(this).find("ThroughBankAmt").text());
+                                    if (ThroughBankAmt == "") {
+                                        ThroughBankAmt = 0;
+                                    }
+                                    AllBank = AllBank + parseFloat(ThroughBankAmt);
+                                    var ChequeAmt = ($(this).find("ChequeAmt").text());
+                                    if (ChequeAmt == "") {
+                                        ChequeAmt = 0;
+                                    }
+                                    AllCheque = AllCheque + parseFloat(ChequeAmt);
+
+                                    html += "<tr>";
+                                    html += "<td>" + Sno + "</td>";
+                                    html += "<td style='text-align:center;'>" + PatientID + "</td>";
+                                    html += "<td style='text-align:center;'>" + FirstName + "</td>";
+                                    html += "<td style='text-align:center;'>" + OrderID + "</td>";
+                                    html += "<td style='text-align:right;'>" + Ord_Grandtotal + "</td>";
+                                    html += "<td style='text-align:right;'>" + Ord_Granddiscount + "</td>";
+                                    html += "<td style='text-align:right;'>" + Ord_nettotal + "</td>";
+                                    html += "<td style='text-align:right;'>" + RECIEVEDAMT + "</td>";
+                                    html += "<td style='text-align:right;'>" + PENDINGTOPAY + "</td>";
+                                    html += "<td style='text-align:right;'>" + OP_RefundAmt + "</td>";
+                                    html += "<td style='text-align:right;'>" + CashReceivedAmt + "</td>";
+                                    html += "<td style='text-align:right;'>" + CreditCardAmt + "</td>";
+                                    html += "<td style='text-align:right;'>" + DebitCardAmt + "</td>";
+                                    html += "<td style='text-align:right;'>" + ThroughBankAmt + "</td>";
+                                    html += "<td style='text-align:right;'> " + ChequeAmt + "</td>";
+                                    html += "</tr>";
+                                });
+                                html += "<tr><td colspan='16' style='font-weight: bold;border-top: solid 1px black;'> </td></tr>";
+                                html += "<tr>";
+                                html += "<td colspan='4'>Total</td>";
+                                html += "<td style='text-align:right;'>" + AllGrandtot + "</td>";
+                                html += "<td style='text-align:right;'>" + AllGranddisc + "</td>";
+                                html += "<td style='text-align:right;'>" + AllNettot + "</td>";
+                                html += "<td style='text-align:right;'>" + AllRECIEVEDAMT + "</td>";
+                                html += "<td style='text-align:right;'>" + AllPending + "</td>";
+                                html += "<td style='text-align:right;'>" + AllRefund + "</td>";
+                                html += "<td style='text-align:right;'>" + AllCash + "</td>";
+                                html += "<td style='text-align:right;'>" + AllCCard + "</td>";
+                                html += "<td style='text-align:right;'>" + AllDCard + "</td>";
+                                html += "<td style='text-align:right;'>" + AllBank + "</td>";
+                                html += "<td style='text-align:right;'>" + AllCheque + "</td>";
+                                html += "</tr>";
+                                html += "<tr><td colspan='16' style='font-weight: bold;border-top: solid 1px black;'> </td></tr>";
+                                html += "</table>";
+                            }
+                            var AllDueCollected = 0;
+                            var AllDueDiscount = 0;
+                            var AllDueNetAmt = 0;
+                            var AllDuePending = 0;
+                            var AllDueCash = 0;
+                            var AllDueCcard = 0;
+                            var AllDueDcard = 0;
+                            var AllDueBank = 0;
+                            var AllDueCheque = 0;
+                            var Sno = 0;
+                            if (Duelen > 0) {
+                                html += "<div style='width: 100%;font-size:23px;text-align:center;'><span> Due Collection Report</span></div>";
+                                html += "<div style='width: 100%;text-align:center;'><span style='font-size:15px;'>From &nbsp;: &nbsp;" + startdate + " &nbsp;&nbsp;&nbsp;&nbsp;  To&nbsp;:&nbsp;" + enddate + "</span> </div>";
+                                html += "<table class='table  table-bordered table-hover dataTable table-reflow' cellpadding='0' border='0'  cellspacing='0' style='color:black;font-size: 14px; width: 100%;'>";
+                                html += "<thead><th  style='Width:2%;'>S.No</th><th  style='Width:15%;'>UHID</th><th  style='Width:15%;'>Name</th><th  style='Width:5%;'>Order ID</th><th  style='Width:7%;'>Collected Amt</th>";
+                                html += "<th  style='Width:7%;'>Disc Amt</th><th  style='Width:7%;'>Net Amt</th><th  style='Width:7%;'>Pending Amt</th>";
+                                html += "<th  style='Width:7%;'>Cash Amt</th><th  style='Width:7%;'>CCard Amt</th><th  style='Width:7%;'>DCard Amt</th><th  style='Width:7%;'>Bank Amt</th><th  style='Width:7%;'>Cheque Amt</th></thead>";
+                                html += "<tr><td colspan='14' style='font-weight: bold;border-top: solid 1px black;'> </td></tr>";
+                                $(response).find("dtcollectionallDue").each(function () {
+                                    Sno = Sno + 1;
+                                    var PatientID = ($(this).find("PatientID").text());
+                                    var FirstName = ($(this).find("FirstName").text());
+                                    var SecondName = ($(this).find("SecondName").text());
+                                    var OrderID = ($(this).find("OrderID").text());
+                                    var Due_CollectedAmt = ($(this).find("Due_CollectedAmt").text());
+                                    AllDueCollected = AllDueCollected + Due_CollectedAmt;
+                                    var Due_DiscountAmt = ($(this).find("Due_DiscountAmt").text());
+                                    AllDueDiscount = AllDueDiscount + Due_DiscountAmt;
+                                    var Due_NetAmt = ($(this).find("Due_NetAmt").text());
+                                    AllDueNetAmt = AllDueNetAmt + Due_NetAmt;
+                                    var Due_PendingAmt = ($(this).find("Due_PendingAmt").text());
+                                    AllDuePending = AllDuePending + Due_PendingAmt;
+                                    var Due_Bycash = ($(this).find("Due_Bycash").text());
+                                    AllDueCash = AllDueCash + Due_Bycash;
+                                    var Due_ByCCard = ($(this).find("Due_ByCCard").text());
+                                    AllDueCcard = AllDueCcard + Due_ByCCard;
+                                    var Due_ByDCard = ($(this).find("Due_ByDCard").text());
+                                    AllDueDcard = AllDueDcard + Due_ByDCard;
+                                    var Due_ByBank = ($(this).find("Due_ByBank").text());
+                                    AllDueBank = AllDueBank + Due_ByBank;
+                                    var Due_ByCheque = ($(this).find("Due_ByCheque").text());
+                                    AllDueCheque = AllDueCheque + Due_ByCheque;
+
+                                    html += "<tr>";
+                                    html += "<td>" + Sno + "</td>";
+                                    html += "<td style='text-align:center;'>" + PatientID + "</td>";
+                                    html += "<td style='text-align:center;'>" + FirstName + "</td>";
+                                    html += "<td style='text-align:center;'>" + OrderID + "</td>";
+                                    html += "<td style='text-align:right;'>" + Due_CollectedAmt + "</td>";
+                                    html += "<td style='text-align:right;'>" + Due_DiscountAmt + "</td>";
+                                    html += "<td style='text-align:right;'>" + Due_NetAmt + "</td>";
+                                    html += "<td style='text-align:right;'>" + Due_PendingAmt + "</td>";
+                                    html += "<td style='text-align:right;'>" + Due_Bycash + "</td>";
+                                    html += "<td style='text-align:right;'>" + Due_ByCCard + "</td>";
+                                    html += "<td style='text-align:right;'>" + Due_ByDCard + "</td>";
+                                    html += "<td style='text-align:right;'>" + Due_ByBank + "</td>";
+                                    html += "<td style='text-align:right;'>" + Due_ByCheque + "</td>";
+                                    html += "</tr>";
+
+                                });
+
+
+                                html += "<tr><td colspan='14' style='font-weight: bold;border-top: solid 1px black;'> </td></tr>";
+                                html += "<tr>";
+                                html += "<td colspan='4'>Total</td>";
+                                html += "<td style='text-align:right;'>" + AllDueCollected + "</td>";
+                                html += "<td style='text-align:right;'>" + AllDueDiscount + "</td>";
+                                html += "<td style='text-align:right;'>" + AllDueNetAmt + "</td>";
+                                html += "<td style='text-align:right;'>" + AllDuePending + "</td>";
+                                html += "<td style='text-align:right;'>" + AllDueCash + "</td>";
+                                html += "<td style='text-align:right;'>" + AllDueCcard + "</td>";
+                                html += "<td style='text-align:right;'>" + AllDueDcard + "</td>";
+                                html += "<td style='text-align:right;'>" + AllDueBank + "</td>";
+                                html += "<td style='text-align:right;'>" + AllDueCheque + "</td>";
+                                html += "</tr>";
+                                html += "<tr><td colspan='14' style='font-weight: bold;border-top: solid 1px black;'> </td></tr>";
+                                html += "</table>";
+                            }
+
+                            var AllRefundAmt = 0;
+                            var AllRefundcash = 0;
+                            var AllRefundCcard = 0;
+                            var AllRefundDcard = 0;
+                            var AllRefundBank = 0;
+                            var AllRefundCheque = 0;
+                            var Sno = 0;
+
+                            if (Refundlen > 0) {
+                                html += "<div style='width: 100%;font-size:23px;text-align:center;'><span> Refund Collection Report</span></div>";
+                                html += "<div style='width: 100%;text-align:center;'><span style='font-size:15px;'>From &nbsp;: &nbsp;" + startdate + " &nbsp;&nbsp;&nbsp;&nbsp;  To&nbsp;:&nbsp;" + enddate + "</span> </div>";
+                                html += "<table class='table  table-bordered table-hover dataTable table-reflow' cellpadding='0' border='0'  cellspacing='0' style='color:black;font-size: 14px; width: 100%;'>";
+                                html += "<thead><th style='Width:2%;'>S.No</th><th style='Width:15%;'>UHID</th><th style='Width:15%;'>Name</th><th style='Width:5%;'>Order ID</th><th style='Width:8%;'>Refund Amt</th>";
+                                html += "<th style='Width:8%;'>Cash Amt</th><th style='Width:8%;'>CCard Amt</th><th style='Width:8%;'>DCard Amt</th><th style='Width:8%;'>Bank Amt</th><th style='Width:8%;'>Cheque Amt</th></thead>";
+                                html += "<tr><td colspan='11' style='font-weight: bold;border-top: solid 1px black;'> </td></tr>";
+                                $(response).find("dtcollectionRefund").each(function () {
+                                    Sno = Sno + 1;
+                                    var PatientID = ($(this).find("PatientID").text());
+                                    var FirstName = ($(this).find("FirstName").text());
+                                    var SecondName = ($(this).find("SecondName").text());
+                                    var OrderID = ($(this).find("OrderID").text());
+                                    var RefundAmt = ($(this).find("RefundAmt").text());
+                                    AllRefundAmt = AllRefundAmt + RefundAmt;
+                                    var CASH_Payed = ($(this).find("CASH_Payed").text());
+                                    AllRefundcash = AllRefundcash + CASH_Payed;
+                                    var CCARD_Payed = ($(this).find("CCARD_Payed").text());
+                                    AllRefundCcard = AllRefundCcard + CCARD_Payed;
+                                    var DCARD_Payed = ($(this).find("DCARD_Payed").text());
+                                    AllRefundDcard = AllRefundDcard + DCARD_Payed;
+                                    var Bank_Payed = ($(this).find("Bank_Payed").text());
+                                    AllRefundBank = AllRefundBank + Bank_Payed;
+                                    var Cheque_Payed = ($(this).find("Cheque_Payed").text());
+                                    AllRefundCheque = AllRefundCheque + Cheque_Payed;
+
+                                    html += "<tr>";
+                                    html += "<td>" + Sno + "</td>";
+                                    html += "<td style='text-align:center;'>" + PatientID + "</td>";
+                                    html += "<td style='text-align:center;'>" + FirstName + "</td>";
+                                    html += "<td style='text-align:center;'>" + OrderID + "</td>";
+                                    html += "<td style='text-align:right;'>" + RefundAmt + "</td>";
+                                    html += "<td style='text-align:right;'>" + CASH_Payed + "</td>";
+                                    html += "<td style='text-align:right;'>" + CCARD_Payed + "</td>";
+                                    html += "<td style='text-align:right;'>" + DCARD_Payed + "</td>";
+                                    html += "<td style='text-align:right;'>" + Bank_Payed + "</td>";
+                                    html += "<td style='text-align:right;'>" + Cheque_Payed + "</td>";
+                                    html += "</tr>";
+                                });
+                                //var AllRefundAmt = 0;
+                                //var AllRefundcash = 0;
+                                //var AllRefundCcard = 0;
+                                //var AllRefundDcard = 0;
+                                //var AllRefundBank = 0;
+                                //var AllRefundCheque = 0;
+                                html += "<tr><td colspan='11' style='font-weight: bold;border-top: solid 1px black;'> </td></tr>";
+                                html += "<tr>";
+                                html += "<td colspan='4'>Total</td>";
+                                html += "<td style='text-align:right;'>" + AllRefundAmt + "</td>";
+                                html += "<td style='text-align:right;'>" + AllRefundcash + "</td>";
+                                html += "<td style='text-align:right;'>" + AllRefundCcard + "</td>";
+                                html += "<td style='text-align:right;'>" + AllRefundDcard + "</td>";
+                                html += "<td style='text-align:right;'>" + AllRefundBank + "</td>";
+                                html += "<td style='text-align:right;'>" + AllRefundCheque + "</td>";
+                                html += "</tr>";
+                                html += "<tr><td colspan='11' style='font-weight: bold;border-top: solid 1px black;'> </td></tr>";
+                                html += "</table>";
+                            }
+
+                            sessionStorage.setItem("PrintDetails", html);
+                            openRequestedPrintPopup();
+                        }
+                        else {
+                            alert('No Data Found.');
+                        }
+
+                    },
+                    failure: function (response) {
+                        alert(response);
+                    },
+                    error: function (response) {
+                        alert(response);
+                    },
+                    complete: function () { $("#loading").css("display", "none"); }
+                });
+            }
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+    function GetOPCollection() {
+        try {
+            var startdate = $("#txtOPfromdate").val();
+            var enddate = $("#txtOPtodate").val();
+            if (startdate == "" || enddate == "") {
+                alert('Please Enter Date');
+            }
+            else {
+                $.ajax({
+                    url: rootUrl + "/api/OPCollectionApi/GetOPCollectionReport",
+                    type: "GET",
+                    data: {
+                        fromdate: startdate,
+                        todate: enddate
+                    },
+                    dataType: "json",
+                    beforeSend: function () { $("#loading").css("display", "block"); },
+                    success: function (response) {
+                        $("#tblOPCollection tbody").empty();
+                        var AllGrandtot = 0;
+                        var AllGranddisc = 0;
+                        var AllNettot = 0;
+                        var AllRECIEVEDAMT = 0;
+                        var AllPending = 0;
+                        var AllRefund = 0;
+                        var AllCash = 0;
+                        var AllCCard = 0;
+                        var AllDCard = 0;
+                        var AllBank = 0;
+                        var AllCheque = 0;
+                        var html = "";
+                        var Sno = 0;
+                        var Alllen = $(response).find("dtcollectionall").length;
+                        var Duelen = $(response).find("dtcollectionallDue").length;
+                        var Refundlen = $(response).find("dtcollectionRefund").length;
+                        if (Alllen > 0 || Duelen > 0 || Refundlen > 0) {
+                            if (Alllen > 0) {
+                                $(response).find("dtcollectionall").each(function () {
+                                    Sno = Sno + 1;
+                                    var PatientID = ($(this).find("PatientID").text());
+                                    var FirstName = ($(this).find("FirstName").text());
+                                    var SecondName = ($(this).find("SecondName").text());
+                                    var OrderID = ($(this).find("OrderID").text());
+                                    var Ord_Grandtotal = ($(this).find("Ord_Grandtotal").text());
+                                    if (Ord_Grandtotal == "") {
+                                        Ord_Grandtotal = 0;
+                                    }
+                                    AllGrandtot = AllGrandtot + parseFloat(Ord_Grandtotal);
+                                    var Ord_Granddiscount = ($(this).find("Ord_Granddiscount").text());
+                                    if (Ord_Granddiscount == "") {
+                                        Ord_Granddiscount = 0;
+                                    }
+                                    AllGranddisc = AllGranddisc + parseFloat(Ord_Granddiscount);
+                                    var Ord_nettotal = ($(this).find("Ord_nettotal").text());
+                                    if (Ord_nettotal == "") {
+                                        Ord_nettotal = 0;
+                                    }
+                                    AllNettot = AllNettot + parseFloat(Ord_nettotal);
+                                    var RECIEVEDAMT = ($(this).find("RECIEVEDAMT").text());
+                                    if (RECIEVEDAMT == "") {
+                                        RECIEVEDAMT = 0;
+                                    }
+                                    AllRECIEVEDAMT = AllRECIEVEDAMT + parseFloat(RECIEVEDAMT);
+                                    var PENDINGTOPAY = ($(this).find("PENDINGTOPAY").text());
+                                    if (PENDINGTOPAY == "") {
+                                        PENDINGTOPAY = 0;
+                                    }
+                                    AllPending = AllPending + parseFloat(PENDINGTOPAY);
+                                    var Currentpendingamount = ($(this).find("Currentpendingamount").text());
+                                    if (Currentpendingamount == "") {
+                                        Currentpendingamount = 0;
+                                    }
+                                    var OP_RefundAmt = ($(this).find("OP_RefundAmt").text());
+                                    if (OP_RefundAmt == "") {
+                                        OP_RefundAmt = 0;
+                                    }
+                                    AllRefund = AllRefund + parseFloat(OP_RefundAmt);
+                                    var OP_Current_Refund = ($(this).find("OP_Current_Refund").text());
+                                    if (OP_Current_Refund == "") {
+                                        OP_Current_Refund = 0;
+                                    }
+                                    var CashReceivedAmt = ($(this).find("CashReceivedAmt").text());
+                                    if (CashReceivedAmt == "") {
+                                        CashReceivedAmt = 0;
+                                    }
+                                    AllCash = AllCash + parseFloat(CashReceivedAmt);
+                                    var CreditCardAmt = ($(this).find("CreditCardAmt").text());
+                                    if (CreditCardAmt == "") {
+                                        CreditCardAmt = 0;
+                                    }
+                                    AllCCard = AllCCard + parseFloat(CreditCardAmt);
+                                    var DebitCardAmt = ($(this).find("DebitCardAmt").text());
+                                    if (DebitCardAmt == "") {
+                                        DebitCardAmt = 0;
+                                    }
+                                    AllDCard = AllDCard + parseFloat(DebitCardAmt);
+                                    var ThroughBankAmt = ($(this).find("ThroughBankAmt").text());
+                                    if (ThroughBankAmt == "") {
+                                        ThroughBankAmt = 0;
+                                    }
+                                    AllBank = AllBank + parseFloat(ThroughBankAmt);
+                                    var ChequeAmt = ($(this).find("ChequeAmt").text());
+                                    if (ChequeAmt == "") {
+                                        ChequeAmt = 0;
+                                    }
+                                    AllCheque = AllCheque + parseFloat(ChequeAmt);
+
+                                    html += "<tr>";
+                                    html += "<td>" + Sno + "</td>";
+                                    html += "<td style='text-align:center;'>" + PatientID + "</td>";
+                                    html += "<td style='text-align:center;'>" + FirstName + "</td>";
+                                    html += "<td style='text-align:center;'>" + OrderID + "</td>";
+                                    html += "<td style='text-align:right;'>" + Ord_Grandtotal + "</td>";
+                                    html += "<td style='text-align:right;'>" + Ord_Granddiscount + "</td>";
+                                    html += "<td style='text-align:right;'>" + Ord_nettotal + "</td>";
+                                    html += "<td style='text-align:right;'>" + RECIEVEDAMT + "</td>";
+                                    html += "<td style='text-align:right;'>" + PENDINGTOPAY + "</td>";
+                                    html += "<td style='text-align:right;'>" + OP_RefundAmt + "</td>";
+                                    html += "<td style='text-align:right;'>" + CashReceivedAmt + "</td>";
+                                    html += "<td style='text-align:right;'>" + CreditCardAmt + "</td>";
+                                    html += "<td style='text-align:right;'>" + DebitCardAmt + "</td>";
+                                    html += "<td style='text-align:right;'>" + ThroughBankAmt + "</td>";
+                                    html += "<td style='text-align:right;'> " + ChequeAmt + "</td>";
+                                    html += "</tr>";
+
+                                });
+
+                                html += "<tr>";
+                                html += "<td colspan='4'>Total</td>";
+                                html += "<td style='text-align:right;'>" + AllGrandtot + "</td>";
+                                html += "<td style='text-align:right;'>" + AllGranddisc + "</td>";
+                                html += "<td style='text-align:right;'>" + AllNettot + "</td>";
+                                html += "<td style='text-align:right;'>" + AllRECIEVEDAMT + "</td>";
+                                html += "<td style='text-align:right;'>" + AllPending + "</td>";
+                                html += "<td style='text-align:right;'>" + AllRefund + "</td>";
+                                html += "<td style='text-align:right;'>" + AllCash + "</td>";
+                                html += "<td style='text-align:right;'>" + AllCCard + "</td>";
+                                html += "<td style='text-align:right;'>" + AllDCard + "</td>";
+                                html += "<td style='text-align:right;'>" + AllBank + "</td>";
+                                html += "<td style='text-align:right;'>" + AllCheque + "</td>";
+                                html += "</tr>";
+                                $("#tblOPCollection tbody").append(html);
+                            }
+                            if (Duelen > 0) {
+
+                                html = "";
+                                var AllDueCollected = 0;
+                                var AllDueDiscount = 0;
+                                var AllDueNetAmt = 0;
+                                var AllDuePending = 0;
+                                var AllDueCash = 0;
+                                var AllDueCcard = 0;
+                                var AllDueDcard = 0;
+                                var AllDueBank = 0;
+                                var AllDueCheque = 0;
+                                var Sno = 0;
+
+                                $(response).find("dtcollectionallDue").each(function () {
+                                    Sno = Sno + 1;
+                                    var PatientID = ($(this).find("PatientID").text());
+                                    var FirstName = ($(this).find("FirstName").text());
+                                    var SecondName = ($(this).find("SecondName").text());
+                                    var OrderID = ($(this).find("OrderID").text());
+                                    var Due_CollectedAmt = ($(this).find("Due_CollectedAmt").text());
+                                    if (Due_CollectedAmt == "") {
+                                        Due_CollectedAmt = 0;
+                                    }
+                                    AllDueCollected = AllDueCollected + parseFloat(Due_CollectedAmt);
+                                    var Due_DiscountAmt = ($(this).find("Due_DiscountAmt").text());
+                                    if (Due_DiscountAmt == "") {
+                                        Due_DiscountAmt = 0;
+                                    }
+                                    AllDueDiscount = AllDueDiscount + parseFloat(Due_DiscountAmt);
+                                    var Due_NetAmt = ($(this).find("Due_NetAmt").text());
+                                    if (Due_NetAmt == "") {
+                                        Due_NetAmt = 0;
+                                    }
+                                    AllDueNetAmt = AllDueNetAmt + parseFloat(Due_NetAmt);
+                                    var Due_PendingAmt = ($(this).find("Due_PendingAmt").text());
+                                    if (Due_PendingAmt == "") {
+                                        Due_PendingAmt = 0;
+                                    }
+                                    AllDuePending = AllDuePending + parseFloat(Due_PendingAmt);
+                                    var Due_Bycash = ($(this).find("Due_Bycash").text());
+                                    if (Due_Bycash == "") {
+                                        Due_Bycash = 0;
+                                    }
+                                    AllDueCash = AllDueCash + parseFloat(Due_Bycash);
+                                    var Due_ByCCard = ($(this).find("Due_ByCCard").text());
+                                    if (Due_ByCCard == "") {
+                                        Due_ByCCard = 0;
+                                    }
+                                    AllDueCcard = AllDueCcard + parseFloat(Due_ByCCard);
+                                    var Due_ByDCard = ($(this).find("Due_ByDCard").text());
+                                    if (Due_ByDCard == "") {
+                                        Due_ByDCard = 0;
+                                    }
+                                    AllDueDcard = AllDueDcard + parseFloat(Due_ByDCard);
+                                    var Due_ByBank = ($(this).find("Due_ByBank").text());
+                                    if (Due_ByBank == "") {
+                                        Due_ByBank = 0;
+                                    }
+                                    AllDueBank = AllDueBank + parseFloat(Due_ByBank);
+                                    var Due_ByCheque = ($(this).find("Due_ByCheque").text());
+                                    if (Due_ByCheque == "") {
+                                        Due_ByCheque = 0;
+                                    }
+                                    AllDueCheque = AllDueCheque + parseFloat(Due_ByCheque);
+
+                                    html += "<tr>";
+                                    html += "<td>" + Sno + "</td>";
+                                    html += "<td style='text-align:center;'>" + PatientID + "</td>";
+                                    html += "<td style='text-align:center;'>" + FirstName + "</td>";
+                                    html += "<td style='text-align:center;'>" + OrderID + "</td>";
+                                    html += "<td style='text-align:right;'>" + Due_CollectedAmt + "</td>";
+                                    html += "<td style='text-align:right;'>" + Due_DiscountAmt + "</td>";
+                                    html += "<td style='text-align:right;'>" + Due_NetAmt + "</td>";
+                                    html += "<td style='text-align:right;'>" + Due_PendingAmt + "</td>";
+                                    html += "<td style='text-align:right;'>" + Due_Bycash + "</td>";
+                                    html += "<td style='text-align:right;'>" + Due_ByCCard + "</td>";
+                                    html += "<td style='text-align:right;'>" + Due_ByDCard + "</td>";
+                                    html += "<td style='text-align:right;'>" + Due_ByBank + "</td>";
+                                    html += "<td style='text-align:right;'>" + Due_ByCheque + "</td>";
+                                    html += "</tr>";
+
+                                });
+
+                                html += "<tr>";
+                                html += "<td colspan='4'>Total</td>";
+                                html += "<td style='text-align:right;'>" + AllDueCollected + "</td>";
+                                html += "<td style='text-align:right;'>" + AllDueDiscount + "</td>";
+                                html += "<td style='text-align:right;'>" + AllDueNetAmt + "</td>";
+                                html += "<td style='text-align:right;'>" + AllDuePending + "</td>";
+                                html += "<td style='text-align:right;'>" + AllDueCash + "</td>";
+                                html += "<td style='text-align:right;'>" + AllDueCcard + "</td>";
+                                html += "<td style='text-align:right;'>" + AllDueDcard + "</td>";
+                                html += "<td style='text-align:right;'>" + AllDueBank + "</td>";
+                                html += "<td style='text-align:right;'>" + AllDueCheque + "</td>";
+                                html += "</tr>";
+
+                                $("#tblOPDueCollection").prop('hidden', false);
+                                $("#tblOPDueCollection tbody").append(html);
+
+                            }
+                            if (Refundlen > 0) {
+                                html = "";
+                                var AllRefundAmt = 0;
+                                var AllRefundcash = 0;
+                                var AllRefundCcard = 0;
+                                var AllRefundDcard = 0;
+                                var AllRefundBank = 0;
+                                var AllRefundCheque = 0;
+                                var Sno = 0;
+
+                                $(response).find("dtcollectionRefund").each(function () {
+                                    Sno = Sno + 1;
+                                    var PatientID = ($(this).find("PatientID").text());
+                                    var FirstName = ($(this).find("FirstName").text());
+                                    var SecondName = ($(this).find("SecondName").text());
+                                    var OrderID = ($(this).find("OrderID").text());
+                                    var RefundAmt = ($(this).find("RefundAmt").text());
+                                    AllRefundAmt = AllRefundAmt + RefundAmt;
+                                    var CASH_Payed = ($(this).find("CASH_Payed").text());
+                                    AllRefundcash = AllRefundcash + CASH_Payed;
+                                    var CCARD_Payed = ($(this).find("CCARD_Payed").text());
+                                    AllRefundCcard = AllRefundCcard + CCARD_Payed;
+                                    var DCARD_Payed = ($(this).find("DCARD_Payed").text());
+                                    AllRefundDcard = AllRefundDcard + DCARD_Payed;
+                                    var Bank_Payed = ($(this).find("Bank_Payed").text());
+                                    AllRefundBank = AllRefundBank + Bank_Payed;
+                                    var Cheque_Payed = ($(this).find("Cheque_Payed").text());
+                                    AllRefundCheque = AllRefundCheque + Cheque_Payed;
+
+                                    html += "<tr>";
+                                    html += "<td>" + Sno + "</td>";
+                                    html += "<td style='text-align:center;'>" + PatientID + "</td>";
+                                    html += "<td style='text-align:center;'>" + FirstName + "</td>";
+                                    html += "<td style='text-align:center;'>" + OrderID + "</td>";
+                                    html += "<td style='text-align:right;'>" + RefundAmt + "</td>";
+                                    html += "<td style='text-align:right;'>" + CASH_Payed + "</td>";
+                                    html += "<td style='text-align:right;'>" + CCARD_Payed + "</td>";
+                                    html += "<td style='text-align:right;'>" + DCARD_Payed + "</td>";
+                                    html += "<td style='text-align:right;'>" + Bank_Payed + "</td>";
+                                    html += "<td style='text-align:right;'>" + Cheque_Payed + "</td>";
+                                    html += "</tr>";
+                                });
+
+                                html += "<tr><td colspan='11' style='font-weight: bold;border-top: solid 1px black;'> </td></tr>";
+                                html += "<tr>";
+                                html += "<td colspan='4'>Total</td>";
+                                html += "<td style='text-align:right;'>" + AllRefundAmt + "</td>";
+                                html += "<td style='text-align:right;'>" + AllRefundcash + "</td>";
+                                html += "<td style='text-align:right;'>" + AllRefundCcard + "</td>";
+                                html += "<td style='text-align:right;'>" + AllRefundDcard + "</td>";
+                                html += "<td style='text-align:right;'>" + AllRefundBank + "</td>";
+                                html += "<td style='text-align:right;'>" + AllRefundCheque + "</td>";
+                                html += "</tr>";
+
+                                $("#tblOPRefundCollection").prop('hidden', false);
+                                $("#tblOPRefundCollection tbody").append(html);
+                            }
+
+                        }
+                        else {
+                            alert('No Data Found.');
+                        }
+                    },
+                    complete: function () { $("#loading").css("display", "none"); }
+                });
+            }
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+    function openRequestedPrintPopup() {
+        var url = '@Url.Action("Print", "Home")';
+        window.open(url, '_blank');
+        sessionStorage.setItem("PrintDetails", "");
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+</script>
+
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div id="loading">
+            <div id="loadingcontent">
+                <div id="loadingspinner">
+                    <img src="~/images/loading.gif" style="width:100px;height:100px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="content-wrapper">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-primary">
+                    <div class="card-header" style="margin-top:15px;">
+                        <h3 class="card-title">Patient Order</h3>
+                        <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>
+                                        From Date
+                                    </label>
+                                    <input type="text" id="txtOPfromdate" placeholder="From Date" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <label>
+                                        To Date
+                                    </label>
+                                    <input type="text" id="txtOPtodate" placeholder="To Date" class="form-control" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    <button type="button" id="btnSearch" onclick="GetOPCollection();" class="btn btn-info">
+                                        Search
+                                    </button>
+                                    <button type="button" id="btnprint" onclick="PrintOPCollection();" class="btn btn-info">
+                                        Print
+                                    </button>
+                                    <button type="button" id="btnCancel" onclick="CancelClick();" class="btn btn-info">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <table id="tblOPCollection" class='table table-bordered table-striped'>
+                                    <thead>
+                                        <tr>
+                                            <th>S.No</th>
+                                            <th>UHID</th>
+                                            <th>Name</th>
+                                            <th>Order ID</th>
+                                            <th>Tot.Amt</th>
+                                            <th>Disc Amt</th>
+                                            <th>Net Amt</th>
+                                            <th>Rec Amt</th>
+                                            <th>Pending Amt</th>
+                                            <th>Refund Amt</th>
+                                            <th>Cash Amt</th>
+                                            <th>CCard Amt</th>
+                                            <th>DCard Amt</th>
+                                            <th>Bank Amt</th>
+                                            <th>Cheque Amt</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <table id="tblOPDueCollection" class='table table-bordered table-striped' hidden>
+                                    <thead>
+                                        <tr>
+                                            <th>S.No</th>
+                                            <th>UHID</th>
+                                            <th>Name</th>
+                                            <th>Order ID</th>
+                                            <th>Collected Amt</th>
+                                            <th>Disc Amt</th>
+                                            <th>Net Amt</th>
+                                            <th>Pending Amt</th>
+                                            <th>Cash Amt</th>
+                                            <th>CCard Amt</th>
+                                            <th>DCard Amt</th>
+                                            <th>Bank Amt</th>
+                                            <th>Cheque Amt</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <table id="tblOPRefundCollection" class='table table-bordered table-striped' hidden>
+                                    <thead>
+                                        <tr>
+                                            <th>S.No</th>
+                                            <th>UHID</th>
+                                            <th>Name</th>
+                                            <th>Order ID</th>
+                                            <th>Refund Amt</th>
+                                            <th>Cash Amt</th>
+                                            <th>CCard Amt</th>
+                                            <th>DCard Amt</th>
+                                            <th>Bank Amt</th>
+                                            <th>Cheque Amt</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

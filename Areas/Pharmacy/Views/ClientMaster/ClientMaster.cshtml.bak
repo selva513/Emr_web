@@ -1,0 +1,1325 @@
+﻿<style>
+    .btn {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        transition: box-shadow 0.28s;
+    }
+
+    .btn-primary {
+        color: #fff;
+        background-color: #337ab7;
+        border-color: #337ab7;
+        box-shadow: none;
+        border-width: 0 !important;
+        overflow: hidden;
+        position: relative;
+        user-select: none;
+        padding: 9px 14px 8px 14px;
+    }
+    #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 9998;
+    }
+
+    #loading1 {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 9998;
+    }
+
+    #loadingcontent {
+        display: table;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loadingspinner {
+        display: table-cell;
+        vertical-align: middle;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+        padding-top: 80px;
+    }
+</style>
+<script>
+    $(document).ready(function () {
+        GetClientDetails();
+        GetStoreName();
+        GetSearchCountry();
+        GetSearchState();
+        GetSearchCity();
+    });
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+
+    function onclickClientPopup() {
+        $('#modal-ClientMaster').modal({
+            backdrop: 'static',
+            keyboard: false
+        });
+    }
+
+    function SaveClientDetails() {
+        $('#btnClientSave').prop("disabled", true);
+        var clientName = $('#txtClientName').val();
+       
+        var cityName = $('#txtClientCityName').val();
+        var CityId = $('#txtClientCityId').val();
+        var stateName = $('#txtClientState').val();
+        var stateId = $('#txtClientStateId').val();
+        var purchaseExpiry = $('#txtClientPurchaseDays').val();
+        if (purchaseExpiry == "") {
+            purchaseExpiry = "0";
+        }
+        var DispenseExpiry = $('#txtClientDispenseDays').val();
+        if (DispenseExpiry == "") {
+            DispenseExpiry = "0";
+        }
+        var countryName = $('#txtClientCountry').val();
+        var countryId = $('#txtClientCountryId').val();
+        if (clientName == "" || clientName == null) {
+            alert("Please Enter the Name");
+            $('#btnClientSave').prop("disabled", false);
+            return false;
+        }
+        var gstDetails = $('#ddlGstDetails').val();
+        if (gstDetails == "Select") {
+            alert("Please Select the Gst");
+            $('#btnClientSave').prop("disabled", false);
+            return false;
+        }
+        var gst = $('#txtClientGst').val();
+        if (gstDetails == "Registered" && gst == "") {
+            alert("Please Enter the Gst No");
+            $('#btnClientSave').prop("disabled", false);
+            return false;
+
+        }
+        var gst = $('#txtClientGst').val();
+        if (gstDetails == "UnRegistered") {
+            $('#txtClientGst').val('');
+        }
+        
+
+        if (cityName == "" && stateName == "" && countryName == "") {
+            CityId = 0;
+            stateId = 0;
+            countryId = 0;
+            var address1 = $('#txtClientAddress1').val();
+            var address2 = $('#txtClientAddress2').val();
+
+            
+       
+            var arn = $('#txtClientArnNo').val();
+            var email = $('#txtEmail').val();
+            var phoneNumber = $('#txtPhoneNumber').val();
+            var mobileNo = $('#txtMobileNo').val();
+
+
+            var warehouse_text = $('#ddlStoreName option:selected').toArray().map(item => item.text);
+            var warehouse_val = $('#ddlStoreName option:selected').toArray().map(item => item.value);
+
+            var WarehouseMappingarray = new Array();
+            if (warehouse_val != "" || warehouse_val != null) {
+                for (var i = 0; i < warehouse_val.length; i++) {
+                    var WarehouseMappings = new Object();
+                    WarehouseMappings.WarehouseID = parseInt(warehouse_val[i]);
+                    WarehouseMappingarray.push(WarehouseMappings);
+                }
+            }
+           
+            var clientDetails = {
+                ClientName: clientName,
+                Address1: address1,
+                Address2: address2,
+                Gst: gst,
+                gstDetails: gstDetails,
+                ARNNO: arn,
+                Email: email,
+                CityName: cityName,
+                StateName: stateName,
+                CountryName: countryName,
+                PhomeNumber: phoneNumber,
+                MobileNo: mobileNo,
+                CityID: parseInt(CityId),
+                StateID: parseInt(stateId),
+                PurchaseExpiryDays: purchaseExpiry,
+                DispenseExpiryDays: DispenseExpiry,
+                CountryID: parseInt(countryId),
+
+                warehouseMappings: WarehouseMappingarray
+            }
+            console.log(clientDetails);
+            $('#btnClientSave').prop("hidden", false);
+            $.ajax({
+                url: rootUrl + "/api/ClientMaster/CreateClientMaster",
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(clientDetails),
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                dataType: 'json',
+                success: function (data) {
+                    if (data > 0) {
+                        alert("Saved Sucessfully");
+                        GetClientDetails();
+                        /*  $('#modal-ClientMaster').modal('toggle');*/
+                        ClientPageClear();
+                    }
+                },
+
+                failure: function (response) {
+                    alert(response);
+                },
+                error: function (response) {
+                    alert(response);
+                },
+                complete: function () { $("#loading").css("display", "none") }
+            });
+        }
+        else
+            if (cityName == "" || stateName == "" || countryName == "") {
+                alert("Please Enter City ,State and Country");
+            }
+            else {
+                if (CityId == "") {
+                    CityId = 0;
+                }
+                if (stateId == "") {
+                    stateId = 0;
+                }
+                if (countryId == "") {
+                    countryId = 0;
+                }
+                var address1 = $('#txtClientAddress1').val();
+                var address2 = $('#txtClientAddress2').val();
+                var email = $('#txtEmail').val();
+                var gst = $('#txtClientGst').val();
+                if (gstDetails == "Registered" && gst == "") {
+                    alert("Please Enter the Gst No");
+                    $('#btnClientSave').prop("disabled", false);
+                    return false;
+
+                }
+                var purchaseExpiry = $('#txtClientPurchaseDays').val();
+                if (purchaseExpiry == "") {
+                    purchaseExpiry = "0";
+                }
+                var DispenseExpiry = $('#txtClientDispenseDays').val();
+                if (DispenseExpiry == "") {
+                    DispenseExpiry = "0";
+                }
+                var gst = $('#txtClientGst').val();
+                if (gstDetails == "UnRegistered") {
+                    $('#txtClientGst').val('');
+                }
+                var arn = $('#txtClientArnNo').val();
+                
+                var phoneNumber = $('#txtPhoneNumber').val();
+                var mobileNo = $('#txtMobileNo').val();
+                var warehouse_text = $('#ddlStoreName option:selected').toArray().map(item => item.text);
+                var warehouse_val = $('#ddlStoreName option:selected').toArray().map(item => item.value);
+
+                var WarehouseMappingarray = new Array();
+                if (warehouse_val != "" || warehouse_val != null) {
+                    for (var i = 0; i < warehouse_val.length; i++) {
+                        var WarehouseMappings = new Object();
+                        WarehouseMappings.WarehouseID = parseInt(warehouse_val[i]);
+                        WarehouseMappingarray.push(WarehouseMappings);
+                    }
+                }
+
+                var clientDetails = {
+                    ClientName: clientName,
+                    Address1: address1,
+                    Address2: address2,
+                    Email: email,
+                    gstDetails: gstDetails,
+                    Gst: gst,
+                    ARNNO: arn,
+                    CityName: cityName,
+                    StateName: stateName,
+                    CountryName: countryName,
+                    PhomeNumber: phoneNumber,
+                    MobileNo: mobileNo,
+                    CityID: parseInt(CityId),
+                    StateID: parseInt(stateId),
+                    CountryID: parseInt(countryId),
+                    PurchaseExpiryDays: purchaseExpiry,
+                    DispenseExpiryDays: DispenseExpiry,
+                    warehouseMappings: WarehouseMappingarray
+                }
+                console.log(clientDetails);
+                $('#btnClientSave').prop("hidden", false);
+                $.ajax({
+                    url: rootUrl + "/api/ClientMaster/CreateClientMaster",
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify(clientDetails),
+                    beforeSend: function () { $("#loading").css("display", "block"); },
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data > 0) {
+                            alert("Saved Sucessfully");
+                            GetClientDetails();
+                            /*  $('#modal-ClientMaster').modal('toggle');*/
+                            ClientPageClear();
+                        }
+                    },
+                    failure: function (response) {
+                        alert(response);
+                    },
+                    error: function (response) {
+                        alert(response);
+                    },
+                    complete: function () { $("#loading").css("display", "none") }
+                });
+            }
+
+
+    }
+    function UpdateClientDetails() {
+        $('#btnClientSave').prop("hidden", true);
+        var SeqId = $('#txtSeqId').val();
+        var seqID = parseFloat(SeqId);
+        var clientName = $('#txtClientName').val();
+        var cityName = $('#txtClientCityName').val();
+        var CityId = $('#txtClientCityId').val();
+        var stateName = $('#txtClientState').val();
+        var purchaseExpiry = $('#txtClientPurchaseDays').val();
+        if (purchaseExpiry == "") {
+            purchaseExpiry = "0";
+        }
+        var DispenseExpiry = $('#txtClientDispenseDays').val();
+        if (DispenseExpiry == "") {
+            DispenseExpiry = "0";
+        }
+        var stateId = $('#txtClientStateId').val();
+        var countryName = $('#txtClientCountry').val();
+        var countryId = $('#txtClientCountryId').val()
+        if (clientName == "" || clientName == null) {
+            alert("Please Enter the Name");
+            $('#btnClientSave').prop("disabled", false);
+            return false;
+        }
+        var gstDetails = $('#ddlGstDetails').val();
+        if (gstDetails == "Select") {
+            alert("Please Select the Gst");
+            $('#btnClientSave').prop("disabled", false);
+            return false;
+        }
+        var gst = $('#txtClientGst').val();
+        if (gstDetails == "Registered" && gst == "") {
+            alert("Please Enter the Gst No");
+            $('#btnClientSave').prop("disabled", false);
+            return false;
+
+        }
+        var gst = $('#txtClientGst').val();
+        if (gstDetails == "UnRegistered") {
+            $('#txtClientGst').val('');
+        }
+
+        if (cityName == "" && stateName == "" && countryName == "") {
+            CityId = 0;
+            stateId = 0;
+            countryId = 0;
+            var address1 = $('#txtClientAddress1').val();
+            var address2 = $('#txtClientAddress2').val();
+          
+            var arn = $('#txtClientArnNo').val();
+            var email = $('#txtEmail').val();
+            var phoneNumber = $('#txtPhoneNumber').val();
+            var mobileNo = $('#txtMobileNo').val();
+
+
+            var warehouse_text = $('#ddlStoreName option:selected').toArray().map(item => item.text);
+            var warehouse_val = $('#ddlStoreName option:selected').toArray().map(item => item.value);
+
+            var WarehouseMappingarray = new Array();
+            if (warehouse_val != "" || warehouse_val != null) {
+                for (var i = 0; i < warehouse_val.length; i++) {
+                    var WarehouseMappings = new Object();
+                    WarehouseMappings.WarehouseID = parseInt(warehouse_val[i]);
+                    WarehouseMappingarray.push(WarehouseMappings);
+                }
+            }
+
+            var clientDetails = {
+                SeqID: seqID,
+                ClientName: clientName,
+                Address1: address1,
+                Address2: address2,
+                gstDetails: gstDetails,
+                Gst: gst,
+                ARNNO: arn,
+                Email: email,
+                CityName: cityName,
+                StateName: stateName,
+                CountryName: countryName,
+                PhomeNumber: phoneNumber,
+                MobileNo: mobileNo,
+                CityID: parseInt(CityId),
+                StateID: parseInt(stateId),
+                CountryID: parseInt(countryId),
+                PurchaseExpiryDays: purchaseExpiry,
+                DispenseExpiryDays: DispenseExpiry,
+                warehouseMappings: WarehouseMappingarray
+            }
+            console.log(clientDetails);
+            $('#btnClientSave').prop("hidden", false);
+            $.ajax({
+                url: rootUrl + "/api/ClientMaster/UpdateClientMaster",
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(clientDetails),
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                dataType: 'json',
+                success: function (data) {
+                    if (data > 0) {
+                        alert("Updated Sucessfully");
+                        GetClientDetails();
+                        /*  $('#modal-ClientMaster').modal('toggle');*/
+                        ClientPageClear();
+                    }
+                },
+                failure: function (response) {
+                    alert(response);
+                },
+                error: function (response) {
+                    alert(response);
+                },
+                complete: function () { $("#loading").css("display", "none") }
+            });
+        }
+        else
+            if (cityName == "" || stateName == "" || countryName == "") {
+                alert("Please Enter City ,State and Country");
+            }
+            else {
+                if (CityId == "") {
+                    CityId = 0;
+                }
+                if (stateId == "") {
+                    stateId = 0;
+                }
+                if (countryId == "") {
+                    countryId = 0;
+                }
+                var address1 = $('#txtClientAddress1').val();
+                var address2 = $('#txtClientAddress2').val();
+                var email = $('#txtEmail').val();
+                var gst = $('#txtClientGst').val();
+                var purchaseExpiry = $('#txtClientPurchaseDays').val();
+                if (purchaseExpiry == "") {
+                    purchaseExpiry = "0";
+                }
+                var DispenseExpiry = $('#txtClientDispenseDays').val();
+                if (DispenseExpiry == "") {
+                    DispenseExpiry = "0";
+                }
+                if (gstDetails == "Registered" && gst == "") {
+                    alert("Please Enter the Gst No");
+                    $('#btnClientSave').prop("disabled", false);
+                    return false;
+
+                }
+                if (gstDetails == "UnRegistered") {
+                    $('#txtClientGst').val('');
+                }
+                var arn = $('#txtClientArnNo').val();
+                var phoneNumber = $('#txtPhoneNumber').val();
+                var mobileNo = $('#txtMobileNo').val();
+                var warehouse_text = $('#ddlStoreName option:selected').toArray().map(item => item.text);
+                var warehouse_val = $('#ddlStoreName option:selected').toArray().map(item => item.value);
+
+                var WarehouseMappingarray = new Array();
+                if (warehouse_val != "" || warehouse_val != null) {
+                    for (var i = 0; i < warehouse_val.length; i++) {
+                        var WarehouseMappings = new Object();
+                        WarehouseMappings.WarehouseID = parseInt(warehouse_val[i]);
+                        WarehouseMappingarray.push(WarehouseMappings);
+                    }
+                }
+
+                var clientDetails = {
+                    SeqID: seqID,
+                    ClientName: clientName,
+                    Address1: address1,
+                    Address2: address2,
+                    gstDetails: gstDetails,
+                    Gst: gst,
+                    ARNNo: arn,
+                    Email: email,
+                    CityName: cityName,
+                    StateName: stateName,
+                    CountryName: countryName,
+                    PhomeNumber: phoneNumber,
+                    MobileNo: mobileNo,
+                    CityID: parseInt(CityId),
+                    StateID: parseInt(stateId),
+                    CountryID: parseInt(countryId),
+                    PurchaseExpiryDays: purchaseExpiry,
+                    DispenseExpiryDays: DispenseExpiry,
+                    warehouseMappings: WarehouseMappingarray
+                }
+                console.log(clientDetails);
+                $.ajax({
+                    url: rootUrl + "/api/ClientMaster/UpdateClientMaster",
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify(clientDetails),
+                    beforeSend: function () { $("#loading").css("display", "block"); },
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data > 0) {
+                            alert("Updated Sucessfully");
+                            GetClientDetails();
+                            /*  $('#modal-ClientMaster').modal('toggle');*/
+                            ClientPageClear();
+                        }
+                    },
+                    failure: function (response) {
+                        alert(response);
+                    },
+                    error: function (response) {
+                        alert(response);
+                    },
+                    complete: function () { $("#loading").css("display", "none") }
+                });
+            }
+    }
+
+    function GetClientDetails() {
+        $.ajax({
+            url: rootUrl + "/api/ClientMaster/GetClientDetailsByHospitalId",
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                BindClientMaster(response);
+            }
+        })
+    }
+
+
+    function BindClientMaster(response) {
+        var html = "";
+        $("#tblClient tbody").empty();
+        for (i = 0; i < response.length; i++) {
+            //if (response[i].WarehouseName == null)
+            //    response[i].WarehouseName = "";
+            if (response[i].CityName == null)
+                response[i].CityName = "";
+            if (response[i].StateName == null)
+                response[i].StateName = "";
+            if (response[i].CountryName == null)
+                response[i].CountryName = "";
+
+            html += "<tr style='font-size:13px;font-family:sans-serif'>";
+            html += "<td style='display:none'>" + response[i].SeqID + "</td>";
+            html += "<td>" + response[i].ClientName + "</td>";
+            html += "<td>" + response[i].Address1 + "</td>";
+            html += "<td>" + response[i].Email + "</td>";
+            html += "<td>" + response[i].PhomeNumber + "</td>";
+            //html += "<td>" + response[i].WarehouseName + "</td>";
+            html += "<td>" + response[i].CityName + "</td>";
+            html += "<td>" + response[i].StateName + "</td>";
+            html += "<td>" + response[i].CountryName + "</td>";
+            html += "<td> <input type='image' src='/images/Edit1.png' style='height:20px;padding-left: 10px;' onclick = 'GetClientSelect(this);'  />";
+            html += "<tr>";
+        }
+        $("#tblClient tbody").append(html);
+    }
+
+    function GetClientSelect(selectedRow) {
+        var row = selectedRow.parentNode.parentNode;
+        var SeqId = parseFloat(row.cells[0].innerHTML);
+        $('#txtSeqId').val(SeqId);
+        $.ajax({
+            url: rootUrl + "/api/ClientMaster/GetClientDetailsBySeqId?SeqId=" + SeqId,
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                $('#modal-ClientMaster').modal({
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                if (response[0].warehouseMappings !== 'undefined') {
+                    var Substance = response[0].warehouseMappings;
+                    var SubstanceMapping = Substance;
+                    if (SubstanceMapping.length > 0) {
+                        var UserArray = new Array();
+                        $.each(SubstanceMapping, function () {
+                            var FormulaSeqId = this.WarehouseID;
+                            UserArray.push(FormulaSeqId);
+
+                        });
+                        $('#ddlStoreName').multiselect('refresh');
+                        $('#ddlStoreName').multiselect('select', UserArray, true);
+
+                    }
+
+                }
+                var warehousename = row.cells[4].innerHTML;
+                var cityname = row.cells[5].innerHTML;
+                var statename = row.cells[6].innerHTML;
+                var countryname = row.cells[7].innerHTML;
+               
+                if (warehousename == "") {
+                    warehousename = "-Select-";
+                }
+                    
+                var gstdetails = response[0].GstRequired;
+                if (gstdetails == "Registered") {
+                    $('#headClientGst').prop("hidden", false);
+                }
+                $('#ddlGstDetails').val(gstdetails);
+                $('#txtSeqId').val(response[0].SeqID);
+                $('#txtClientName').val(response[0].ClientName);
+                $('#txtClientAddress1').val(response[0].Address1);
+                $('#txtClientAddress2').val(response[0].Address2);
+                $('#txtEmail').val(response[0].Email);
+                $('#txtPhoneNumber').val(response[0].PhomeNumber);
+                $('#txtMobileNo').val(response[0].MobileNo);
+                $('#txtClientCityName').val(response[0].CityName);
+                $('#txtClientState').val(response[0].StateName);
+                $('#txtClientCountry').val(response[0].CountryName);
+                $('#txtClientCityId').val(response[0].CityID);
+                $('#txtClientStateId').val(response[0].StateID);
+                $('#txtClientCountryId').val(response[0].CountryID);
+                $('#txtClientGst').val(response[0].Gst);
+/*                $('#ddlGstDetails').text(response[0].gstDetails);*/
+                $('#txtClientArnNo').val(response[0].ARNNo);
+                var purchaseExpiry = response[0].PurchaseExpiryDays;
+                if (purchaseExpiry == "0") {
+                    $('#txtClientPurchaseDays').val("");
+                }
+                else {
+                    $('#txtClientPurchaseDays').val(purchaseExpiry);
+                }
+                var dispenseExpiry = response[0].DispenseExpiryDays;
+                if (dispenseExpiry == "0") {
+                    $('#txtClientDispenseDays').val("");
+                }
+                else {
+                    $('#txtClientDispenseDays').val(dispenseExpiry);
+                }
+                
+               
+                //setSelectedIndex(document.getElementById("ddlStoreName"), warehousename);
+                //setSelectedIndex(document.getElementById("ddlCityName"), cityname);
+                //setSelectedIndex(document.getElementById("ddlStateName"), statename);
+                //setSelectedIndex(document.getElementById("ddlCountryName"), countryname);
+                $('#btnClientSave').prop('hidden', true);
+                $('#btnClientUpdate').prop('hidden', false);
+            }
+        });
+
+    }
+
+    function ClientPageClear() {
+        $('#txtSeqId').val('');
+        $('#txtClientName').val('');
+        $('#txtClientAddress1').val('');
+        $('#txtClientAddress2').val('');
+        $('#txtClientGst').val('');
+        $('#ddlGstDetails').val("Select");
+        $('#txtClientArnNo').val('');
+        $('#txtEmail').val('');
+        $('#txtPhoneNumber').val('');
+        $('#txtMobileNo').val('');
+        $('#txtMobileNo').val('');
+        $('#txtClientCityName').val('');
+        $('#txtClientState').val('');
+        $('#txtClientCountry').val('');
+        $('#txtClientCityId').val('');
+        $('#txtClientStateId').val('');
+        $('#txtClientCountryId').val('');
+        $('#btnClientSave').prop("hidden", false);
+        $('#btnClientUpdate').prop("hidden", true);
+        $('#modal-ClientMaster').modal('toggle');
+        $('#ddlStoreName option:selected').prop("selected", false);
+        $("#ddlStoreName").multiselect('refresh');
+    }
+    function isNumberAndSpecialCharacters(e) {
+        var isValid = false;
+        var regex = /^[0-9-+()\s]*$/;
+        var phoneno = e.key;
+        isValid = regex.test(phoneno);
+        if (!isValid) {
+            e.preventDefault();
+            //return false;
+        }   
+    }
+    function isNumber(e) {
+        var code = ('charCode' in e) ? e.charCode : e.keyCode;
+        if (!(code == 32) && // space
+            !(code > 47 && code < 58))// numeric (0-9)
+        //!(code > 64 && code < 91) && // upper alpha (A-Z)
+        //!(code > 96 && code < 123)) { // lower alpha (a-z)
+        {
+            e.preventDefault();
+        }
+    }
+    function OnPackTypeClick() {
+        var DrugForm = $("#txtPackage").val();
+        if (DrugForm != null && DrugForm != "")
+            $("#txtPackage").autocomplete("search", DrugForm);
+        else
+            $("#txtPackage").autocomplete("search", "");
+    }
+    function GetStoreName() {
+        $.ajax({
+            url: "/Pharma/Invoice/GetStoreName",
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.length > 0) {
+                    $('#ddlStoreName')
+                        .empty();
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var HIS_PH_STOREMASTER = response[PCHeader].HIS_PH_STOREMASTER;
+                        var HIS_PH_STORENAME = response[PCHeader].HIS_PH_STORENAME;
+                        $('#ddlStoreName')
+                            .append($("<option></option>").val(HIS_PH_STOREMASTER).html(HIS_PH_STORENAME));
+                    }
+                    $('#ddlStoreName').multiselect({
+                        enableFiltering: true,
+                        includeSelectAllOption: true,
+                        maxHeight: 400,
+                        buttonWidth: '100%',
+                        dropUp: false
+                    });
+                }
+            }
+        });
+    }
+    function GetCity() {
+        $.ajax({
+            url: rootUrl + "/api/ClientMaster/GetCity",
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.length > 0) {
+                    $('#ddlCityName').empty();
+                    $('#ddlCityName')
+                        .append($("<option></option>").val(0).html('-Select-'));
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var CityID = response[PCHeader].CitySeqID;
+                        var CityName = response[PCHeader].CityName;
+                        $('#ddlCityName')
+                            .append($("<option></option>").val(CityID).html(CityName));
+                    }
+                }
+            }
+        });
+    }
+    function OnCityClick() {
+        var City = $("#txtClientCityName").val();
+        if (City != null && City != "")
+            $("#txtClientCityName").autocomplete("search", City);
+        else
+            $("#txtClientCityName").autocomplete("search", "");
+    }
+    function GetSearchCity() {
+
+        $("#txtClientCityName").autocomplete({
+
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/Patient/GetCityBySearch",
+                    type: "GET",
+                    data: {
+                        Search: request.term
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.CityName,
+                                value: el.CitySeqID
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+                //$("#txtSupplierCity").val(ui.item.label);
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#txtClientCityName").val(ui.item.label);
+                $("#txtClientCityName").val(ui.item.label);
+                $("#txtClientCityId").val(ui.item.value);
+                GetClientCityData(ui.item.value);
+                
+            }, 
+            minLength: 0,
+            appendTo: "#modal-ClientMaster"
+            
+        });
+        //$(".City").autocomplete("option", "appendTo", ".eventInsForm");
+    }
+    function GetClientCityData(CityId) {
+      var cityid =  parseFloat(CityId)
+        $.ajax({
+            type: "GET",
+            url: rootUrl + "/api/ClientMaster/GetStateCountryByCityID/?CityID=" + cityid + "",
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: true,
+            success: function (response) {
+                if (response.length > 0) {
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var CountryID = response[PCHeader].CountrySeqID;
+                        var CountryName = response[PCHeader].CountryName;
+                        var stateID = response[PCHeader].StateSeqID;
+                        var StateName = response[PCHeader].StateName;
+                        $('#txtClientState').val(StateName);
+                        $('#txtClientStateId').val(stateID);
+                        $('#txtClientCountry').val(CountryName);
+                        $('#txtClientCountryId').val(CountryID);
+                    }
+                }
+                else {
+                    $('#txtClientState').val('');
+                    $('#txtClientStateId').val('');
+                    $('#txtClientCountry').val('');
+                    $('#txtClientCountryId').val('');
+                }
+            },
+            failure: function (response) {
+            },
+            error: function (response) {
+            }
+        });
+    }
+
+    function GetCityDetailsByCityName() {
+        var cityName = $('#txtClientCityName').val();
+        var id = 0;
+        $('#txtClientCityId').val(id);
+
+        $.ajax({
+            type: "GET",
+            url: rootUrl + "/api/ClientMaster/GetCityDetailsByCityName/?cityName=" + cityName.trim() ,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: true,
+            success: function (response) {
+                if (response.length > 0) {
+                    for (i = 0; i < response.length; i++) {
+                        var cityId = response[i].CitySeqID;
+                        var countryName = response[i].CountryName;
+                        var stateName = response[i].StateName;
+                        var stateId = response[i].StateSeqID;
+                        var countryId = response[i].CountrySeqID;
+                        $('#txtClientCityId').val(cityId);
+                        $('#txtClientState').val(stateName);
+                        $('#txtClientStateId').val(stateId);
+                        $('#txtClientCountry').val(countryName);
+                        $('#txtClientCountryId').val(countryId);
+                       
+                    }
+                }
+             
+            },
+            failure: function (response) {
+            },
+            error: function (response) {
+            }
+        });
+
+    }
+
+    function OnStateClick() {
+        var State = $("#txtClientState").val();
+        if (State != null && State != "")
+            $("#txtClientState").autocomplete("search", State);
+        else
+            $("#txtClientState").autocomplete("search", "");
+    }
+    function GetSearchState() {
+
+        $("#txtClientState").autocomplete({
+
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/Patient/GetStateBySearch",
+                    type: "GET",
+                    data: {
+                        Search: request.term
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.StateName,
+                                value: el.StateSeqID
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#txtClientState").val(ui.item.label);
+                $("#txtClientState").val(ui.item.label);
+                $("#txtClientStateId").val(ui.item.value);
+                GetClientStateData(ui.item.value);
+                //$("#txtCustomerName").val(ui.item.label);
+                //$("#txtContactSearch").val('');
+            },
+            minLength: 0,
+            appendTo: "#modal-ClientMaster"
+        });
+        //$(".State").autocomplete("option", "appendTo", ".eventInsForm");
+    }
+
+    function GetClientStateData(StateId) {
+        var stateid = parseFloat(StateId);
+       
+
+        $.ajax({
+            type: "GET",
+            url: rootUrl + "/api/ClientMaster/GetCountryByStateID/?StateID=" + stateid + "",
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: true,
+            success: function (response) {
+                if (response.length > 0) {
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var CountryID = response[PCHeader].CountrySeqID;
+                        var CountryName = response[PCHeader].CountryName;
+                        $('#txtClientCountry').val(CountryName);
+                        $('#txtClientCountryId').val(CountryID);
+                    }
+                }
+                else {
+                    $('#txtClientCountry').val('');
+                    $('#txtClientCountryId').val('');
+                }
+            },
+            failure: function (response) {
+                alert(response);
+            },
+            error: function (response) {
+                alert(response);
+            }
+        });
+    }
+   
+
+    function GetStateDetailsByStateName() {
+        var stateName = $('#txtClientState').val();
+        var stateid = 0;
+        $('#txtClientStateId').val(stateid);
+        $.ajax({
+            type: "GET",
+            url: rootUrl + "/api/ClientMaster/GetStateDetailsByStateName/?StateName=" + stateName.trim(),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: true,
+            success: function (response) {
+                if (response.length > 0) {
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var CountryID = response[PCHeader].CountrySeqID;
+                        var CountryName = response[PCHeader].CountryName;
+                        var StateID = response[PCHeader].StateSeqID;
+                        var StateName = response[PCHeader].StateName;
+                        $('#txtClientStateId').val(StateID);
+                        $('#txtClientCountry').val(CountryName);
+                        $('#txtClientCountryId').val(CountryID);
+                    }
+                }
+
+            },
+            failure: function (response) {
+            },
+            error: function (response) {
+            }
+        });
+
+    }
+    function OnCountryClick() {
+        var Country = $("#txtClientCountry").val();
+        if (Country != null && Country != "")
+            $("#txtClientCountry").autocomplete("search", Country);
+        else
+            $("#txtClientCountry").autocomplete("search", "");
+    }
+    function GetSearchCountry() {
+       
+        $("#txtClientCountry").autocomplete({
+
+            source: function (request, response) {
+                $.ajax({
+                    url: rootUrl + "/api/Patient/GetCountryBySearch",
+                    type: "GET",
+                    data: {
+                        Search: request.term
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        response($.map(data, function (el) {
+                            return {
+                                label: el.CountryName,
+                                value: el.CountrySeqId
+                            };
+                        }));
+                    }
+                });
+            },
+            focus: function (event, ui) {
+                event.preventDefault();
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#txtClientCountry").val(ui.item.label);
+                $("#txtClientCountryId").val(ui.item.value);
+                //$("#txtCustomerName").val(ui.item.label);
+                //$("#txtContactSearch").val('');
+            },
+            minLength: 0,
+            appendTo: "#modal-ClientMaster"
+        });
+        //$(".Country").autocomplete("option", "appendTo", ".eventInsForm");
+    }
+    function GetCountyDetailsByCountryName() {
+        var countryName = $('#txtClientCountry').val();
+        var countryid = 0;
+        $('#txtClientCountryId').val(countryid);
+
+        $.ajax({
+            type: "GET",
+            url: rootUrl + "/api/ClientMaster/GetCountryDetailsByCountryName/?CountryName=" + countryName.trim(),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: true,
+            success: function (response) {
+                if (response.length > 0) {
+                    for (i = 0; i < response.length; i++) {
+                        var CountryID = response[i].CountrySeqId;
+                        $('#txtClientCountryId').val(CountryID);
+                    }
+                }
+
+            },
+            failure: function (response) {
+            },
+            error: function (response) {
+            }
+        });
+
+    }
+    function GetState() {
+        $.ajax({
+            url: rootUrl + "/api/ClientMaster/GetState",
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.length > 0) {
+                    $('#ddlStateName').empty();
+                    $('#ddlStateName')
+                        .append($("<option></option>").val(0).html('-Select-'));
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var StateID = response[PCHeader].StateSeqID;
+                        var StateName = response[PCHeader].StateName;
+                        $('#ddlStateName')
+                            .append($("<option></option>").val(StateID).html(StateName));
+                    }
+                }
+            }
+        });
+    }
+    function GetCountry() {
+        $.ajax({
+            url: rootUrl + "/api/ClientMaster/GetCountry",
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.length > 0) {
+                    $('#ddlCountryName').empty();
+                    $('#ddlCountryName')
+                        .append($("<option></option>").val(0).html('-Select-'));
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var CountryID = response[PCHeader].CountrySeqId;
+                        var CountryName = response[PCHeader].CountryName;
+                        $('#ddlCountryName')
+                            .append($("<option></option>").val(CountryID).html(CountryName));
+                    }
+                }
+            }
+        });
+    }
+    function CityChange() {
+        try {
+            var e = document.getElementById("ddlCityName");
+            var cityid = e.options[e.selectedIndex].value;
+           
+        }
+        catch (e) {
+
+        }
+    }
+    function StateChange() {
+        try {
+            var e = document.getElementById("ddlStateName");
+            var stateid = e.options[e.selectedIndex].value;
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/ClientMaster/GetCountryByStateID/?StateID=" + stateid + "",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    if (response.length > 0) {
+                        for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                            var CountryID = response[PCHeader].CountrySeqID;
+                            var CountryName = response[PCHeader].CountryName;
+                            setSelectedIndex(document.getElementById("ddlCountryName"), CountryName);
+                        }
+                    }
+                    else {
+                        setSelectedIndex(document.getElementById("ddlCountryName"), '-Select-');
+                    }
+                },
+                failure: function (response) {
+                    alert(response);
+                },
+                error: function (response) {
+                    alert(response);
+                }
+            });
+        }
+        catch (e) {
+
+        }
+    }
+    function setSelectedIndex(s, v) {
+        try {
+            for (var i = 0; i < s.options.length; i++) {
+                if (s.options[i].text == v) {
+                    s.options[i].selected = true;
+                    return;
+                }
+            }
+        }
+        catch (e) {
+        }
+    }
+    function SelectGstNumber() {
+       var gstDetails = $('#ddlGstDetails').val();
+        if (gstDetails == "Registered") {
+            $('#headClientGst').prop("hidden", false);
+        }
+        else if (gstDetails == "UnRegistered") {
+            $('#headClientGst').prop("hidden", true);
+        }
+        else if (gstDetails == "Select") {
+            $('#headClientGst').prop("hidden", true);
+        }
+    }
+</script>
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div id="loading">
+            <div id="loadingcontent">
+                <p id="loadingspinner">
+                    Please Wait...
+                </p>
+                <div id="loadingspinner">
+                    <img src="~/images/loading.gif" style="width: 100px; height: 100px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@*<div class="content-wrapper" style=" font-family: arial, sans-serif;">
+    <div class="content">
+        <div class="container-fluid">*@
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="panel panel-default DivBox" style="background-color: white;">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                    @*<input type="text" class="form-control" id="txtSearch" />*@
+                                </div>
+                                <div class="col-xs-4 col-sm-4 col-md-4">
+                                </div>
+                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                </div>
+                                <div class="col-xs-2 col-sm-2 col-md-2">
+                                    <button style="margin-top: 4px;margin-right:22px;float:right" class="btn btn-primary" onclick="onclickClientPopup();">
+                                        <i class="fas fa-plus"></i>Add Client
+                                    </button>
+                                </div>
+
+                            </div>
+
+                            <div class="row">
+                                <table class="table table-bordered" id="tblClient" style="margin-top: 10px;">
+                                    <thead>
+                                        <tr style="font-size:13px;font-weight:700;font-family:sans-serif;">
+                                            <th>Name</th>
+                                            <th>Address</th>
+                                            <th>Email</th>
+                                            <th>Phone Number</th>
+                                            @*<th>Warehouse</th>*@
+                                            <th>City</th>
+                                            <th>State</th>
+                                            <th>Country</th>
+                                            <th style="width: 20px;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+
+                                </table>
+                            </div>
+                            <div class="modal fade" id="modal-ClientMaster">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h4 class="modal-title">Add Client</h4>
+                                            @*<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>*@
+                                        </div>
+                                        <div class="modal-body eventForm ">
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <label>Name</label>
+                                                    <input type="text" class="form-control" id="txtClientName" placeholder="Name" />
+                                                    <input type="hidden" id="txtSeqId" />
+
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <label>Address 1</label>
+                                                    <input type="text" class="form-control" id="txtClientAddress1" placeholder="Address1" />
+                                                </div>
+
+
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <label>Address 2</label>
+                                                    <input type="text" class="form-control" id="txtClientAddress2" placeholder="Address2" />
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <label>Email</label>
+                                                    <input type="text" class="form-control" id="txtEmail" placeholder="Email" />
+                                                </div>
+
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <label>Phone Number</label>
+                                                    <input type="text" class="form-control" id="txtPhoneNumber" onkeypress="return isNumberAndSpecialCharacters(event)" placeholder="PhoneNumber" />
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <label>Mobile No</label>
+                                                    <input type="text" class="form-control" id="txtMobileNo" onkeypress="return isNumber(event)" placeholder="MobileNo" />
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <label>Gst</label>
+                                                    <select class="form-control" id="ddlGstDetails" onchange="SelectGstNumber();">
+                                                        <option value="Select">--Select--</option>
+                                                        <option value="Registered">Registered</option>
+                                                        <option value="UnRegistered">UnRegistered</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6" hidden id="headClientGst">
+                                                    <label>Gst No</label>
+                                                    <input type="text" class="form-control" id="txtClientGst" placeholder="Gst No" />
+                                                </div>
+
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <label>ARN No</label>
+                                                    <input type="text" class="form-control" id="txtClientArnNo" placeholder="ARN No" />
+                                                </div>
+
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <label>City</label>
+                                                    <input class="form-control" placeholder="City" id="txtClientCityName" onchange="GetCityDetailsByCityName();" onkeyup="OnCityClick();" style="cursor:pointer;" />
+                                                    <input type="hidden" class="form-control" id="txtClientCityId" />
+
+
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <label>State</label>
+                                                    <input class="form-control" placeholder="State" id="txtClientState" onchange="GetStateDetailsByStateName();" onkeyup="OnStateClick();" style="cursor:pointer;" />
+                                                    <input type="hidden" class="form-control" id="txtClientStateId" />
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <label>Country</label>
+                                                    <input class="form-control" placeholder="Country" onchange="GetCountyDetailsByCountryName();" id="txtClientCountry" onkeyup="OnCountryClick();" style="cursor:pointer;" />
+                                                    <input type="hidden" class="form-control" id="txtClientCountryId" />
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <label>Warehouse</label>
+                                                    <select class="form-control" id="ddlStoreName" style="cursor:pointer;" multiple>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <label>Purchase Expiry Days</label>
+                                                    <input class="form-control" placeholder="Country Expiry Days" id="txtClientPurchaseDays"  />
+                                                </div>
+                                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                                    <label>Dispense Expiry Days</label>
+                                                    <input class="form-control" placeholder="Dispense Expiry Days" id="txtClientDispenseDays"   />
+                                                </div>
+                                            </div>
+                                            <br />
+                                            <div class="row">
+                                                <div class="col">
+                                                    <button class="btn btn-primary" id="btnClientSave" onclick="SaveClientDetails();">Save</button>
+                                                    <button class="btn btn-primary" id="btnClientUpdate" hidden onclick="UpdateClientDetails();">Update</button>
+                                                    <button class="btn btn-primary" onclick="ClientPageClear();">Cancel</button>
+                                                </div>
+                                            </div>
+
+                                            <!-- /.modal-content -->
+                                        </div>
+                                        <!-- /.modal-dialog -->
+                                    </div>
+
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @*</div>
+    </div>
+</div>*@

@@ -1,0 +1,395 @@
+﻿
+@{
+    ViewData["Title"] = "Register";
+    Layout = null;
+}
+@using Syncfusion.EJ2
+@using Newtonsoft.Json
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    function CheckSplPwd() {
+        try {
+            var Splpassword = $("#splpwd").val();
+            if (Splpassword == '')
+                alert('Please Enter Password');
+            else {
+                $.ajax({
+                    type: "GET",
+                    url: rootUrl + "/api/Patient/CheckSplPwd/?splpawd=" + Splpassword,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    success: function (response) {
+                        var data = response;
+                        if (data == 'success') {
+                            $("#firstview").hide();
+                            $("#secondview").show();
+                            $("#splpwd").val('');
+                        }
+                        else
+                            alert('Wrong Credentials.Please Enter Corret Password');
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+            }
+        }
+        catch (e) {
+        }
+    }
+    function Checkusername() {
+        try {
+            var adusername = $("#adminusrnme").val();
+            if (adusername == '')
+                alert('Please Enter Admin User Name');
+            else {
+                $.ajax({
+                    type: "GET",
+                    url: rootUrl + "/api/Patient/CheckUsername?admusernm=" + adusername,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    success: function (response) {
+                        var data = response;
+                        if (data == 'success') {
+                            alert('Admin User Name already Exist');
+                            $("#adminusrnme").focus();
+                            $("#adminusrnme").val('');
+                        }
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+            }
+        }
+        catch (e) {
+        }
+    }
+    function Clear() {
+        try {
+            $("#adminusrnme").val('');
+            $("#adminusrid").val('');
+            $("#adminusrpwd").val('');
+            $("#adminusrcnfpwd").val('');
+            $("#adminusremail").val('');
+            $("#adminusrcontact").val('');
+        }
+        catch (e) {
+        }
+    }
+    function Checkuserid() {
+        try {
+            var aduserid = $("#adminusrid").val();
+            if (aduserid == '')
+                alert('Please Enter Admin User Id');
+            else {
+                $.ajax({
+                    type: "GET",
+                    url: rootUrl + "/api/Patient/CheckUserid?admuserid=" + aduserid,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    success: function (response) {
+                        var data = response;
+                        if (data == 'success') {
+                            alert('Admin User ID already Exist');
+                            $("#adminusrid").focus();
+                            $("#adminusrid").val('');
+                        }
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+            }
+        }
+        catch (e) {
+        }
+    }
+    function regCancel() {
+        try {
+            $("#firstview").show();
+            $("#secondview").hide();
+            Clear();
+        }
+        catch (e) {
+        }
+    }
+    function Checkconfirmpwd() {
+        try {
+            var Pwd = $("#adminusrpwd").val();
+            var ConfirmPwd = $("#adminusrcnfpwd").val();
+            if (Pwd == '') {
+                alert('Please Enter Password First');
+                $("#adminusrcnfpwd").val('');
+            }
+            else {
+                if (Pwd != ConfirmPwd) {
+                    alert('Password Not Match.Please Enter Correct Password');
+                    $("#adminusrcnfpwd").val('');
+                }
+            }
+        }
+        catch (e) {
+        }
+    }
+    function CheckPwd() {
+        try {
+            var Pwd = $("#adminusrpwd").val();
+            var ConfirmPwd = $("#adminusrcnfpwd").val();
+            if (ConfirmPwd == '')
+                return;
+            else {
+                if (Pwd != ConfirmPwd) {
+                    alert('Password Not Match.Please Enter Correct Password');
+                    $("#adminusrpwd").val('');
+                }
+            }
+        }
+        catch (e) {
+        }
+    }
+    function ValidateEmail() {
+        try {
+            var email = document.getElementById("adminusremail").value;
+            var expr = /^([\w-\.]+)@@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([\w-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/;
+            if (!expr.test(email)) {
+                alert("Invalid email address.");
+                $("#adminusremail").val('');
+                return;
+            }
+            $.ajax({
+                type: "GET",
+                url: rootUrl + "/api/Patient/CheckUseremail?admuseremail=" + email,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: true,
+                success: function (response) {
+                    var data = response;
+                    if (data == 'success') {
+                        alert('Admin User Email already Exist');
+                        $("#adminusremail").focus();
+                        $("#adminusremail").val('');
+                    }
+                },
+                failure: function (response) {
+                },
+                error: function (response) {
+                }
+            });
+        }
+        catch (e) {
+        }
+    }
+    function CancelClick() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+    function CheckHospitalname() {
+        try {
+            var adhosname = $("#adminhosname").val();
+            if (adhosname == '')
+                alert('Please Enter Hospital Name');
+            else {
+                $.ajax({
+                    type: "GET",
+                    url: rootUrl + "/api/Patient/CheckHospitalname?HosName=" + adhosname,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    success: function (response) {
+                        var data = response;
+                        if (data == 'success') {
+                            alert('Hospital Name already Exist');
+                            $("#adminhosname").focus();
+                            $("#adminhosname").val('');
+                        }
+                    },
+                    failure: function (response) {
+                    },
+                    error: function (response) {
+                    }
+                });
+            }
+        }
+        catch (e) {
+        }
+    }
+    function SaveRegistration() {
+        try {
+            var adusername = $("#adminusrnme").val();
+            var aduserid = $("#adminusrid").val();
+            var pwd = $("#adminusrpwd").val();
+            var confirmpwd = $("#adminusrcnfpwd").val();
+            var Emailid = $("#adminusremail").val();
+            var contact = $("#adminusrcontact").val();
+            var Hospitalname = $("#adminhosname").val();
+            if (adusername == '')
+                alert('Please Enter Admin User Name');
+            else if (aduserid == '')
+                alert('Please Enter Admin User Id');
+            else if (pwd == '')
+                alert('Please Enter Password');
+            else if (Emailid == '')
+                alert('Please Enter Emailid');
+            else if (confirmpwd == '')
+                alert('Please Enter Confirm Password');
+            else if (Hospitalname == '')
+                alert('Please Enter Hospital Name');
+            else {
+                if (contact == "")
+                    contact = 0;
+                var Registerinfo = new Object();
+                Registerinfo.RegisterSeqid = 0;
+                Registerinfo.AdminUsername = adusername;
+                Registerinfo.AdminUserid = aduserid;
+                Registerinfo.AdminPassword = pwd;
+                Registerinfo.AdminEmailid = Emailid;
+                Registerinfo.ContactNumber = contact;
+                Registerinfo.ActivationKey = "";
+                Registerinfo.CreatedDatetime = "";
+                Registerinfo.ModifiedDatetime = "";
+                Registerinfo.CreatedUser = "";
+                Registerinfo.ModifiedUser = "";
+                Registerinfo.IsActive = true;
+                Registerinfo.HospitalName = Hospitalname;
+                $.ajax({
+                    url: "/Register/NewRegisterInsert",
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify(Registerinfo),
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data == true)
+                            alert('User Created Successfully');
+                        window.location.href = "/Login/Login";
+                    },
+                    failure: function (response) {
+                        alert(response);
+                    },
+                    error: function (response) {
+                        alert(response);
+                    }
+                });
+            }
+        }
+        catch (e) {
+        }
+    }
+</script>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <environment include="Development">
+        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
+        <link rel="stylesheet" href="~/css/site.css" />
+    </environment>
+    <environment exclude="Development">
+        <link rel="stylesheet" href="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.7/css/bootstrap.min.css"
+              asp-fallback-href="~/lib/bootstrap/dist/css/bootstrap.min.css"
+              asp-fallback-test-class="sr-only" asp-fallback-test-property="position" asp-fallback-test-value="absolute" />
+        <link rel="stylesheet" href="~/css/site.min.css" asp-append-version="true" />
+    </environment>
+
+</head>
+<body class="text-center">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-5 col-md-offset-4">
+                <div class="panel-heading">
+                    <h3 class="panel-title"><img class="mb-4" alt="" width="400" height="50" src="~/images/JeeNahRx4.png" /></h3>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-5 col-md-offset-4">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Register</h3>
+                    </div>
+                    <div class="panel-body">
+                        <form role="form" id="firstview">
+                            <fieldset>
+                                <div class="form-group">
+                                    <input type="password" id="splpwd" class="form-control" placeholder="Enter Special Password" autocomplete="off" autofocus required />
+                                </div>
+                                <div class="form-group">
+                                    <input type="button" id="btnsubmit" onclick="CheckSplPwd();" class="btn btn-lg btn-primary btn-block" autocomplete="off" value="Submit" />
+                                </div>
+                                <div class="form-group">
+                                    <input type="button" id="btncancel" onclick="CancelClick();" class="btn btn-lg btn-primary btn-block" autocomplete="off" value="Cancel" />
+                                </div>
+                            </fieldset>
+                        </form>
+                        <form role="form" id="secondview" style="display:none;">
+                            <fieldset>
+                                <div class="form-group">
+                                    <input type="text" id="adminusrnme" class="form-control" onchange="Checkusername();" placeholder="Admin User Name" autocomplete="off" autofocus required />
+                                </div>
+                                <div class="form-group">
+                                    <input type="text" id="adminusrid" class="form-control" onchange="Checkuserid();" placeholder="Admin User ID" autocomplete="off" autofocus required />
+                                </div>
+                                <div class="form-group">
+                                    <input type="password" id="adminusrpwd" class="form-control" placeholder="Password" onchange="CheckPwd();" autocomplete="off" autofocus required />
+                                </div>
+                                <div class="form-group">
+                                    <input type="password" id="adminusrcnfpwd" class="form-control" placeholder="Confirm Password" onchange="Checkconfirmpwd();" autocomplete="off" autofocus required />
+                                </div>
+                                <div class="form-group">
+                                    <input type="email" id="adminusremail" class="form-control" placeholder="Email Id" autocomplete="off" onchange="ValidateEmail()" autofocus required />
+                                </div>
+                                <div class="form-group">
+                                    <input type="text" id="adminusrcontact" maxlength="10" class="form-control" placeholder="Contact Number" autocomplete="off" autofocus />
+                                </div>
+                                <div class="form-group">
+                                    <input type="text" id="adminhosname" class="form-control" placeholder="Hospital Name" onchange="CheckHospitalname();" autocomplete="off" autofocus />
+                                </div>
+                                <div class="form-group">
+                                    <input type="button" id="btnsecview" class="btn btn-lg btn-primary btn-block" onclick="SaveRegistration();" autocomplete="off" value="Submit" />
+                                </div>
+                                <div class="form-group">
+                                    <input type="button" id="btncancelreg" onclick="regCancel();" class="btn btn-lg btn-primary btn-block" autocomplete="off" value="Cancel" />
+                                </div>
+                            </fieldset>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <environment include="Development">
+        <script src="~/lib/jquery/dist/jquery.js"></script>
+        <script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
+        <script src="~/js/site.js" asp-append-version="true"></script>
+    </environment>
+    <environment exclude="Development">
+        <script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-2.2.0.min.js"
+                asp-fallback-src="~/lib/jquery/dist/jquery.min.js"
+                asp-fallback-test="window.jQuery"
+                crossorigin="anonymous"
+                integrity="sha384-K+ctZQ+LL8q6tP7I94W+qzQsfRV2a+AfHIi9k8z8l9ggpc8X+Ytst4yBo/hH+8Fk">
+        </script>
+        <script src="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.7/bootstrap.min.js"
+                asp-fallback-src="~/lib/bootstrap/dist/js/bootstrap.min.js"
+                asp-fallback-test="window.jQuery && window.jQuery.fn && window.jQuery.fn.modal"
+                crossorigin="anonymous"
+                integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa">
+        </script>
+        <script src="~/js/site.min.js" asp-append-version="true"></script>
+    </environment>
+    @section Scripts {
+        @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    }
+</body>
+
+
+

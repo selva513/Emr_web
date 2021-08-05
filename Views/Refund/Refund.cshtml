@@ -1,0 +1,306 @@
+﻿
+@{
+    ViewData["Title"] = "Refund";
+}
+<style>
+    /*::placeholder {
+        color: gray;
+    }*/
+
+    .form-group {
+        font-family: serif;
+        font-size: 17px;
+        font-weight: 400;
+    }
+
+    .rows {
+        padding-left: 20px;
+    }
+
+    .Tex {
+        border-color: #80808030;
+    }
+
+    .head {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+        font-family: serif;
+        color: gray;
+        font-size: 14px;
+        background-color: #7e8ae33b;
+        cursor: pointer;
+    }
+
+    th {
+        border: 1px solid #dddddd;
+        text-align: center;
+        padding: 8px;
+        font-size: 15px;
+        color: black;
+    }
+
+    td {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+    }
+
+    /*.container-fluid {
+        background-color: white;
+    }*/
+    .head1 {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+        font-family: serif;
+        color: black;
+        font-size: 14px;
+    }
+
+    tr:nth-child(even) {
+        background-color: #8080800d;
+    }
+
+    .container-fluid {
+        background-color: white;
+    }
+
+    table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 98%;
+        margin-left: 5px;
+        margin-top: 26px;
+    }
+
+    .Backcolor {
+        color: black;
+        font-size: medium;
+        font-weight: 400 !important;
+        font-family: arial, sans-serif;
+    }
+
+    .PatDetails {
+        top: 8px;
+        font-size: 16px;
+    }
+</style>
+<script>
+    function getValues(url) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+    function postValues(url, jdata) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(jdata),
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+</script>
+<script>
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    $(document).ready(function () {
+        var today = new Date();
+        var currentyear = today.getFullYear();
+        var onetwentyyearback = currentyear - 120;
+        var daterange = onetwentyyearback + ':' + currentyear;
+
+        $('#txtFromDate').datepicker({
+            changeMonth: true,
+            changeYear: true,
+            yearRange: daterange,
+            dateFormat: 'dd/mm/yy',
+            endDate: "today",
+            maxDate: today,
+        });
+        $('#txtToDate').datepicker({
+            changeMonth: true,
+            changeYear: true,
+            yearRange: daterange,
+            dateFormat: 'dd/mm/yy',
+            endDate: "today",
+            maxDate: today,
+        });
+        $("#txtFromDate").datepicker('setDate', new Date());
+        $("#txtToDate").datepicker('setDate', new Date());
+        document.getElementById('lblOPTotal').innerHTML  = 'OP:';
+        document.getElementById('lblIPTotal').innerHTML = 'IP:';
+        document.getElementById('lblTotal').innerHTML = 'TOTAL:';
+        BindRefundtable();
+    });
+    function BindRefundtable() {
+        try {
+            var tData = getValues("/Order/GetTodaDuePatients");
+            BindRefundList(tData);
+        }
+        catch (e) {
+
+        }
+    }
+    function BindRefundList(tData) {
+        try {
+            var html = "";
+            if (tData != null && tData != '') {
+                $('#tbldue tbody').empty();
+                for (var i = 0; i < tData.length; i++) {
+                    //var SNO = tData[i].SNO;
+                    var PatSeqID = tData[i].PatSeqID;
+                    var PatientID = tData[i].PatientID;
+                    var FirstName = tData[i].FirstName;
+                    var DoctorName = tData[i].DoctorName;
+                    var VisitID = tData[i].VisitID;
+                    var DoctorID = tData[i].DoctorID;
+                    var OrderID = tData[i].OrderID;
+                    var OrderDate = tData[i].OrderDate;
+                    var Refund = tData[i].Refund;
+
+                    html += "<tr onclick='GetOrderReprint(this);' class='head1'>";
+                    //html += "<td>" + SNO + "</td>";
+                    html += " <td>" + PatientID + "</td>";
+                    html += "<td>" + FirstName + "</td>";
+                    html += "<td style='text-align:center;'>OP</td>";
+                    html += "<td >" + OrderID + "</td>";
+                    //html += "<td style='text-align:center;'>" + OrderDate + "</td>";
+                    html += "<td style='text-align:right;'>" + Refund + "</td>";
+                    html += "<td style='display:none;'>" + DoctorID + "</td>";
+                    html += "<td style='display:none;'>" + VisitID + "</td>";
+                    html += "<td style='display:none;'>" + PatSeqID + "</td>";
+                    html += "</tr>";
+                }
+            }
+            else if (tData == '' || tData == null) {
+                $('#tbldue tbody').empty();
+                html += "<tr class='head1'>";
+                html += "<td style='text-align:center;' colspan='9'>No Records Found</td>";
+                html += "</tr>";
+            }
+            $('#tbldue tbody').html(html);
+        }
+        catch (e) {
+
+        }
+    }
+    function BindFiltertable() {
+        try {
+            var Fromdatestr = $("#txtFromDate").val();
+            var Todatestr = $("#txtToDate").val();
+            var Search = $("#txtsearch").val();
+            var e = document.getElementById("drpdays");
+            var Days = e.options[e.selectedIndex].text;
+            var f = document.getElementById("drppatienttype");
+            var PatientType = f.options[f.selectedIndex].text;
+            var g = document.getElementById("drprowcount");
+            var RowCount = g.options[g.selectedIndex].text;
+            var Url = "/Order/GetTodayDuePatientsSearch?Fromdate=" + Fromdatestr + "&Todate=" + Todatestr + "&Search=" + Search + "&Days=" + Days + "&PatientType=" + PatientType + "&RowCount=" + RowCount + "";
+            var tData = getValues(Url);
+            BindRefundList(tData);
+        }
+        catch (e) {
+
+        }
+    }
+</script>
+
+
+<div class="content-wrapper">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-primary">
+                    <div class="card-header" style="margin-top:15px;height: 53px;">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <h3 class="card-title">Patient Refund</h3>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label id="lblOPTotal"></label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label id="lblIPTotal"></label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label id="lblTotal"></label>
+                                </div>
+                            </div>
+                        </div>
+                        <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;margin-top:-48px" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" style="margin-left:-11px">
+            <div class="rows">
+                <label class="form-group">From:</label>
+                <input type="text" id="txtFromDate" onchange="BindFiltertable();" class="Tex" placeholder="DD/MM/YYYY" /> @*readonly="readonly"*@
+            </div>
+            <div class="rows">
+                <label class="form-group">To:</label>
+                <input type="text" id="txtToDate" onchange="BindFiltertable();" class="Tex" placeholder="DD/MM/YYYY" />
+            </div>
+            <div class="rows">
+                <input type="text" id="txtsearch" onkeyup="BindFiltertable();" class="Tex" placeholder="Search" style="margin-top:0px;width: 230px;" />
+            </div>
+            <div class="rows">
+                <select class="Tex" id="drpdays" onchange="BindFiltertable();" style="width:134px;height:30px">
+                    <option>Today</option>
+                    <option>2 Days</option>
+                    <option>7 Days</option>
+                </select>
+            </div>
+            <div class="rows">
+                <select class="Tex" id="drppatienttype" onchange="BindFiltertable();" style="border-color: #80808030; margin-top:5px">
+                    <option>OP</option>
+                    <option>IP</option>
+                </select>
+            </div>
+            <div class="rows">
+                <label class="form-group">Display Row :</label>
+                <select id="drprowcount" onchange="BindFiltertable();" style="border-color: #80808030; margin-top:5px">
+                    <option>10</option>
+                    <option>20</option>
+                    <option>30</option>
+                    <option>40</option>
+                </select>
+            </div>
+        </div>
+        <table id="tbldue">
+            <thead>
+                <tr class="head">
+                    <th style="width:3%">UHID</th>
+                    <th style="width:5%">PATIENT NAME</th>
+                    <th style="width:1%">TYPE</th>
+                    <th style="width:2%">ORDER ID</th>
+                    <th style="width:1%">REFUND</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>

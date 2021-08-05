@@ -1,0 +1,1805 @@
+﻿
+@using Syncfusion.EJ2
+@using Newtonsoft.Json
+<style>
+</style>
+<script>
+    $(document).ready(function () {
+        var Patientid = $("#lblpatid").text();
+        var visitid = $("#lblvisitid").text();
+        if (sessionStorage.getItem('Status') == 'Check-In')
+            GetOldExamination(Patientid, visitid);
+    });
+    function GetOldExamination(Patientid, visitid) {
+        var sendJsonData = {};
+        var response = postValues("/Emr/GetPatDetails", sendJsonData);
+        if (response.Pat.length > 0) {
+            var DoctorCompare = response.Pat[0].DoctorCompare;
+            if (DoctorCompare == false) {
+                document.getElementById('btnPatSaveExamintionVerfiy').disabled = true;
+            }
+            else {
+                var verifyresponse = getValues("/Emr/GetVerifyDetails");
+                if (verifyresponse == false) {
+                    $("#btnPatSaveExamintionVerfiy").prop('disabled', true);
+                }
+                else {
+                    $("#btnPatSaveExamintionVerfiy").prop('disabled', false);
+                }
+            }
+        }
+        $.ajax({
+            url: "/Emr/GetExamLastData/?PatientId=" + Patientid + "&Visitid=" + visitid + "",
+            type: 'GET',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                if (response.PatExam.length > 0) {
+                    for (Count = 0; Count < response.PatExam.length; Count++) {
+                        $("#txExamintionComments").val(response.PatExam[Count].Comments);
+                        $("#txSpecificComments").val(response.PatExam[Count].SpecifiComments);
+                    }
+                    if (response.ExamView.length) {
+                        $("#tblExamanition tbody").empty();
+                        for (ExamCount = 0; ExamCount < response.ExamView.length; ExamCount++) {
+                            var Examintion = response.ExamView[ExamCount].ExaminationName;
+                            var opt1 = response.ExamView[ExamCount].Option1;
+                            var opt2 = response.ExamView[ExamCount].Option2;
+                            var opt3 = response.ExamView[ExamCount].Option3;
+                            var opt4 = response.ExamView[ExamCount].Option4;
+                            var opt5 = response.ExamView[ExamCount].Option5;
+                            var opt6 = response.ExamView[ExamCount].Option6;
+                            var opt7 = response.ExamView[ExamCount].Option7;
+                            var opt8 = response.ExamView[ExamCount].Option8;
+                            var opt9 = response.ExamView[ExamCount].Option9;
+                            var opt10 = response.ExamView[ExamCount].Option10;
+                            var opt11 = response.ExamView[ExamCount].Option11;
+                            var opt12 = response.ExamView[ExamCount].Option12;
+
+                            var optChk1 = response.ExamView[ExamCount].OptChk1;
+                            var optChk2 = response.ExamView[ExamCount].OptChk2;
+                            var optChk3 = response.ExamView[ExamCount].OptChk3;
+                            var optChk4 = response.ExamView[ExamCount].OptChk4;
+                            var optChk5 = response.ExamView[ExamCount].OptChk5;
+                            var optChk6 = response.ExamView[ExamCount].OptChk6;
+                            var optChk7 = response.ExamView[ExamCount].OptChk7;
+                            var optChk8 = response.ExamView[ExamCount].OptChk8;
+                            var optChk9 = response.ExamView[ExamCount].OptChk9;
+                            var optChk10 = response.ExamView[ExamCount].OptChk10;
+                            var optChk11 = response.ExamView[ExamCount].OptChk11;
+                            var optChk12 = response.ExamView[ExamCount].OptChk12;
+                            var Notes = response.ExamView[ExamCount].Notes;
+                            var $tr = $('#tblExamanition tr[data-id="' + Examintion + '"]');
+                            if ($tr.length === 0)
+                                OnsucessLastExamintion(Examintion, opt1, opt2, opt3, opt4, opt5, opt6, opt7, opt8, opt9, opt10, opt11, opt12, optChk1, optChk2, optChk3, optChk4, optChk5, optChk6, optChk7, optChk8, optChk9, optChk10, optChk11, optChk12, Notes);
+                        }
+                    }
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function OpenExamintionMaster() {
+        $("#txtOption1").val("");
+        $("#txtOption2").val("");
+        $("#txtOption3").val("");
+        $("#txtOption4").val("");
+        $("#txtOption5").val("");
+        $("#txtOption6").val("");
+        $("#txtOption7").val("");
+        $("#txtOption8").val("");
+        $("#txtOption9").val("");
+        $("#txtOption10").val("");
+        $("#txtOption11").val("");
+        $("#txtOption12").val("");
+        document.getElementById('txtEnterExamintion').ej2_instances[0].value = "";
+        document.getElementById('ExamintionAdd').ej2_instances[0].show();
+    }
+    function SaveExamintion() {
+        var Examintion = document.getElementById('txtEnterExamintion').ej2_instances[0].value;
+        if (Examintion !== null) {
+            var sendJsonData = {
+                ExaminationName: document.getElementById('txtEnterExamintion').ej2_instances[0].value,
+                Option1: $("#txtOption1").val(),
+                Option2: $("#txtOption2").val(),
+                Option3: $("#txtOption3").val(),
+                Option4: $("#txtOption4").val(),
+                Option5: $("#txtOption5").val(),
+                Option6: $("#txtOption6").val(),
+                Option7: $("#txtOption7").val(),
+                Option8: $("#txtOption8").val(),
+                Option9: $("#txtOption9").val(),
+                Option10: $("#txtOption10").val(),
+                Option11: $("#txtOption11").val(),
+                Option12: $("#txtOption12").val()
+            };
+            $.ajax({
+                url: "/Emr/CreateNewExamintion",
+                type: 'post',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(sendJsonData),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+            document.getElementById('ExamintionAdd').ej2_instances[0].hide();
+        }
+        return false;
+    }
+    function OnchangeExamintion() {
+        var Examintion = document.getElementById('txtEnterExamintion').ej2_instances[0].value;
+        if (Examintion !== null) {
+            var arg = Examintion;
+            if (arg.length > 0) {
+                $.ajax({
+                    url: "/Emr/GetExamintionByName/?Examintion=" + arg + "",
+                    type: 'GET',
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    beforeSend: function () { $("#loading").css("display", "block"); },
+                    success: function (response) {
+
+                        for (Count = 0; Count < response.PatExam.length; Count++) {
+                            $("#txtOption1").val(response.PatExam[Count].Option1);
+                            $("#txtOption2").val(response.PatExam[Count].Option2);
+                            $("#txtOption3").val(response.PatExam[Count].Option3);
+                            $("#txtOption4").val(response.PatExam[Count].Option4);
+                            $("#txtOption5").val(response.PatExam[Count].Option5);
+                            $("#txtOption6").val(response.PatExam[Count].Option6);
+                            $("#txtOption7").val(response.PatExam[Count].Option7);
+                            $("#txtOption8").val(response.PatExam[Count].Option8);
+                            $("#txtOption9").val(response.PatExam[Count].Option9);
+                            $("#txtOption10").val(response.PatExam[Count].Option10);
+                            $("#txtOption11").val(response.PatExam[Count].Option11);
+                            $("#txtOption12").val(response.PatExam[Count].Option12);
+                        }
+                    },
+                    complete: function () { $("#loading").css("display", "none"); }
+                });
+            }
+        }
+    }
+    function UpdateExamintion() {
+        var Examintion = document.getElementById('txtEnterExamintion').ej2_instances[0].value;
+        if (Examintion !== null) {
+            var sendJsonData = {
+                ExaminationName: document.getElementById('txtEnterExamintion').ej2_instances[0].value,
+                Option1: $("#txtOption1").val(),
+                Option2: $("#txtOption2").val(),
+                Option3: $("#txtOption3").val(),
+                Option4: $("#txtOption4").val(),
+                Option5: $("#txtOption5").val(),
+                Option6: $("#txtOption6").val(),
+                Option7: $("#txtOption7").val(),
+                Option8: $("#txtOption8").val(),
+                Option9: $("#txtOption9").val(),
+                Option10: $("#txtOption10").val(),
+                Option11: $("#txtOption11").val(),
+                Option12: $("#txtOption12").val()
+            };
+            $.ajax({
+                url: "/Emr/UpdateExamintionByName",
+                type: 'post',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(sendJsonData),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+            document.getElementById('ExamintionAdd').ej2_instances[0].hide();
+        }
+        return false;
+    }
+    function ExamintionRowCreate(Exam, opt1, opt2, opt3, opt4, opt5, opt6, opt7, opt8, opt9, opt10, opt11, opt12, Notes) {
+        var html = "";
+        if (Exam !== "") {
+            html += "<tr data-id=\"" + Exam + "\">";
+            html += "<td><input type=\"checkbox\" style=\"width:16px;height:16px;\"></td>";
+            html += "<td style='color:blue;font-size:medium;'>" + Exam + " <img src='../Images/comments.png' onclick='OpenHelpExamination(this);' title='Notes' style='cursor:pointer;height:25px !important;'></td>";
+            if (opt1 !== "")
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt1 + "' onclick='CheckedRow(this)'> " + opt1 + "</td>";
+            else
+                html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+            if (opt2 !== "")
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt2 + "' onclick='CheckedRow(this)'> " + opt2 + "</td>";
+            else
+                html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+            if (opt3 !== "")
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt3 + "' onclick='CheckedRow(this)'> " + opt3 + "</td>";
+            else
+                html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+            if (opt4 !== "")
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt4 + "' onclick='CheckedRow(this)'> " + opt4 + "</td>";
+            else
+                html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+            if (opt5 !== "")
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt5 + "' onclick='CheckedRow(this)'> " + opt5 + "</td>";
+            else
+                html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+            if (opt6 !== "")
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt6 + "' onclick='CheckedRow(this)'> " + opt6 + "</td>";
+            else
+                html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+            if (opt7 !== "")
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt7 + "' onclick='CheckedRow(this)'> " + opt7 + "</td>";
+            else
+                html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+            if (opt8 !== "")
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt8 + "' onclick='CheckedRow(this)'> " + opt8 + "</td>";
+            else
+                html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+            if (opt9 !== "")
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt9 + "' onclick='CheckedRow(this)'> " + opt9 + "</td>";
+            else
+                html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+            if (opt10 !== "")
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt10 + "' onclick='CheckedRow(this)'> " + opt10 + "</td>";
+            else
+                html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+            if (opt11 !== "")
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt11 + "' onclick='CheckedRow(this)'> " + opt11 + "</td>";
+            else
+                html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+            if (opt12 !== "")
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt12 + "' onclick='CheckedRow(this)'> " + opt12 + "</td>";
+            else
+                html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+
+
+            html += "<td style='text-align: center;'>";
+            html += "<img src='../Images/Delete.png'  onclick='return DeleteExamintion(this)' style='cursor:pointer;width: 25px !important;height:25px !important;'></td>";
+            html += "<td style='text-align: center;display:none;'>" + Exam + "</td>";
+            html += "<td style='text-align: center;display:none;'>" + Notes + "";
+            html += "</td></tr>";
+            $("#tblExamanition tbody").append(html);
+        }
+    }
+    function CheckedRow(SelectedRow) {
+        var myrow = SelectedRow.parentNode.parentNode;
+        var cellValue = SelectedRow.parentNode.cellIndex;
+        var table = document.getElementById("tblExamanition");
+        var i = myrow.rowIndex;
+        var sval12 = table.rows[i];
+        var checkbox = sval12.cells[cellValue].getElementsByTagName("input");
+        if ($(checkbox).is(':checked'))
+            sval12.cells[0].getElementsByTagName("input")[0].setAttribute('checked', 'checked');
+    }
+    function OnSearchchangeExamintion() {
+        var Examintion = document.getElementById('txtSearchExam').ej2_instances[0].value;
+        // Examintion = escape(Examintion);
+        if (Examintion !== null) {
+            var arg = Examintion;
+            if (arg.length > 0) {
+                $.ajax({
+                    url: "/Emr/GetExamintionByName/?Examintion=" + arg + "",
+                    type: 'GET',
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    beforeSend: function () { $("#loading").css("display", "block"); },
+                    success: function (response) {
+                        for (Count = 0; Count < response.PatExam.length; Count++) {
+                            var ExamName = response.PatExam[Count].ExaminationName;
+                            var opt1 = response.PatExam[Count].Option1;
+                            var opt2 = response.PatExam[Count].Option2;
+                            var opt3 = response.PatExam[Count].Option3;
+                            var opt4 = response.PatExam[Count].Option4;
+                            var opt5 = response.PatExam[Count].Option5;
+                            var opt6 = response.PatExam[Count].Option6;
+                            var opt7 = response.PatExam[Count].Option7;
+                            var opt8 = response.PatExam[Count].Option8;
+                            var opt9 = response.PatExam[Count].Option9;
+                            var opt10 = response.PatExam[Count].Option10;
+                            var opt11 = response.PatExam[Count].Option11;
+                            var opt12 = response.PatExam[Count].Option12;
+                            var Notes = response.PatExam[Count].Notes;
+                            var $tr = $('#tblExamanition tr[data-id="' + ExamName + '"]');
+                            if ($tr.length === 0)
+                                ExamintionRowCreate(ExamName, opt1, opt2, opt3, opt4, opt5, opt6, opt7, opt8, opt9, opt10, opt11, opt12, Notes);
+
+                            document.getElementById('txtSearchExam').ej2_instances[0].text = "";
+                            document.getElementById('txtSearchExam').ej2_instances[0].value = "";
+                        }
+                    },
+                    complete: function () { $("#loading").css("display", "none"); }
+                });
+            }
+        }
+    }
+    function DeleteExamintion(SelectedRow) {
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = myrow.rowIndex;
+        document.getElementById("tblExamanition").deleteRow(myrow.rowIndex);
+        var table = document.getElementById("tblExamanition");
+        var rowCount = table.rows.length;
+        var i = myrow.rowIndex;
+        document.getElementById('txtSearchExam').ej2_instances[0].text = "";
+        document.getElementById('txtSearchExam').ej2_instances[0].value = "";
+        //regroup(i, rowCount, "tblComplaints");
+        return false;
+    }
+    function SaveExamintionPickList() {
+        var PickLstName = document.getElementById('txtPickLstExamintion').ej2_instances[0].value;
+        if (PickLstName !== null) {
+            var Examintion = new Array();
+            var tblExamanition = document.getElementById("tblExamanition");
+            var rowtblExamanition = tblExamanition.rows.length;
+            for (M = 1; M < rowtblExamanition; M++) {
+                var rowExamanition = tblExamanition.rows[M];
+                var ObjectDetails = new Object();
+                ObjectDetails.PickListName = "";
+                ObjectDetails.ExaminationName = rowExamanition.cells[15].innerHTML;
+                ObjectDetails.Option1 = rowExamanition.cells[2].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option2 = rowExamanition.cells[3].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option3 = rowExamanition.cells[4].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option4 = rowExamanition.cells[5].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option5 = rowExamanition.cells[6].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option6 = rowExamanition.cells[7].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option7 = rowExamanition.cells[8].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option8 = rowExamanition.cells[9].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option9 = rowExamanition.cells[10].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option10 = rowExamanition.cells[11].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option11 = rowExamanition.cells[12].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option12 = rowExamanition.cells[13].getElementsByTagName("input")[0].value;
+                Examintion.push(ObjectDetails);
+            }
+            var sendJsonData = {
+                PickListName: document.getElementById('txtPickLstExamintion').ej2_instances[0].value,
+                GetExamination: Examintion,
+                EPickClick: "Old"
+            };
+            $.ajax({
+                url: "/Emr/CreateExamintionPickList",
+                type: 'post',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(sendJsonData),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    alert(data);
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        else {
+        }
+    }
+    function SaveAsExamintionPickList() {
+        var PickLstName = $("#txtExamintionNewPickLstName").val();
+        if (PickLstName.length > 0) {
+            var Examintion = new Array();
+            var tblExamanition = document.getElementById("tblExamanition");
+            var rowtblExamanition = tblExamanition.rows.length;
+            for (M = 1; M < rowtblExamanition; M++) {
+                var rowExamanition = tblExamanition.rows[M];
+                var ObjectDetails = new Object();
+                ObjectDetails.PickListName = "";
+                ObjectDetails.ExaminationName = rowExamanition.cells[15].innerHTML;
+                ObjectDetails.Option1 = rowExamanition.cells[2].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option2 = rowExamanition.cells[3].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option3 = rowExamanition.cells[4].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option4 = rowExamanition.cells[5].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option5 = rowExamanition.cells[6].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option6 = rowExamanition.cells[7].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option7 = rowExamanition.cells[8].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option8 = rowExamanition.cells[9].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option9 = rowExamanition.cells[10].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option10 = rowExamanition.cells[11].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option11 = rowExamanition.cells[12].getElementsByTagName("input")[0].value;
+                ObjectDetails.Option12 = rowExamanition.cells[13].getElementsByTagName("input")[0].value;
+                Examintion.push(ObjectDetails);
+            }
+            var sendJsonData = {
+                PickListName: PickLstName,
+                GetExamination: Examintion,
+                EPickClick: "New"
+            };
+            $.ajax({
+                url: "/Emr/CreateExamintionPickList",
+                type: 'post',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(sendJsonData),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    alert(data);
+                    $("#txtExamintionNewPickLstName").val('');
+                    document.getElementById('ExamPickdialog').ej2_instances[0].hide();
+
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        else {
+            $("#txtExamintionNewPickLstName").focus();
+        }
+    }
+    function OnPickListChange() {
+        var PickListName = document.getElementById('txtPickLstExamintion').ej2_instances[0].value;
+        if (PickListName !== null) {
+            var arg = PickListName;
+            if (arg.length > 0) {
+                $.ajax({
+                    url: "/Emr/GetPickLstByPickName/?PickListName=" + arg + "",
+                    type: 'GET',
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    beforeSend: function () { $("#loading").css("display", "block"); },
+                    success: function (response) {
+                        //$("#tblExamanition tbody").empty();
+                        for (Count = 0; Count < response.PatExam.length; Count++) {
+                            var Examintion = response.PatExam[Count].ExaminationName;
+                            var opt1 = response.PatExam[Count].Option1;
+                            var opt2 = response.PatExam[Count].Option2;
+                            var opt3 = response.PatExam[Count].Option3;
+                            var opt4 = response.PatExam[Count].Option4;
+                            var opt5 = response.PatExam[Count].Option5;
+                            var opt6 = response.PatExam[Count].Option6;
+                            var opt7 = response.PatExam[Count].Option7;
+                            var opt8 = response.PatExam[Count].Option8;
+                            var opt9 = response.PatExam[Count].Option9;
+                            var opt10 = response.PatExam[Count].Option10;
+                            var opt11 = response.PatExam[Count].Option11;
+                            var opt12 = response.PatExam[Count].Option12;
+                            var Notes = response.PatExam[Count].Notes;
+                            var $tr = $('#tblExamanition tr[data-id="' + Examintion + '"]');
+                            if ($tr.length === 0)
+                                ExamintionRowCreate(Examintion, opt1, opt2, opt3, opt4, opt5, opt6, opt7, opt8, opt9, opt10, opt11, opt12, Notes);
+                        }
+                    },
+                    complete: function () { $("#loading").css("display", "none"); }
+                });
+            }
+        }
+    }
+    function SavePatientExamintion(IsActive) {
+        var Examintion = new Array();
+        var tblExamanition = document.getElementById("tblExamanition");
+        var rowtblExamanition = tblExamanition.rows.length;
+        for (M = 1; M < rowtblExamanition; M++) {
+            var rowExamanition = tblExamanition.rows[M];
+
+            var checkbox = rowExamanition.cells[0].getElementsByTagName("input");
+            if ($(checkbox).is(':checked')) {
+                var ObjectDetails = new Object();
+                ObjectDetails.PickListName = "";
+                ObjectDetails.ExaminationName = rowExamanition.cells[15].innerHTML;
+
+                var checkbox1 = rowExamanition.cells[2].getElementsByTagName("input");
+                if ($(checkbox1).is(':checked')) {
+                    ObjectDetails.Option1 = rowExamanition.cells[2].getElementsByTagName("input")[0].value;
+                    ObjectDetails.OptChk1 = true;
+                }
+                else {
+                    ObjectDetails.Option1 = rowExamanition.cells[2].getElementsByTagName("input")[0].value;
+                    ObjectDetails.OptChk1 = false;
+                }
+                var checkbox2 = rowExamanition.cells[3].getElementsByTagName("input");
+                if ($(checkbox2).is(':checked')) {
+                    ObjectDetails.Option2 = rowExamanition.cells[3].getElementsByTagName("input")[0].value;
+                    ObjectDetails.OptChk2 = true;
+                }
+                else {
+                    ObjectDetails.Option2 = rowExamanition.cells[3].getElementsByTagName("input")[0].value;
+                    ObjectDetails.OptChk2 = false;
+                }
+                var checkbox3 = rowExamanition.cells[4].getElementsByTagName("input");
+                if ($(checkbox3).is(':checked')) {
+                    ObjectDetails.Option3 = rowExamanition.cells[4].getElementsByTagName("input")[0].value;
+                    ObjectDetails.OptChk3 = true;
+                }
+                else {
+                    ObjectDetails.Option3 = rowExamanition.cells[4].getElementsByTagName("input")[0].value;
+                    ObjectDetails.OptChk3 = false;
+                }
+                var checkbox4 = rowExamanition.cells[5].getElementsByTagName("input");
+                if ($(checkbox4).is(':checked')) {
+                    ObjectDetails.Option4 = rowExamanition.cells[5].getElementsByTagName("input")[0].value;
+                    ObjectDetails.OptChk4 = true;
+                }
+                else {
+                    ObjectDetails.Option4 = rowExamanition.cells[5].getElementsByTagName("input")[0].value;
+                    OptChk4 = false;
+                }
+                var checkbox5 = rowExamanition.cells[6].getElementsByTagName("input");
+                if ($(checkbox5).is(':checked')) {
+                    ObjectDetails.Option5 = rowExamanition.cells[6].getElementsByTagName("input")[0].value;
+                    ObjectDetails.OptChk5 = true;
+                }
+                else {
+                    ObjectDetails.Option5 = rowExamanition.cells[6].getElementsByTagName("input")[0].value;
+                    OptChk5 = false;
+                }
+                var checkbox6 = rowExamanition.cells[7].getElementsByTagName("input");
+                if ($(checkbox6).is(':checked')) {
+                    ObjectDetails.Option6 = rowExamanition.cells[7].getElementsByTagName("input")[0].value;
+                    ObjectDetails.OptChk6 = true;
+                }
+                else {
+                    ObjectDetails.Option6 = rowExamanition.cells[7].getElementsByTagName("input")[0].value;
+                    OptChk6 = false;
+                }
+                var checkbox7 = rowExamanition.cells[8].getElementsByTagName("input");
+                if ($(checkbox7).is(':checked')) {
+                    ObjectDetails.Option7 = rowExamanition.cells[8].getElementsByTagName("input")[0].value;
+                    ObjectDetails.OptChk7 = true;
+                }
+                else {
+                    ObjectDetails.Option7 = rowExamanition.cells[8].getElementsByTagName("input")[0].value;
+                    OptChk7 = false;
+                }
+                var checkbox8 = rowExamanition.cells[9].getElementsByTagName("input");
+                if ($(checkbox8).is(':checked')) {
+                    ObjectDetails.Option8 = rowExamanition.cells[9].getElementsByTagName("input")[0].value;
+                    ObjectDetails.OptChk8 = true;
+                }
+                else {
+                    ObjectDetails.Option8 = rowExamanition.cells[9].getElementsByTagName("input")[0].value;
+                    OptChk8 = false;
+                }
+                var checkbox9 = rowExamanition.cells[10].getElementsByTagName("input");
+                if ($(checkbox9).is(':checked')) {
+                    ObjectDetails.Option9 = rowExamanition.cells[10].getElementsByTagName("input")[0].value;
+                    ObjectDetails.OptChk9 = true;
+                }
+                else {
+                    ObjectDetails.Option9 = rowExamanition.cells[10].getElementsByTagName("input")[0].value;
+                    OptChk9 = false;
+                }
+                var checkbox10 = rowExamanition.cells[11].getElementsByTagName("input");
+                if ($(checkbox10).is(':checked')) {
+                    ObjectDetails.Option10 = rowExamanition.cells[11].getElementsByTagName("input")[0].value;
+                    ObjectDetails.OptChk10 = true;
+                }
+                else {
+                    ObjectDetails.Option10 = rowExamanition.cells[11].getElementsByTagName("input")[0].value;
+                    OptChk10 = false;
+                }
+                var checkbox11 = rowExamanition.cells[12].getElementsByTagName("input");
+                if ($(checkbox11).is(':checked')) {
+                    ObjectDetails.Option11 = rowExamanition.cells[12].getElementsByTagName("input")[0].value;
+                    ObjectDetails.OptChk11 = true;
+                }
+                else {
+                    ObjectDetails.Option11 = rowExamanition.cells[12].getElementsByTagName("input")[0].value;
+                    OptChk11 = false;
+                }
+                var checkbox12 = rowExamanition.cells[13].getElementsByTagName("input");
+                if ($(checkbox12).is(':checked')) {
+                    ObjectDetails.Option12 = rowExamanition.cells[13].getElementsByTagName("input")[0].value;
+                    ObjectDetails.OptChk12 = true;
+                }
+                else {
+                    ObjectDetails.Option12 = rowExamanition.cells[13].getElementsByTagName("input")[0].value;
+                    OptChk12 = false;
+                }
+                ObjectDetails.Notes = rowExamanition.cells[16].innerHTML;
+                Examintion.push(ObjectDetails);
+            }
+        }
+        var sendJsonData = {
+            SeqID: 0,
+            PatientID: $("#lblpatid").text(),
+            VisitID: $("#lblvisitid").text(),
+            Comments: $("#txExamintionComments").val(),
+            SpecifiComments: $("#txSpecificComments").val(),
+            IsActive: IsActive,
+            EntryDate: "",
+            GetExamination: Examintion
+        };
+        $.ajax({
+            url: "/Emr/CreateNewPatientExamintion",
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(sendJsonData),
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (data) {
+                if (IsActive === true) {
+                    $("#tblExamanition tbody").empty();
+                    $("#txSpecificComments").val("");
+                    $("#txExamintionComments").val("");
+                    $("#chkExamPrevious").prop("checked", false);
+                }
+                CloseExamintionStatus();
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function OnLastPatientExamintion() {
+        if ($("#chkExamPrevious").is(":checked")) {
+            
+            var arg = $("#lblpatid").text();
+            $.ajax({
+                url: "/Emr/GetLatestPatientExamintion/?PatientId=" + arg + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    if (response.PatExam.length > 0) {
+                        for (Count = 0; Count < response.PatExam.length; Count++) {
+                            $("#txExamintionComments").val(response.PatExam[Count].Comments);
+                            $("#txSpecificComments").val(response.PatExam[Count].SpecifiComments);
+                        }
+                        if (response.ExamView.length) {
+                            $("#tblExamanition tbody").empty();
+                            for (ExamCount = 0; ExamCount < response.ExamView.length; ExamCount++) {
+                                var Examintion = response.ExamView[ExamCount].ExaminationName;
+                                var opt1 = response.ExamView[ExamCount].Option1;
+                                var opt2 = response.ExamView[ExamCount].Option2;
+                                var opt3 = response.ExamView[ExamCount].Option3;
+                                var opt4 = response.ExamView[ExamCount].Option4;
+                                var opt5 = response.ExamView[ExamCount].Option5;
+                                var opt6 = response.ExamView[ExamCount].Option6;
+                                var opt7 = response.ExamView[ExamCount].Option7;
+                                var opt8 = response.ExamView[ExamCount].Option8;
+                                var opt9 = response.ExamView[ExamCount].Option9;
+                                var opt10 = response.ExamView[ExamCount].Option10;
+                                var opt11 = response.ExamView[ExamCount].Option11;
+                                var opt12 = response.ExamView[ExamCount].Option12;
+
+                                var optChk1 = response.ExamView[ExamCount].OptChk1;
+                                var optChk2 = response.ExamView[ExamCount].OptChk2;
+                                var optChk3 = response.ExamView[ExamCount].OptChk3;
+                                var optChk4 = response.ExamView[ExamCount].OptChk4;
+                                var optChk5 = response.ExamView[ExamCount].OptChk5;
+                                var optChk6 = response.ExamView[ExamCount].OptChk6;
+                                var optChk7 = response.ExamView[ExamCount].OptChk7;
+                                var optChk8 = response.ExamView[ExamCount].OptChk8;
+                                var optChk9 = response.ExamView[ExamCount].OptChk9;
+                                var optChk10 = response.ExamView[ExamCount].OptChk10;
+                                var optChk11 = response.ExamView[ExamCount].OptChk11;
+                                var optChk12 = response.ExamView[ExamCount].OptChk12;
+                                var Notes = response.ExamView[ExamCount].Notes;
+                                var $tr = $('#tblExamanition tr[data-id="' + Examintion + '"]');
+                                if ($tr.length === 0)
+                                    OnsucessLastExamintion(Examintion, opt1, opt2, opt3, opt4, opt5, opt6, opt7, opt8, opt9, opt10, opt11, opt12, optChk1, optChk2, optChk3, optChk4, optChk5, optChk6, optChk7, optChk8, optChk9, optChk10, optChk11, optChk12, Notes);
+                            }
+                        }
+                    }
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        else {
+            $("#tblExamanition tbody").empty();
+            $("#txSpecificComments").val("");
+            $("#txExamintionComments").val("");
+        }
+    }
+    function OnsucessLastExamintion(Exam, opt1, opt2, opt3, opt4, opt5, opt6, opt7, opt8, opt9, opt10, opt11, opt12, optChk1, optChk2, optChk3, optChk4, optChk5, optChk6, optChk7, optChk8, optChk9, optChk10, optChk11, optChk12, Notes) {
+        var html = "";
+        html += "<tr data-id=\"" + Exam + "\">";
+        html += "<td><input type=\"checkbox\" style=\"width:16px;height:16px;\" checked></td>";
+        if (Notes) {
+            html += "<td style='color:blue;font-size:medium;'>" + Exam + " <img src='../Images/Commented.png' onclick='OpenHelpExamination(this);' title='Notes' style='cursor:pointer;width: 20px !important;height:20px !important;'></td>";
+            $("#txtHelpExamNotes").val(Notes);
+        }
+        else
+            html += "<td style='color:blue;font-size:medium;'>" + Exam + " <img src='../Images/comments.png' onclick='OpenHelpExamination(this);' title='Notes' style='cursor:pointer;width: 20px !important;height:20px !important;'></td>";
+        if (opt1 !== "") {
+            if (optChk1 === true)
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt1 + "' checked> " + opt1 + "</td>";
+            else
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt1 + "'> " + opt1 + "</td>";
+        }
+        else
+            html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+        if (opt2 !== "") {
+            if (optChk2 === true)
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt2 + "' checked> " + opt2 + "</td>";
+            else
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt2 + "'> " + opt2 + "</td>";
+        }
+        else
+            html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+        if (opt3 !== "") {
+            if (optChk3 === true)
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt3 + "' checked> " + opt3 + "</td>";
+            else
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt3 + "'> " + opt3 + "</td>";
+        }
+        else
+            html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+        if (opt4 !== "") {
+            if (optChk4 === true)
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt4 + "' checked> " + opt4 + "</td>";
+            else
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt4 + "'> " + opt4 + "</td>";
+        }
+        else
+            html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+        if (opt5 !== "") {
+            if (optChk5 === true)
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt5 + "' checked> " + opt5 + "</td>";
+            else
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt5 + "'> " + opt5 + "</td>";
+        }
+        else
+            html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+        if (opt6 !== "") {
+            if (optChk6 === true)
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt6 + "' checked> " + opt6 + "</td>";
+            else
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt6 + "'> " + opt6 + "</td>";
+        }
+        else
+            html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+        if (opt7 !== "") {
+            if (optChk7 === true)
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt7 + "' checked> " + opt7 + "</td>";
+            else
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt7 + "'> " + opt7 + "</td>";
+        }
+        else
+            html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+        if (opt8 !== "") {
+            if (optChk8 === true)
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt8 + "' checked> " + opt8 + "</td>";
+            else
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt8 + "'> " + opt8 + "</td>";
+        }
+        else
+            html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+        if (opt9 !== "") {
+            if (optChk9 === true)
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt9 + "' checked> " + opt9 + "</td>";
+            else
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt9 + "'> " + opt9 + "</td>";
+        }
+        else
+            html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+        if (opt10 !== "") {
+            if (optChk10 === true)
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt10 + "' checked> " + opt10 + "</td>";
+            else
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt10 + "'> " + opt10 + "</td>";
+        }
+        else
+            html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+        if (opt11 !== "") {
+            if (optChk11 === true)
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt11 + "' checked> " + opt11 + "</td>";
+            else
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt11 + "'> " + opt11 + "</td>";
+        }
+        else
+            html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+        if (opt12 !== "") {
+            if (optChk12 === true)
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt12 + "' checked> " + opt12 + "</td>";
+            else
+                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt12 + "'> " + opt12 + "</td>";
+        }
+        else
+            html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+        html += "<td style='text-align: center;'>";
+        html += "<img src='../Images/Delete.png'  onclick='return DeleteExamintion(this)' style='cursor:pointer;width: 25px !important;height:25px !important;'></td>";
+        html += "<td style='text-align: center;display:none;'>" + Exam + "</td>";
+        html += "<td style='text-align: center;display:none;'>" + Notes + "";
+        html += "</td></tr>";
+        $("#tblExamanition tbody").append(html);
+    }
+    function GetAllPatExamintion() {
+        var arg = $("#lblpatid").text();
+        $("#CurrentExamnitaion").hide();
+        $("#ExaminationMore").show();
+        $.ajax({
+            url: "/Emr/GetAllPatientExamination/?PatientID=" + arg + "",
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: OnSuccessAllPatExamintion,
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function OnSuccessAllPatExamintion(response) {
+        if (response.PatExam.length > 0) {
+            var Sno = 0;
+            var html = "";
+            $("#tblOldExamintion tbody").empty();
+            for (PatExamCount = 0; PatExamCount < response.PatExam.length; PatExamCount++) {
+                Sno = PatExamCount + 1;
+                html += "<tr>";
+                html += "<td><input type='image' style='width:21px;height:21px;' src='../Images/details_open.png' onclick='javascript:return CheckExamSelect(this)'></td>";
+                html += "<td style='display:none;'>" + response.PatExam[PatExamCount].SeqID + "</td>";
+                html += "<td>" + response.PatExam[PatExamCount].EntryDate + "</td>";
+                if (response.PatExam[PatExamCount].IsActive == true)
+                    html += "<td>Verified</td>";
+                else
+                    html += "<td>Not Verified</td>";
+                html += "<td style='display:none;'>" + response.PatExam[PatExamCount].Comments + "</td>";
+                html += "<td style='display:none;'>" + response.PatExam[PatExamCount].SpecifiComments + "</td>";
+                html += "<tr>";
+            }
+            $("#tblOldExamintion tbody").append(html);
+        }
+    }
+    function CheckExamSelect(SelectedRow) {
+        var row = SelectedRow.parentNode.parentNode;
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = row.rowIndex - 1;
+        var SeqID = row.cells[1].innerHTML;
+        var Comments = row.cells[4].innerHTML;
+        var SpecifiComments = row.cells[5].innerHTML;
+
+
+
+        var className = myrow.cells[0].getElementsByTagName("input")[0].className;
+        if (className === "shown") {
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', '../Images/details_open.png');
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'abc');
+            $('#tblOldExamintion > tbody > tr').eq(rowIndex).next().remove();
+        }
+        else {
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', '../Images/details_close.png');
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'shown');
+
+            var arg = parseFloat(SeqID);
+            $.ajax({
+                url: "/Emr/GetLatestPatientExamintionView/?seqID=" + arg + "",
+                type: 'Get',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (response) {
+                    var html = "<table id='myTable1' class='table table-striped table-bordered table-hover table-full-width dataTable no-footer'>";
+                   
+                    for (ExamCount = 0; ExamCount < response.ExamView.length; ExamCount++) {
+                        if (ExamCount == 0) {
+                            html += "<tr>";
+                            html += "<thead><th></th><th></th><th></th><th></th><th></th></thead>";
+                            html += "</tr>";
+                        }
+                        var Examintion = response.ExamView[ExamCount].ExaminationName;
+                        var opt1 = response.ExamView[ExamCount].Option1;
+                        var opt2 = response.ExamView[ExamCount].Option2;
+                        var opt3 = response.ExamView[ExamCount].Option3;
+                        var opt4 = response.ExamView[ExamCount].Option4;
+                        var opt5 = response.ExamView[ExamCount].Option5;
+                        var opt6 = response.ExamView[ExamCount].Option6;
+                        var opt7 = response.ExamView[ExamCount].Option7;
+                        var opt8 = response.ExamView[ExamCount].Option8;
+                        var opt9 = response.ExamView[ExamCount].Option9;
+                        var opt10 = response.ExamView[ExamCount].Option10;
+                        var opt11 = response.ExamView[ExamCount].Option11;
+                        var opt12 = response.ExamView[ExamCount].Option12;
+
+                        var optChk1 = response.ExamView[ExamCount].OptChk1;
+                        var optChk2 = response.ExamView[ExamCount].OptChk2;
+                        var optChk3 = response.ExamView[ExamCount].OptChk3;
+                        var optChk4 = response.ExamView[ExamCount].OptChk4;
+                        var optChk5 = response.ExamView[ExamCount].OptChk5;
+                        var optChk6 = response.ExamView[ExamCount].OptChk6;
+                        var optChk7 = response.ExamView[ExamCount].OptChk7;
+                        var optChk8 = response.ExamView[ExamCount].OptChk8;
+                        var optChk9 = response.ExamView[ExamCount].OptChk9;
+                        var optChk10 = response.ExamView[ExamCount].OptChk10;
+                        var optChk11 = response.ExamView[ExamCount].OptChk11;
+                        var optChk12 = response.ExamView[ExamCount].OptChk12;
+                        var Notes = response.ExamView[ExamCount].Notes;
+
+                        html += "<tr data-id=\"" + Examintion + "\">";
+                        html += "<td style='color:blue;font-size:medium;'>" + Examintion + "</td>";
+                        if (opt1 !== "") {
+                            if (optChk1 === true)
+                                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt1 + "' checked> " + opt1 + "</td>";
+                            //else
+                            //    html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt1 + "'> " + opt1 + "</td>";
+                        }
+                        //else
+                        //    html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+                        if (opt2 !== "") {
+                            if (optChk2 === true)
+                                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt2 + "' checked> " + opt2 + "</td>";
+                            //else
+                            //    html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt2 + "'> " + opt2 + "</td>";
+                        }
+                        //else
+                        //    html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+                        if (opt3 !== "") {
+                            if (optChk3 === true)
+                                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt3 + "' checked> " + opt3 + "</td>";
+                            //else
+                            //    html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt3 + "'> " + opt3 + "</td>";
+                        }
+                        //else
+                        //    html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+                        if (opt4 !== "") {
+                            if (optChk4 === true)
+                                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt4 + "' checked> " + opt4 + "</td>";
+                            //else
+                            //    html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt4 + "'> " + opt4 + "</td>";
+                        }
+                        //else
+                        //    html += "<td><input type=\"checkbox\" style='display:none;' value=''></td></tr>";
+
+                        if (opt5 !== "") {
+                            if (optChk5 === true)
+                                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt5 + "' checked> " + opt5 + "</td>";
+                            //else
+                            //    html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt5 + "'> " + opt5 + "</td>";
+                        }
+                        //else
+                        //    html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+                        if (opt6 !== "") {
+                            if (optChk6 === true)
+                                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt6 + "' checked> " + opt6 + "</td>";
+                            //else
+                            //    html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt6 + "'> " + opt6 + "</td>";
+                        }
+                        //else
+                        //    html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+                        if (opt7 !== "") {
+                            if (optChk7 === true)
+                                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt7 + "' checked> " + opt7 + "</td>";
+                            //else
+                            //    html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt7 + "'> " + opt7 + "</td>";
+                        }
+                        //else
+                        //    html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+                        if (opt8 !== "") {
+                            if (optChk8 === true)
+                                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt8 + "' checked> " + opt8 + "</td>";
+                            //else
+                            //    html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt8 + "'> " + opt8 + "</td>";
+                        }
+                        //else
+                        //    html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+                        if (opt9 !== "") {
+                            if (optChk9 === true)
+                                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt9 + "' checked> " + opt9 + "</td>";
+                            //else
+                            //    html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt9 + "'> " + opt9 + "</td>";
+                        }
+                        //else
+                        //    html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+                        if (opt10 !== "") {
+                            if (optChk10 === true)
+                                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt10 + "' checked> " + opt10 + "</td>";
+                            //else
+                            //    html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt10 + "'> " + opt10 + "</td>";
+                        }
+                        //else
+                        //    html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+                        if (opt11 !== "") {
+                            if (optChk11 === true)
+                                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt11 + "' checked> " + opt11 + "</td>";
+                            //else
+                            //    html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt11 + "'> " + opt11 + "</td>";
+                        }
+                        //else
+                        //    html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+                        if (opt12 !== "") {
+                            if (optChk12 === true)
+                                html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt12 + "' checked> " + opt12 + "</td>";
+                            //else
+                            //    html += "<td style='font-size:medium;'><input type=\"checkbox\" style='width:16px;height:16px;' value='" + opt12 + "'> " + opt12 + "</td>";
+                        }
+                        //else
+                        //    html += "<td><input type=\"checkbox\" style='display:none;' value=''></td>";
+
+                        html += "<td style='color:blue;font-size:medium;'>" + Notes + "</td></tr>";
+                    }
+                    html += "</table>";
+                    html += "<table class='table' style='color:black;font-size: medium;'> <tbody>";
+                    html += " <tr style='color:black;'><td>" + Comments + "</td> </tr>";
+                    html += " <tr style='color:black;'><td>" + SpecifiComments + "</td> </tr>";
+                    html += "</tbody></table>";
+                    var newRow = $('<tr><td></td><td colspan="7">' + html + '</td></tr>');
+                    $('#tblOldExamintion > tbody > tr').eq(rowIndex).after(newRow);
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        return false;
+    }
+    function OpenAsExamintionPickList() {
+        var Examtbl12 = document.getElementById("tblExamanition");
+        var html = "";
+        var Examrow12 = Examtbl12.rows.length;
+        $("#tblNewExamintionSaveAsNewPickLsit tbody").empty();
+        for (r = 1; r < Examrow12; r++) {
+            var Examsval12 = Examtbl12.rows[r];
+            var ExaminationName = Examsval12.cells[15].innerHTML;
+            html += "<tr><td>" + ExaminationName + "</td></tr>";
+        }
+        $("#tblNewExamintionSaveAsNewPickLsit tbody").append(html);
+        document.getElementById('ExamPickdialog').ej2_instances[0].show();
+    }
+    function onFunctionalfiltering(e) {
+        var Functional = document.getElementById('cmbFunctional').ej2_instances[0];
+        var query = new ej.data.Query();
+
+        query = (e.text !== '') ? query.where('FunctionalStatus', 'Contains', e.text, true) : query;
+
+        e.updateData(Functional.dataSource, query);
+        if (document.getElementById('nodata')) {
+
+            document.getElementById('btn').onclick = function () {
+
+                var customValue = (document.getElementById('cmbFunctional')).value;
+
+                var tData = getValues("/FunctionalStatus/CreateNewFunctionalSatus/?FunctionalStatus=" + customValue + "");
+
+
+                var newItem = { 'FunctionalStatus': tData.FunctionalStatus, 'SeqID': tData.SeqID };
+
+                (Functional.dataSource).push(newItem);
+
+                Functional.hidePopup();
+
+                //Functional.addItem(newItem);
+                // select the newly added item.
+                Functional.value = customValue;
+            };
+        }
+    }
+    function OnFunctionalChange() {
+        var Functional = document.getElementById('cmbFunctional').ej2_instances[0];
+        var SeqID = Functional.value;
+        var FunctionalStatus = Functional.text;
+        if (FunctionalStatus !== null) {
+            var table = $('#tblFunctionlStatus');
+            var $tr = $('#tblFunctionlStatus tr[data-id="' + FunctionalStatus + '"]');
+            if ($tr.length === 0)
+                CreateFunctionNewRow(SeqID, FunctionalStatus);
+            //else
+            //    alert('Already Exist');
+            document.getElementById('cmbFunctional').ej2_instances[0].value = "";
+        }
+    }
+    function CreateFunctionNewRow(SeqId, Functional) {
+        var html = "";
+        if (SeqId > 0) {
+            html += "<tr data-id=\"" + Functional + "\">";
+            html += "<td style='color:blue;'>" + Functional + "</td>";
+            html += "<td style='display:none;'>" + SeqId + "</td>";
+            html += "<td><input  class='form-control' type=\"Text\"></td>";
+            html += "<td style='text-align: center;'>";
+            html += "<img src='../Images/Delete.png'  onclick='return DeleteFunactional(this)' style='cursor:pointer;width: 25px !important;height:25px !important;'>";
+            html += "</td></tr>";
+            $("#tblFunctionlStatus tbody").append(html);
+        }
+        return html;
+    }
+    function DeleteFunactional(SelectedRow) {
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = myrow.rowIndex;
+        document.getElementById("tblFunctionlStatus").deleteRow(myrow.rowIndex);
+        var table = document.getElementById("tblFunctionlStatus");
+        var rowCount = table.rows.length;
+        var i = myrow.rowIndex;
+        //regroup(i, rowCount, "tblComplaints");
+        //PreviewIllness();
+        return false;
+    }
+    function OpenAsFunctionalPickList() {
+        var tbl12 = document.getElementById("tblFunctionlStatus");
+        var html = "";
+        var row12 = tbl12.rows.length;
+        $("#tblFunSaveAsNewPickLsit tbody").empty();
+        for (k = 1; k < row12; k++) {
+            var sval12 = tbl12.rows[k];
+            var FunctionalStatus = sval12.cells[0].innerHTML;
+            html += "<tr><td>" + FunctionalStatus + "</td></tr>";
+        }
+        $("#tblFunSaveAsNewPickLsit tbody").append(html);
+        document.getElementById('FunNewdialog').ej2_instances[0].show();
+    }
+    function SaveAsFunNewPickList() {
+        var tbl12 = document.getElementById("tblFunctionlStatus");
+        var PickListName = document.getElementById("txtFunNewPickListName").value;
+        var PickArray = new Array();
+        if (PickListName.length > 0) {
+            var row12 = tbl12.rows.length;
+            for (k = 1; k < row12; k++) {
+                var sval12 = tbl12.rows[k];
+                var objDetails = new Object();
+                objDetails.FuncationalStatus = sval12.cells[0].innerHTML;
+                PickArray.push(objDetails);
+            }
+            var sendJsonData = {
+                PickListName: $("#txtFunNewPickListName").val(),
+                FunStatsuDtl: PickArray
+            };
+            $.ajax({
+                url: "/FunctionalStatus/SaveFunctionalPickList",
+                type: 'post',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(sendJsonData),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+            document.getElementById('FunNewdialog').ej2_instances[0].hide();
+        }
+        else {
+            alert("Please Enter Pick List Name");
+        }
+        return false;
+    }
+    function ChangeFunStatusPickList() {
+        var PickListName = document.getElementById('txtFunPickList').ej2_instances[0].value;
+        if (PickListName !== null) {
+            GetDefaultFunctionalStatus(PickListName);
+        }
+    }
+    function GetDefaultFunctionalStatus(PicklistName) {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        var arg = PicklistName;
+        $.ajax({
+            url: rootUrl + "/FunctionalStatus/GetLatestPatientHistoryByPatientID/?PickListName=" + arg + "",
+            type: 'GET',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                $("#tblFunctionlStatus tbody").empty();
+                for (Count = 0; Count < response.FunLstDtl.length; Count++) {
+                    var SeqID = response.FunLstDtl[Count].SeqID;
+                    var FuncationalStatus = response.FunLstDtl[Count].FuncationalStatus;
+                    CreateFunctionNewRow(SeqID, FuncationalStatus);
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+    }
+    function SaveFunctionAsPicklist() {
+        var tbl12 = document.getElementById("tblFunctionlStatus");
+        var PickListName = document.getElementById('txtFunPickList').ej2_instances[0].value;
+        var PickArray = new Array();
+        if (PickListName.length > 0) {
+            var row12 = tbl12.rows.length;
+            for (k = 1; k < row12; k++) {
+                var sval12 = tbl12.rows[k];
+                var objDetails = new Object();
+                objDetails.FuncationalStatus = sval12.cells[0].innerHTML;
+                PickArray.push(objDetails);
+            }
+            var sendJsonData = {
+                PickListName: PickListName,
+                FunStatsuDtl: PickArray
+            };
+            $.ajax({
+                url: "/FunctionalStatus/SaveFunctionalPickList",
+                type: 'post',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(sendJsonData),
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+        else {
+            alert("Please Enter Pick List Name");
+        }
+        return false;
+    }
+    function ExaminationBack() {
+        $("#CurrentExamnitaion").show();
+        $("#ExaminationMore").hide();
+    }
+    function CleartblExamination() {
+        $("#tblExamanition tbody").empty();
+    }
+    var Examaination = "";
+    var rowIndex = 0;
+    var row;
+    function OpenHelpExamination(SelectedRow) {
+        document.getElementById('Helpdialog').ej2_instances[0].show();
+        row = SelectedRow.parentNode.parentNode;
+        Examaination = row.cells[15].innerHTML;
+        var Notes = row.cells[16].innerHTML;
+        $("#txtHelpExamNotes").val(Notes);
+    }
+    function SaveNotes() {
+        var Notes = $("#txtHelpExamNotes").val();
+        if (Notes !== "") {
+            row.cells[16].innerHTML = Notes;
+            row.cells[1].getElementsByTagName("img")[0].setAttribute('src', '../Images/Commented.png');
+            document.getElementById('Helpdialog').ej2_instances[0].hide();
+            $("#txtHelpExamNotes").val(Notes);
+        }
+        else {
+            alert("Please Enter Notes");
+        }
+    }
+    function ExonopenPopup() {
+        var multiselectObj = document.getElementById("txtSearchExam");
+        multiselectObj.ej2_instances[0].showPopup();
+    }
+    function ExonCreated() {
+        document.getElementById("txtSearchExam").addEventListener("click", ExonopenPopup);
+    }
+    function ExonactionComplete(e) {
+        if (this.suggestionCount) {
+            e.result = e.result.slice(0, this.suggestionCount)
+        }
+    }
+    function Exonfiltering(args) {
+        var dataSource;
+        new ej.data.DataManager({ url: "/api/EmrApi/GetExamintionBySearch/", adaptor: new ej.data.WebApiAdaptor }).executeQuery(new ej.data.Query().where('ExaminationName', 'Contains', args.text, true)).then((e) => {
+            dataSource = e.result;
+            var dropdown_query = new ej.data.Query();
+            if (args.text !== '') {
+                dropdown_query = dropdown_query.where('ExaminationName', 'Contains', args.text, true);
+                args.updateData(dataSource, dropdown_query);
+            } else {
+                args.updateData(dataSource);
+            }
+        });
+    }
+    function ExaonopenPopup() {
+        var multiselectObj = document.getElementById("txtPickLstExamintion");
+        multiselectObj.ej2_instances[0].showPopup();
+    }
+    function ExaonCreated() {
+        document.getElementById("txtPickLstExamintion").addEventListener("click", ExaonopenPopup);
+    }
+    function ExaonactionComplete(e) {
+        if (this.suggestionCount) {
+            e.result = e.result.slice(0, this.suggestionCount)
+        }
+    }
+    function Exaonfiltering(args) {
+        var dataSource;
+        new ej.data.DataManager({ url: "/api/EmrApi/GetExamintionPickNameBySearch/", adaptor: new ej.data.WebApiAdaptor }).executeQuery(new ej.data.Query().where('PickListName', 'Contains', args.text, true)).then((e) => {
+            dataSource = e.result;
+            var dropdown_query = new ej.data.Query();
+            if (args.text !== '') {
+                dropdown_query = dropdown_query.where('PickListName', 'Contains', args.text, true);
+                args.updateData(dataSource, dropdown_query);
+            } else {
+                args.updateData(dataSource);
+            }
+        });
+    }
+    function IsAlreadyExaminationExists(IsVerified) {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        var PatID = $("#lblpatid").text();
+        var VisitId = $("#lblvisitid").text();
+        var tblexam = document.getElementById("tblExamanition");
+        var comments = $("#txExamintionComments").val();
+        var specificcomments = $("#txSpecificComments").val();
+        if (tblexam.rows.length == 1 && comments == "" && specificcomments == "") {
+            alert('Please Enter atleast one Data to save');
+        }
+        else {
+            $.ajax({
+                url: rootUrl + "/Emr/IsAlreadyExaminationExists/?PatientID=" + PatID + "&VisitID=" + VisitId + "",
+                type: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () { $("#loading").css("display", "block"); },
+                success: function (data) {
+                    const verify = data.verified;
+                    const notverify = data.notverified;
+                    if (notverify == 1) {
+                        if (IsVerified === true)
+                            SavePatientExamintion(true);
+                        else
+                            SavePatientExamintion(false);
+                    }
+                    else if (verify == 1)
+                        OpenExaminationStatus();
+
+                    else {
+                        if (IsVerified === true)
+                            SavePatientExamintion(true);
+                        else
+                            SavePatientExamintion(false);
+                    }
+
+
+                    //if (data === "Already Exists") {
+                    //    OpenExaminationStatus();
+                    //}
+                    //else {
+                    //    if (IsVerified === true)
+                    //        SavePatientExamintion(true);
+                    //    else
+                    //        SavePatientExamintion(false);
+                    //}
+                },
+                complete: function () { $("#loading").css("display", "none"); }
+            });
+        }
+    }
+    function OpenExaminationStatus() {
+        document.getElementById('ExaminationInfo').ej2_instances[0].show();
+    }
+    function CloseExamintionStatus() {
+        document.getElementById('ExaminationInfo').ej2_instances[0].hide();
+    }
+</script>
+<div class="container-fluid">
+    <br />
+    <div class="row">
+        <div class="col-xs-12 col-sm-12 col-md-12" id="CurrentExamnitaion">
+            <div class="panel panel-default DivBox">
+                <div class="row">
+                    <div class="col-xs-10 col-sm-10 col-md-10">
+
+                    </div>
+                    <div class="col-xs-2 col-sm-2 col-md-2">
+                        <div class="form-group">
+                            <button type="button" id="btnCleartblExamintion" class="btn EmrBtn" onclick="CleartblExamination();" style="display:none;">
+                                <span class="glyphicon glyphicon-remove-circle"></span> Clear
+                            </button>
+                            @*<button type="button" id="btnOldExamintion" class="btn" onclick="GetAllPatExamintion();">
+                                    <img src="~/images/MOREX.png" style="height:50px;width:50px;float:right;" />
+                                </button>*@
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-1 col-sm-1 col-md-1">
+                        <div class="form-check">
+                            <input type="checkbox" style="height:22px;width:30px;margin-top:15px;" onclick="OnLastPatientExamintion();" class="form-check-input" id="chkExamPrevious" title="Load Previous Data">
+                            <label class="form-check-label" for="chkPrevious"></label>
+                        </div>
+                    </div>
+                    <div class="col-xs-4 col-sm-4 col-md-4" style="padding:10px;">
+                        <div class="form-group">
+                            <ejs-autocomplete id="txtSearchExam" filterType="Contains" highlight="true" cssClass="inputEmr"
+                                              placeholder="General Examination" suggestionCount="10" change="OnSearchchangeExamintion"
+                                              filtering="Exonfiltering" actionComplete="ExonactionComplete" created="ExonCreated">
+                                <e-data-manager url="/api/EmrApi/GetExamintionBySearch/" adaptor="WebApiAdaptor"></e-data-manager>
+                                <e-autocomplete-fields value="ExaminationName"></e-autocomplete-fields>
+                            </ejs-autocomplete>
+                        </div>
+                    </div>
+                    <div class="col-xs-1 col-sm-1 col-md-1">
+                        <div class="form-group">
+                            <span>
+                                <img src="~/images/ADD ITEM.png" style="height:45px;cursor:pointer;width:40px;margin-top:3px;"
+                                     title="Add New Examination" onclick="OpenExamintionMaster();" />
+                            </span>
+                        </div>
+                    </div>
+                    @*<div class="col-xs-2 col-sm-2 col-md-2" style="margin-top:7px;">
+                            <div class="form-group">
+                                <button type="button" id="btnAddExamintion" class="btn EmrBtn" onclick="OpenExamintionMaster();">
+                                    <span class="glyphicon glyphicon-plus"></span>Examination
+                                </button>
+                            </div>
+                        </div>*@
+                    <div class="col-xs-3 col-sm-3 col-md-3" style="padding:10px;">
+                        <div class="form-group">
+                            <ejs-autocomplete id="txtPickLstExamintion" filterType="Contains" highlight="true" cssClass="inputEmr"
+                                              placeholder="Examintion Pick List" suggestionCount="10" change="OnPickListChange"
+                                              filtering="Exaonfiltering" actionComplete="ExaonactionComplete" created="ExaonCreated">
+                                <e-data-manager url="/api/EmrApi/GetExamintionPickNameBySearch/" adaptor="WebApiAdaptor"></e-data-manager>
+                                <e-autocomplete-fields value="PickListName"></e-autocomplete-fields>
+                            </ejs-autocomplete>
+                        </div>
+                    </div>
+                    <div class="col-xs-3 col-sm-3 col-md-3" style="width:50px;">
+                        <div class="form-group">
+                            <img src="~/images/SAVEA PICKLISTX.png" style="height:40px;cursor:pointer;" title="Save As PickList" onclick="OpenAsExamintionPickList();" />
+                            <img src="~/images/SAVE TO PICK LIST.png" style="height:40px;cursor:pointer;margin-left:10px;" title="Save To PickList" onclick="SaveExamintionPickList();" />
+                            <img src="~/images/MOREX.png" style="height:50px;cursor:pointer;" title="More" onclick="GetAllPatExamintion();" />
+                        </div>
+                    </div>
+                    @*<div class="col-xs-1 col-sm-1 col-md-1" style="width:50px;">
+                            <div class="form-group">
+
+                            </div>
+                        </div>
+                        <div class="col-xs-1 col-sm-1 col-md-1" style="width:50px;">
+                            <div class="form-group">
+                                <button type="button" id="btnOldExamintion" class="btn" onclick="GetAllPatExamintion();">
+
+                                </button>
+                            </div>
+                        </div>*@
+                    @*<div class="col-xs-2" style="top:4px;">
+                            <div class="form-group">
+                                <img src="~/images/SAVEA PICKLISTX.png" style="height:40px;" title="Save As PickList" onclick="OpenAsExamintionPickList();" />
+                                <img src="~/images/SAVE TO PICK LIST.png" style="height:40px;" title="Save To PickList" onclick="SaveExamintionPickList();" />
+                            </div>
+                        </div>*@
+                </div>
+                <div class="row" style="padding:10px;">
+                    <div class="col-xs-12 col-sm-12 col-md-12">
+                        <div class="table-responsive">
+                            <table id="tblExamanition" class="table table-bordered table-striped dataTable table-reflow tableHB">
+                                <thead>
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="row">
+                    <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                        <div class="form-group">
+                            <textarea id="txExamintionComments" class="form-control inputEmr" placeholder="Comments"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                        <div class="form-group">
+                            <textarea id="txSpecificComments" class="form-control inputEmr" placeholder="Specific Examination Comments"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="display:none;">
+                    <div class="col-xs-5 col-sm-5 col-md-5">
+                        <div class="form-group">
+                            <ejs-combobox id="cmbFunctional" allowFiltering="true"
+                                          dataSource="@ViewBag.FunctionalStatus" placeholder="Search Functional Status" popupHeight="230px"
+                                          noRecordsTemplate="@Html.Raw("<div>"
+                                                +"<div id=\"nodata\"> No matched item, do you want to add it as new item in list?</div>"
+                                                + "<button id=\"btn\" class=\"e-control e-btn\">Add New Item</button></div>")"
+                                          filtering="onFunctionalfiltering" change="OnFunctionalChange">
+                                <e-combobox-fields text="FunctionalStatus" value="SeqID"></e-combobox-fields>
+                            </ejs-combobox>
+                        </div>
+                    </div>
+                    <div class="col-xs-5 col-sm-5 col-md-5">
+                        <div class="form-group">
+                            <ejs-autocomplete id="txtFunPickList" filterType="Contains" highlight="true"
+                                              placeholder="Functional Status Pick list" suggestionCount="10" change="ChangeFunStatusPickList">
+                                <e-data-manager url="/api/EmrApi/SelectFunPickLstByText/" adaptor="WebApiAdaptor"></e-data-manager>
+                            </ejs-autocomplete>
+                        </div>
+                    </div>
+                    <div class="col-xs-1" style="width:55px;">
+                        <div class="form-group">
+                            <img src="~/images/SAVEA PICKLISTX.png" style="height:45px;" title="Save As PickList" onclick="OpenAsFunctionalPickList();" />
+                        </div>
+                    </div>
+                    <div class="col-xs-1" style="width:55px;">
+                        <div class="form-group">
+                            <img src="~/images/SAVE TO PICK LIST.png" style="height:45px;" title="Save To PickList" onclick="SaveFunctionAsPicklist();" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="padding:10px;display:none;">
+                    <div class="col-xs-12 col-sm-12 col-md-12">
+                        <div class="table-responsive">
+                            <table id="tblFunctionlStatus" class="table table-bordered table-striped dataTable table-reflow">
+                                <thead>
+                                    <tr>
+                                        <td>Functional Status</td>
+                                        <td>Comments</td>
+                                        <td>Delete</td>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" id="ExaminationbtnDiv">
+                    <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                        <div class="form-group">
+                            <button type="button" id="btnPatSaveExamintion" class="btn" onclick="IsAlreadyExaminationExists(false);" title="Save">
+                                <img src="~/images/SAVES.png" style="height:50px;width:50px;">
+                            </button>
+                            <button type="button" id="btnPatSaveExamintionVerfiy" class="btn" onclick="IsAlreadyExaminationExists(true);" title="Save and Verify">
+                                <img src="~/images/verify-512.png" style="height:50px;width:50px;">
+                            </button>
+                            <button type="button" id="btncancel" onclick="CancelViewclick();" class="btn" title="Cancel">
+                                <img src="~/images/CANCEL-512.png" style="height:50px;width:50px;">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="co12-xs-12 col-sm-12 col-md-12" id="ExaminationMore" style="display:none;">
+            <div class="panel panel-default DivBox">
+                <div class="row" style="padding:10px;">
+                    <div class="col-xs-12 col-sm-12 col-md-12">
+                        <div class="table-responsive">
+                            <table id="tblOldExamintion" class="table table-bordered table-striped dataTable table-reflow tableHB">
+                                <thead>
+                                    <tr>
+                                        <td></td>
+                                        <td>Date</td>
+                                        <td>Status</td>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                        <div class="form-group">
+                            <button type="button" id="btnExamBack" class="btn" onclick="ExaminationBack();" title="Back">
+                                <img src="~/images/Back.png" style="height:50px;width:50px;" title="Back">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <ejs-dialog id="ExamintionAdd" showCloseIcon="true" cssClass="ejs-dialog" header="Add Examintion" style="max-height:400px" visible="false" width="634px">
+                <e-content-template>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <ejs-autocomplete id="txtEnterExamintion" filterType="Contains" highlight="true" cssClass="inputEmr"
+                                                  placeholder="Examination Name" suggestionCount="10" change="OnchangeExamintion">
+                                    <e-data-manager url="/api/EmrApi/GetExamintionBySearch/" adaptor="WebApiAdaptor"></e-data-manager>
+                                    <e-autocomplete-fields value="ExaminationName"></e-autocomplete-fields>
+                                </ejs-autocomplete>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-3 col-sm-3 col-md-3" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtOption1" class="form-control inputEmr" placeholder="Option 1" />
+                            </div>
+                        </div>
+                        <div class="col-xs-3 col-sm-3 col-md-3" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtOption2" class="form-control inputEmr" placeholder="Option 2" />
+                            </div>
+                        </div>
+                        <div class="col-xs-3 col-sm-3 col-md-3" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtOption3" class="form-control inputEmr" placeholder="Option 3" />
+                            </div>
+                        </div>
+                        <div class="col-xs-3 col-sm-3 col-md-3" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtOption4" class="form-control inputEmr" placeholder="Option 4" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-3 col-sm-3 col-md-3" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtOption5" class="form-control inputEmr" placeholder="Option 5" />
+                            </div>
+                        </div>
+                        <div class="col-xs-3 col-sm-3 col-md-3" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtOption6" class="form-control inputEmr" placeholder="Option 6" />
+                            </div>
+                        </div>
+                        <div class="col-xs-3 col-sm-3 col-md-3" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtOption7" class="form-control inputEmr" placeholder="Option 7" />
+                            </div>
+                        </div>
+                        <div class="col-xs-3 col-sm-3 col-md-3" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtOption8" class="form-control inputEmr" placeholder="Option 8" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-3 col-sm-3 col-md-3" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtOption9" class="form-control inputEmr" placeholder="Option 9" />
+                            </div>
+                        </div>
+                        <div class="col-xs-3 col-sm-3 col-md-3" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtOption10" class="form-control inputEmr" placeholder="Option 10" />
+                            </div>
+                        </div>
+                        <div class="col-xs-3 col-sm-3 col-md-3" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtOption11" class="form-control inputEmr" placeholder="Option 11" />
+                            </div>
+                        </div>
+                        <div class="col-xs-3 col-sm-3 col-md-3" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtOption12" class="form-control inputEmr" placeholder="Option 12" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <button type="button" id="btnSaveExamintion" class="btn btn-info" onclick="SaveExamintion();" style="background-color:blue">
+                                    <span class="glyphicon glyphicon-floppy-disk"></span> Save
+                                </button>
+                                <button type="button" id="btnUpdateExamintion" class="btn btn-info" onclick="UpdateExamintion();" style="background-color:blue">
+                                    <span class="glyphicon glyphicon-floppy-disk"></span> Update
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </e-content-template>
+            </ejs-dialog>
+        </div>
+        <div>
+            <ejs-dialog id="ExamPickdialog" showCloseIcon="true" cssClass="ejs-dialog" header="Symptom Pick Lsit Name" style="max-height:400px" visible="false" width="634px">
+                <e-content-template>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtExamintionNewPickLstName" class="form-control" placeholder="Enter Pick List Name" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <div class="table-responsive">
+                                    <table id="tblNewExamintionSaveAsNewPickLsit" class="table table-bordered table-striped dataTable table-reflow">
+                                        <thead>
+                                            <tr>
+                                                <td style="font-weight: 700;color: darkred;">Examination</td>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <button type="button" id="btnExamSavePickList" class="btn" onclick="SaveAsExamintionPickList();">
+                                    <img src="~/images/SAVES.png" style="height:50px;width:50px;" title="Save">
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </e-content-template>
+            </ejs-dialog>
+        </div>
+        <div>
+            <ejs-dialog id="FunNewdialog" showCloseIcon="true" cssClass="ejs-dialog" header="Functional Status Pick Lsit Name" style="max-height:400px" visible="false" width="634px">
+                <e-content-template>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <input type="text" id="txtFunNewPickListName" class="form-control" placeholder="Enter Pick List Name" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <div class="table-responsive">
+                                    <table id="tblFunSaveAsNewPickLsit" class="table table-bordered table-striped dataTable table-reflow">
+                                        <thead>
+                                            <tr>
+                                                <td style="font-weight: 700;color: darkred;">Functional Status</td>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <button type="button" id="btnFunSavePickList" class="btn btn-info" onclick="SaveAsFunNewPickList();">
+                                    <span class="glyphicon glyphicon-floppy-disk"></span> Save
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </e-content-template>
+            </ejs-dialog>
+        </div>
+        <div>
+            <ejs-dialog id="Helpdialog" showCloseIcon="true" cssClass="ejs-help" header="Notes" allowDragging="true"
+                        enableResize="true" style="max-height:400px" visible="false" width="450px">
+                <e-dialog-position X="center" Y="center"></e-dialog-position>
+                <e-dialog-animationsettings effect="FadeZoom" duration="400" delay="0"></e-dialog-animationsettings>
+                <e-content-template>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;height:80px;">
+                            <div class="form-group">
+                                <textarea id="txtHelpExamNotes" class="form-control inputEmr" placeholder="Notes"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <button type="button" id="btnExamSavePickList" class="btn" onclick="SaveNotes();">
+                                    <img src="~/images/SAVES.png" style="height:50px;width:50px;" title="Save">
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </e-content-template>
+            </ejs-dialog>
+        </div>
+        <div>
+            <ejs-dialog id="ExaminationInfo" showCloseIcon="true" cssClass="ejs-help" header="Inforamtion" style="max-height:400px" visible="false" width="634px">
+                <e-content-template>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <span style="font-size: 15px !important;font-family: Source Sans Pro,sans-serif !important;">
+                                    There are data in the current visit Do you want to add new data?
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12" style="padding:10px;">
+                            <div class="form-group">
+                                <button type="button" id="btnExamStatusYes" class="btn EmrbtnPrimary" onclick="SavePatientExamintion(false);" title="Save">
+                                    Save
+                                </button>
+                                <button type="button" id="btnExamStatusYes" class="btn EmrbtnPrimary" onclick="SavePatientExamintion(true);" title="Save and Verify">
+                                    Save & Verify
+                                </button>
+                                <button type="button" id="btnExamStatusNo" class="btn EmrbtnPrimary" onclick="CloseExamintionStatus();" title="Cancel">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </e-content-template>
+            </ejs-dialog>
+        </div>
+    </div>
+</div>

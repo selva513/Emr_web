@@ -1,0 +1,762 @@
+﻿
+@{
+    ViewData["Title"] = "PatientDashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@using Syncfusion.EJ2.Navigations;
+@using Syncfusion.EJ2.Charts;
+@using Newtonsoft.Json;
+
+<link href="~/AutoComplete/jquery-ui_1.11.4.css" rel="stylesheet" />
+<script src="~/AutoComplete/jquery-1.10.2.js"></script>
+<script src="~/AutoComplete/jquery-ui_1.11.4.js"></script>
+<style>
+    #loading {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        z-index: 1000;
+    }
+
+    #loadingcontent {
+        display: table;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loadingspinner {
+        display: table-cell;
+        vertical-align: middle;
+        width: 100%;
+        text-align: center;
+        font-size: larger;
+        padding-top: 80px;
+    }
+</style>
+<script>
+    $(function () {
+
+    });
+    var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+    function rowSelected(args) {
+        var selectedrecords = this.getSelectedRecords();  // get the selected records.
+        var PatientId = selectedrecords[0].PatientID;
+        try {
+            $.ajax({
+                type: 'GET',
+                url: rootUrl + "/api/Patient/GetPatientDetailsById?PatientId=" + PatientId + " ",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () {
+                    $("#loading").css("display", "block");
+                },
+                success: SuccessBind,
+                error: function (response) {
+                    alert(response);
+                },
+                complete: function () {
+                    $("#loading").css("display", "none");
+                },
+            });
+        }
+        catch (e) { }
+    }
+    function SuccessBind(response) {
+        if (response.PatDetails.length > 0) {
+            var Id = response.PatDetails[0].PatientID;
+            var Name = response.PatDetails[0].FirstName;
+            var Second_Name = response.PatDetails[0].SecondName;
+            if (Second_Name == null)
+                Second_Name = "";
+            var Gender = response.PatDetails[0].Gender;
+            var MobileNo = response.PatDetails[0].MobileNumber;
+            var PhoneNo = response.PatDetails[0].PhoneNumber;
+            if (PhoneNo == 0)
+                PhoneNo = "";
+            var Dob = response.PatDetails[0].BirthDate;
+            if (Dob == null)
+                Dob = "";
+            var AgeYear = response.PatDetails[0].AgeYear;
+            var AgeMonth = response.PatDetails[0].AgeMonth;
+            var AgeDay = response.PatDetails[0].AgeDay;
+            var ClinicName = response.PatDetails[0].ClinicName;
+            var City = response.PatDetails[0].CityName;
+            if (City == null)
+                City = "";
+            var State = response.PatDetails[0].StateName;
+            if (State == null)
+                State = "";
+            var Country = response.PatDetails[0].CountryName;
+            if (Country == null)
+                Country = "";
+            var Address1 = response.PatDetails[0].PatientAddress1;
+            if (Address1 == null)
+                Address1 = "";
+            var Address2 = response.PatDetails[0].PatientAddress2;
+            if (Address2 == null)
+                Address2 = "";
+            var Email = response.PatDetails[0].Email;
+            if (Email == null)
+                Email = "";
+            var RelationType = response.PatDetails[0].RelationType;
+            if (RelationType == null)
+                RelationType = "";
+            var RelationName = response.PatDetails[0].RelationName;
+            if (RelationName == null)
+                RelationName = "";
+            var Allergy = response.PatDetails[0].Allergy;
+            if (Allergy == null)
+                Allergy = "";
+            var Age = AgeYear + "Y" + " " + AgeMonth + "M" + " " + AgeDay + "D";
+
+            var Patdtl = "";
+            var Patallergy = "";
+            $("#tblPatient_Details tbody").empty();
+            $("#tblAllergy tbody").empty();
+            //Patdtl += "<tr>";
+            //Patdtl += "<td>UHID : " + Id + "</td>";
+            //Patdtl += "<td>Name : " + Name + " " + Second_Name + "</td>";
+            //Patdtl += "<td>Gender : " + Gender + "</td>";
+            //Patdtl += "<td>DOB : " + Dob + "</td>";
+            //Patdtl += "<td>Age : " + AgeYear + " Y</td>";
+            //Patdtl += "<td>Mobile : " + MobileNo + "</td>";
+            //Patdtl += "</tr>";
+            //Patdtl += "<tr>";
+            //Patdtl += "<td>Phone : " + PhoneNo + "</td>";
+            ////Patdtl += "<td>Clinic : " + ClinicName + "</td>";
+            //Patdtl += "<td>City : " + City + "</td>";
+            //Patdtl += "<td>State : " + State + " </td>";
+            //Patdtl += "<td>Country : " + Country + " </td>";
+            //if (Address1 != "")
+            //Patdtl += "<td>Address1 : " + Address1 + "</td>";
+            //Patdtl += "</tr>";
+            //Patdtl += "<tr>";
+            //if (Address2 != "")
+            //Patdtl += "<td>Address2 : " + Address2 + "</td>";
+            //Patdtl += "<td>Email : " + Email + "</td>";
+            //Patdtl += "<td>Relations : " + RelationType + " " + RelationName+ "</td>";
+            //Patdtl += "<td Style='Color:red;'>Allergy : " + Allergy + " </td>";
+            //Patdtl += "</tr>";
+
+            Patdtl += "<tr>";
+            Patdtl += "<td>UHID : " + Id + "</td>";
+            Patdtl += "<td>Name : " + Name + " " + Second_Name + "</td>";
+            Patdtl += "<td>Gender : " + Gender + "</td>";
+            Patdtl += "<td>DOB : " + Dob + "</td>";
+            Patdtl += "<td>Age : " + AgeYear + " Y</td>";
+            Patdtl += "<td>Mobile : " + MobileNo + "</td>";
+            //Patdtl += "<td Style='Color:red;'>Allergy : " + Allergy + " </td>";
+            Patdtl += "</tr>";
+            Patdtl += "<tr>";
+            Patdtl += "<td>Phone : " + PhoneNo + "</td>";
+            if (Address1 != "") 
+                Patdtl += "<td>Address1 : " + Address1 + "</td>";
+            if (Address2 != "") 
+                Patdtl += "<td>Address2 : " + Address2 + "</td>";
+            Patdtl += "<td>City : " + City + "</td>";
+            Patdtl += "<td>State : " + State + " </td>";
+            Patdtl += "<td>Country : " + Country + " </td>";
+            if (Address1 != "" || Address2 != "") {
+                Patdtl += "</tr>";
+                Patdtl += "<tr>";
+            }
+            Patdtl += "<td>Email : " + Email + "</td>";
+            Patdtl += "<td>Relations : " + RelationType + " " + RelationName+ "</td>";
+            Patdtl += "</tr>";
+
+            Patallergy += "<tr>";
+            Patallergy += "<td Style='Color:red;'>Allergy : " + Allergy + "</td>";
+            Patallergy += "</tr>";
+
+            $("#tblPatient_Details tbody").append(Patdtl);
+            $("#tblAllergy tbody").append(Patallergy);
+        }
+        $("#tblDiagnosis tbody").empty();
+        var Check_VisitId = "";
+        var html = "";
+        var SeqNo = 0;
+        var tableid = "subtable_";
+        if (response.PatDiagnosis.length > 0) {
+            for (i = 0; i < response.PatDiagnosis.length; i++) {
+                var DiagnosisName = response.PatDiagnosis[i].DiagnosisName;
+                if (DiagnosisName == null)
+                    DiagnosisName = "";
+                var DiagnosisType = response.PatDiagnosis[i].DignosisType;
+                var tmpDate = new Date(response.PatDiagnosis[i].CreateDatetime);
+                var VisitId = response.PatDiagnosis[i].VisitId;
+                var date = tmpDate.getDate();
+                var mth = tmpDate.getMonth();
+                var yr = tmpDate.getFullYear();
+                var mth = mth + 1;
+                var time = tmpDate.toLocaleTimeString();
+                if (date < 10) {
+                    date = '0' + date;
+                }
+                if (mth < 10) {
+                    mth = '0' + mth;
+                }
+                var CreatedTime = date + "/" + mth + "/" + yr + " " + time;
+                if (Check_VisitId != VisitId) {
+                    SeqNo = SeqNo + 1;
+                    tableid = tableid + 1;
+                    if (i != 0) {
+                        html += "</tbody></table></td></tr>";
+                        html += "<tr onclick='OnVisitClick(this);'><td>" + SeqNo + "</td><td style='display:none;'>" + VisitId + "</td><td>" + CreatedTime + "</td>";
+                        html += "<td><table id=" + tableid + "><thead></thead><tbody><tr><td>" + DiagnosisName + "</td></tr>";
+                    }
+                    else if (i == 0) {
+                        html += "<tr onclick='OnVisitClick(this);'><td>" + SeqNo + "</td><td style='display:none;'>" + VisitId + "</td><td>" + CreatedTime + "</td>";
+                        html += "<td><table id=" + tableid + "><thead></thead><tbody><tr><td>" + DiagnosisName + "</td></tr>";
+                    }
+                    Check_VisitId = VisitId;
+                }
+                else {
+                    html += "<tr><td>" + DiagnosisName + "</td></tr>";
+                }
+                //{
+                //    $("#tblDiagnosis tbody tr #Diagnosis").append(
+                //        "<table><thead></thead><tbody>" +
+                //        "<tr>" +
+                //        "<td>" + DiagnosisName + "</td>" +
+                //        "</tr></tbody></table>");
+                //}
+            }
+            $("#tblDiagnosis tbody").append(html);
+        }
+        $("#tblSymptoms tbody").empty();
+        if (response.LatestSymptom.length > 0) {
+            for (j = 0; j < response.LatestSymptom.length; j++) {
+                var SNo = response.LatestSymptom[j].RowNumber;
+                var SymptomName = response.LatestSymptom[j].SymptomName;
+                var Duration = response.LatestSymptom[j].duration;
+
+                $("#tblSymptoms tbody").append(
+                    "<tr>" +
+                    "<td>" + SNo + "</td>" +
+                    "<td>" + SymptomName + "</td>" +
+                    "<td>" + Duration + "</td>" +
+                    "</tr>"
+                );
+            }
+        }
+        $("#tblInvestigation tbody").empty();
+        if (response.LatestInvestigation.length > 0) {
+            for (k = 0; k < response.LatestInvestigation.length; k++) {
+                var SNo = response.LatestInvestigation[k].RowNumber;
+                var Investigation = response.LatestInvestigation[k].InvestigationName;
+
+                $("#tblInvestigation").append(
+                    "<tr>" +
+                    "<td>" + SNo + "</td>" +
+                    "<td>" + Investigation + "</td>" +
+                    "</tr>"
+                );
+            }
+        }
+        $("#tblTreatment tbody").empty();
+        if (response.LatestTreatment.length > 0) {
+            for (l = 0; l < response.LatestTreatment.length; l++) {
+                var SNo = response.LatestTreatment[l].RowNumber;
+                var Drug = response.LatestTreatment[l].DrugName;
+
+                $("#tblTreatment").append(
+                    "<tr>" +
+                    "<td>" + SNo + "</td>" +
+                    "<td>" + Drug + "</td>" +
+                    "</tr>"
+                );
+            }
+        }
+        $("#tblCoMorbities tbody").empty();
+        if (response.LatestCoMorbities.length > 0) {
+            for (m = 0; m < response.LatestCoMorbities.length; m++) {
+                var SNo = response.LatestCoMorbities[m].RowNumber;
+                var MedicalHistory = response.LatestCoMorbities[m].MedicalHistory;
+                var Duration = response.LatestCoMorbities[m].Duration;
+
+                $("#tblCoMorbities").append(
+                    "<tr>" +
+                    "<td>" + SNo + "</td>" +
+                    "<td>" + MedicalHistory + "</td>" +
+                    "<td>" + Duration + "</td>" +
+                    "</tr>"
+                );
+            }
+        }
+        VitalsChart();
+        $("#PatientList").hide();
+        $("#DetailsView").show();
+    }
+    function OnVisitClick(SelectedRow) {
+        try {
+            var myrow = SelectedRow.parentNode.parentNode;
+            var VisitId = SelectedRow.cells[1].innerHTML;
+            $.ajax({
+                type: 'GET',
+                url: rootUrl + "/api/Patient/GetEmrViewDataByVisitId?VisitId=" + VisitId + " ",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () {
+                    $("#loading").css("display", "block");
+                },
+                success: BindPatientEmrDetials,
+                error: function (response) {
+                    alert(response);
+                },
+                complete: function () {
+                    $("#loading").css("display", "none");
+                },
+            });
+        }
+        catch (e) { }
+    }
+    function BindPatientEmrDetials(response) {
+        $("#tblSymptoms tbody").empty();
+        if (response.PatSymptom.length > 0) {
+            for (i = 0; i < response.PatSymptom.length; i++) {
+                var SNo = response.PatSymptom[i].RowNumber;
+                var SymptomName = response.PatSymptom[i].SymptomName;
+                var Duration = response.PatSymptom[i].duration;
+
+                $("#tblSymptoms tbody").append(
+                    "<tr>" +
+                    "<td>" + SNo + "</td>" +
+                    "<td>" + SymptomName + "</td>" +
+                    "<td>" + Duration + "</td>" +
+                    "</tr>"
+                );
+            }
+        }
+        $("#tblInvestigation tbody").empty();
+        if (response.PatInvestigation.length > 0) {
+            for (j = 0; j < response.PatInvestigation.length; j++) {
+                var SNo = response.PatInvestigation[j].RowNumber;
+                var Investigation = response.PatInvestigation[j].InvestigationName;
+                $("#tblInvestigation tbody").append(
+                    "<tr>" +
+                    "<td>" + SNo + "</td>" +
+                    "<td>" + Investigation + "</td>" +
+                    "</tr>"
+                );
+
+            }
+        }
+        $("#tblTreatment tbody").empty();
+        if (response.PatTreatment.length > 0) {
+            for (k = 0; k < reponse.PatTreatment.length; k++) {
+                var SNo = response.PatTreatment[k].RowNumber;
+                var Drug = response.PatInvestigation[k].DrugName;
+
+                $("#tblTreatment tbody").append(
+                    "<tr>" +
+                    "<td>" + SNo + "</td>" +
+                    "<td>" + Drug + "</td>" +
+                    "</tr>"
+                );
+            }
+        }
+        $("#tblCoMorbities tbody").empty();
+        if (response.PatCoMorbities.length > 0) {
+            for (l = 0; l < response.PatCoMorbities.length; l++) {
+                var SNo = response.PatCoMorbities[l].RowNumber;
+                var MedicalHistory = response.PatCoMorbities[l].MedicalHistory;
+                var Duration = response.PatCoMorbities[l].Duration;
+                $("#tblCoMorbities tbody").append(
+                    "<tr>" +
+                    "<td>" + SNo + "</td>" +
+                    "<td>" + MedicalHistory + "</td>" +
+                    "<td>" + Duration + "</td>" +
+                    "</tr>"
+                );
+            }
+        }
+    }
+    function DiagnosisVisitSelect(SelectedRow) {
+        var html = "";
+        var row = SelectedRow.parentNode.parentNode;
+        var myrow = SelectedRow.parentNode.parentNode;
+        var rowIndex = row.rowIndex - 1;
+        var VisitId = row.cells[2].innerHTML;
+        var className = myrow.cells[0].getElementsByTagName("input")[0].className;
+        if (className === "shown") {
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', '../Images/details_open.png');
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'abc');
+            $('#tblDiagnosis > tbody > tr').eq(rowIndex).next().remove();
+        }
+        else {
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('src', '../Images/details_close.png');
+            myrow.cells[0].getElementsByTagName("input")[0].setAttribute('class', 'shown');
+            $.ajax({
+                type: 'GET',
+                url: rootUrl + "/api/Patient/GetDiagnosisByVisitId?VisitId=" + VisitId + " ",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function () {
+                    $("#loading").css("display", "block");
+                },
+                success: function (response) {
+
+                    html += "<div class='col-xs-12 col-sm-12 col-md-12'><div class='form-group'>";
+                    html += "<table class='table table-bordered table-striped dataTable table-reflow'>";
+                    html += "<thead><tr style='color: Blue;'><td>Diagnosis Name</td><td>Diagnosis Type</td></tr></thead><tbody>";
+                    if (response.PatDiagnosis.length > 0) {
+                        for (i = 0; i < response.PatDiagnosis.length; i++) {
+                            html += "<tr><td>" + response.PatDiagnosis[i].DiagnosisName + "</td>";
+                            html += "<td>" + response.PatDiagnosis[i].DignosisType + "</td></tr>";
+                        }
+                    }
+                    html += "</tbody><table></div></div>";
+                    var newRow = $('<tr><td></td><td colspan="6">' + html + '</td></tr>');
+                    $('#tblDiagnosis > tbody > tr').eq(rowIndex).after(newRow);
+                },
+                error: function (response) {
+                    alert(response);
+                },
+                complete: function () {
+                    $("#loading").css("display", "none");
+                },
+            });
+        }
+    }
+    function VitalsChart() {
+        var arg = $("#lblid").text();
+        var c = document.getElementById("MultiLineChart");
+        var ctx = c.getContext("2d");
+        var chartOptions = {
+            legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                    boxWidth: 50,
+                    fontColor: 'black'
+                }
+            }
+        };
+        var tData = getValues("/PatientDashboard/MultiLineChartData/?PatientID=" + arg + "");
+        var myLineChart = new Chart(ctx, {
+            type: 'line',
+            data: tData
+        });
+    }
+    function getValues(url) {
+        var result = null;
+        $.ajax({
+            url: url,
+            type: 'get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                result = data;
+            },
+        });
+        return result;
+    }
+    function GotoLogin() {
+        try {
+            window.location.href = "/Login/Login";
+        }
+        catch (e) {
+        }
+    }
+
+    function btnback() {
+        var url = "/PatientDashboard/PatientDashboard";
+        window.location = url;
+    }
+</script>
+
+<style>
+    table tbody tr td label {
+        padding-left: 15px;
+        padding-top: 4px;
+    }
+</style>
+<div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div id="loading">
+            <div id="loadingcontent">
+                <div id="loadingspinner">
+                    <img src="~/images/loading.gif" style="width:100px;height:100px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-primary">
+                        <div class="card-header" style="margin-top:15px;">
+                            <h3 class="card-title">Patient Dashboard</h3>
+                            <img src="~/images/ShutdownWhite.png" style="float:right;cursor:pointer;" onclick="GotoLogin();" />
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div id="PatientList" class="col-sm-12 col-md-12 col-lg-12">
+                                    <div id="loading" style="display:none;">
+                                        <img src="~/images/loading.gif" style="position:absolute; top:30%; left:45%; width:100px;height:100px;" />
+                                    </div>
+                                    <div class="row">
+                                        <ejs-grid id="PatientGrid" allowPaging="true" dataSource="ViewBag.PatientList"
+                                                  toolbar="@(new List<string>() { "Search"})" allowSelection="true" enableHover="false"
+                                                  rowSelected="rowSelected" style="cursor:pointer;">
+                                            <e-grid-searchsettings fields="@(new string[] { "PatientID","FirstName"})"
+                                                                   operator="contains" ignoreCase="true"></e-grid-searchsettings>
+                                            <e-grid-selectionsettings type="Single"></e-grid-selectionsettings>
+                                            <e-grid-pagesettings pageCount="10" pageSizes="10"></e-grid-pagesettings>
+                                            <e-grid-columns>
+                                                <e-grid-column field="RowNumber" headerText="Seq No" textAlign="Left" width=""></e-grid-column>
+                                                <e-grid-column field="PatientID" headerText="Patient ID" textAlign="Left" width=""></e-grid-column>
+                                                <e-grid-column field="FirstName" headerText="Name" textAlign="Left" width=""></e-grid-column>
+                                                <e-grid-column field="Gender" headerText="Gender" textAlign="Left" width=""></e-grid-column>
+                                                <e-grid-column field="MobileNumber" headerText="Mobile" textAlign="Left" width=""></e-grid-column>
+                                            </e-grid-columns>
+                                        </ejs-grid>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="DetailsView" style="display:none;">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <div id="Details_Accordion">
+                                                    <div class="card card-success">
+                                                        <div class="card-header">
+                                                            <h4 class="card-title">
+                                                                <a data-toggle="collapse" data-parent="#Details_Accordion" href="#collapse1" >
+                                                                    Patient Details
+                                                                </a>
+                                                            </h4>
+                                                        </div>
+                                                        <div id="collapse1" class="panel-collapse collapse show">
+                                                            <div class="card-body">
+                                                                <div class="row">
+                                                                    <div class="col-xs-10 col-sm-10 col-md-10">
+                                                                        @*<table class="table table-bordered table-striped dataTable table-reflow" id="tblPatient_Details" style="width:100%;font-family:'Times New Roman', Times, serif; ">*@
+                                                                        <table class="table table-bordered table-striped" id="tblPatient_Details" style="width:100%; font-family:'Times New Roman', Times, serif; font-size:small;">
+                                                                            <thead></thead>
+                                                                            <tbody style="line-height:1;"></tbody>
+                                                                        </table>
+                                                                    </div>
+                                                                    <div class="col-xs-2 col-sm-2 col-md-2">
+                                                                        <table class="table table-striped" id="tblAllergy" style="width:100%; margin-left:-10px; font-family:'Times New Roman', Times, serif; font-size:small;">
+                                                                            <thead></thead>
+                                                                            <tbody style="line-height:1;"></tbody>
+                                                                        </table>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="row">
+                                                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                                                        <button class="btn btn-sm btn-primary" onclick="btnback();">Back</button>
+                                                                    </div>
+                                                                </div>
+                                                                </div>
+                                                            </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <div id="Diagnosis_Accordion">
+                                                    <div class="card card-primary">
+                                                        <div class="card-header">
+                                                            <h4 class="card-title">
+                                                                <a data-toggle="collapse" data-parent="#Diagnosis_Accordion" href="#collapse2">
+                                                                    Patient Visit Details
+                                                                </a>
+                                                            </h4>
+                                                        </div>
+                                                        <div id="collapse2" class="panel-collapse collapse">
+                                                            <div class="card-body">
+                                                                <table id="tblDiagnosis" class="table table-bordered table-striped dataTable table-reflow tableHB" style="width:100%;">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <td>S No</td>
+                                                                            <td style="display:none;">Visit Id</td>
+                                                                            <td>Visited Date & Time</td>
+                                                                            <td>Diagnosis</td>
+                                                                            <td style="display:none;">Diagnosis Type</td>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody></tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <div id="Chart_Accordion">
+                                                    <div class="card card-danger">
+                                                        <div class="card-header">
+                                                            <h4 class="card-title">
+                                                                <a data-toggle="collapse" data-parent="#Chart_Accordion" href="#collapsechart">
+                                                                    Vitals Chart
+                                                                </a>
+                                                            </h4>
+                                                        </div>
+                                                        <div id="collapsechart" class="panel-collapse collapse">
+                                                            <div class="card-body">
+                                                                <canvas id="MultiLineChart" style="height:250px;" class="col-lg-12"></canvas>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <div id="Symptoms_Accordion">
+                                                    <div class="card card-primary">
+                                                        <div class="card-header">
+                                                            <h4 class="card-title">
+                                                                <a data-toggle="collapse" data-parent="#Symptoms_Accordion" href="#collapseThree">
+                                                                    Presenting Illness
+                                                                </a>
+                                                            </h4>
+                                                        </div>
+                                                        <div id="collapseThree" class="panel-collapse collapse">
+                                                            <div class="card-body">
+                                                                <table id="tblSymptoms" class="table table-bordered table-striped dataTable table-reflow tableHB" style="width:100%;">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <td>S No</td>
+                                                                            <td>Symptom</td>
+                                                                            <td>Duration</td>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody></tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <div id="Investigation_Accordion">
+                                                    <div class="card card-danger">
+                                                        <div class="card-header">
+                                                            <h4 class="card-title">
+                                                                <a data-toggle="collapse" data-parent="#Investigation_Accordion" href="#collapse4">
+                                                                    Investigation
+                                                                </a>
+                                                            </h4>
+                                                        </div>
+                                                        <div id="collapse4" class="panel-collapse collapse">
+                                                            <div class="card-body">
+                                                                <table id="tblInvestigation" class="table table-bordered table-striped dataTable table-reflow tableHB" style="width:100%;">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <td>S No</td>
+                                                                            <td>Investigation</td>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody></tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <div id="Treatment_Accordion">
+                                                    <div class="card card-primary">
+                                                        <div class="card-header">
+                                                            <h4 class="card-title">
+                                                                <a data-toggle="collapse" data-parent="#Treatment_Accordion" href="#collapse5">
+                                                                    Treatment Plan
+                                                                </a>
+                                                            </h4>
+                                                        </div>
+                                                        <div id="collapse5" class="panel-collapse collapse">
+                                                            <div class="card-body">
+                                                                <table id="tblTreatment" class="table table-bordered table-striped dataTable table-reflow tableHB" style="width:100%;">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <td>S No</td>
+                                                                            <td>Drug Name</td>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody></tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <div id="Co-Morbidities_Accordion">
+                                                    <div class="card card-danger">
+                                                        <div class="card-header">
+                                                            <h4 class="card-title">
+                                                                <a data-toggle="collapse" data-parent="#Co-Morbidities_Accordion" href="#collapse6">
+                                                                    Co-Morbidities
+                                                                </a>
+                                                            </h4>
+                                                        </div>
+                                                        <div id="collapse6" class="panel-collapse collapse">
+                                                            <div class="card-body">
+                                                                <table id="tblCoMorbities" class="table table-bordered table-striped dataTable table-reflow tableHB" style="width:100%;">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <td>S No</td>
+                                                                            <td>Medical History</td>
+                                                                            <td>Duration</td>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody></tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+

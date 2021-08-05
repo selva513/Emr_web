@@ -1,0 +1,334 @@
+﻿
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        GetPOListSupplierMaster();
+        
+    });
+    function GetPOListTop100() {
+        $.ajax({
+            url: "/api/PurchaseApi/GetPurchaseOrderTop100",
+            type: "GET",
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                if (response.length > 0) {
+                    BindPoListTop100(response);
+                }
+                
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+    function BindPoListTop100(response) {
+        $("#tblPOList tbody").empty();
+        if (response.length > 0) {
+            var html = "";
+            var Sno = 0;
+            for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                Sno = PCHeader + 1;
+                var SeqID = response[PCHeader].SeqID;
+                var PurchaseOrderNumber = response[PCHeader].PurchaseOrderNumber;
+                var PH_SupplierName = response[PCHeader].PH_SupplierName;
+                var CreatedDatetime = response[PCHeader].CreatedDatetime;
+                var TotalItem = response[PCHeader].TotalItem;
+                var TotalAmount = response[PCHeader].TotalAmount;
+                var IsAprovedBy = response[PCHeader].IsAprovedBy;
+                var WarehouseId = response[PCHeader].WarehouseId;
+                var WarehouseName = response[PCHeader].WarehouseName;
+                var ModifiedDatetime = response[PCHeader].ModifiedDatetime;
+
+                if (IsAprovedBy === true) {
+                    html += "<tr><td>" + Sno + "</td>";//0
+                    html += "<td style='display:none;'>" + SeqID + "</td>";//1
+                    html += "<td>" + SeqID + "</td>";//2
+                    //html += "<td>" + PurchaseOrderNumber + "</td>";//2
+                    html += "<td>" + PH_SupplierName + "</td>";//3
+                    html += "<td>" + CreatedDatetime + "</td>";//4
+                    html += "<td>" + TotalItem + "</td>";//5
+                    html += "<td>" + TotalAmount + "</td>";//6
+                    html += "<td style='display:none;'>" + WarehouseId + "</td>";//7
+                    html += "<td>" + WarehouseName + "</td>";//8
+                    html += "<td>Approved</td>";//9
+                    html += "<td><button type='button' onclick='return SelectPOListBind(this)'>Print</button></td>";//8
+                    html += "</tr>";
+                }
+            }
+            $("#tblPOList tbody").append(html);
+        }
+    }
+    function GetPOListDrugBySupplierID(selectedrow) {
+        var BillNo = parseFloat(selectedrow.cells[0].innerHTML);
+        $.ajax({
+            url: "/api/PurchaseApi/GetPurchaseOrderDrugBySupplierID",
+            type: "GET",
+            data: {
+                BillNo: BillNo
+            },
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                POListBillPrint(response);
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+        //  $('#modal-default').modal().hide();
+        
+    }
+    function SelectPOListBind(selectedrow) {
+        var row = selectedrow.parentNode.parentNode;
+        var dtlSeqID = parseFloat(row.cells[1].innerHTML);
+        var Status = row.cells[9].innerHTML;
+        if (Status === 'Not Approved') {
+            GetPOListDrugBySupplierID(dtlSeqID);
+        }
+        else {
+            SelectedReprint(dtlSeqID);
+        }
+    }
+    function POListBillPrint(response) {
+        if (response.PrintHeader.length > 0) {
+            var html = "";
+            for (PCHeader = 0; PCHeader < response.PrintHeader.length; PCHeader++) {
+                var SeqID = response.PrintHeader[PCHeader].SeqID;
+                var PurchaseOrderNumber = response.PrintHeader[PCHeader].PurchaseOrderNumber;
+                var CreatedDatetime = response.PrintHeader[PCHeader].CreatedDatetime;
+                var PH_SupplierName = response.PrintHeader[PCHeader].PH_SupplierName;
+                var TotalItem = response.PrintHeader[PCHeader].TotalItem;
+                var TotalAmount = response.PrintHeader[PCHeader].TotalAmount;
+                var PH_Supplier_Address1 = response.PrintHeader[PCHeader].PH_Supplier_Address1;
+                var PH_Supplier_Address2 = response.PrintHeader[PCHeader].PH_Supplier_Address2;
+                var PH_Supplier_City = response.PrintHeader[PCHeader].PH_Supplier_City;
+                var PH_Supplier_State = response.PrintHeader[PCHeader].PH_Supplier_State;
+                var PH_Supplier_Country = response.PrintHeader[PCHeader].PH_Supplier_Country;
+                var PH_Supplier_Office_Contact1 = response.PrintHeader[PCHeader].PH_Supplier_Office_Contact1;
+                var PH_Supplier_Office_Contact2 = response.PrintHeader[PCHeader].PH_Supplier_Office_Contact2;
+                var PH_Supplier_GSTRegNo = response.PrintHeader[PCHeader].PH_Supplier_GSTRegNo;
+                var PH_Supplier_Url = response.PrintHeader[PCHeader].PH_Supplier_Url;
+                var QuotationNo = response.PrintHeader[PCHeader].QuotationNo;
+                var DeliveryDate = response.PrintHeader[PCHeader].DeliveryDate;
+
+                //Purchase Text
+                var Sub = response.PurchaseText[PCHeader].Sub;
+                var Body = response.PurchaseText[PCHeader].Body;
+                var TINO = response.PurchaseText[PCHeader].TINO;
+                var Delivery = response.PurchaseText[PCHeader].Delivery;
+                var Disposal = response.PurchaseText[PCHeader].Disposal;
+
+                //Client Deatils
+                var ClientName = response.Client[PCHeader].ClientName;
+                var Address1 = response.Client[PCHeader].Address1;
+                var Address2 = response.Client[PCHeader].Address2;
+                var Email = response.Client[PCHeader].Email;
+                var PhomeNumber = response.Client[PCHeader].PhomeNumber;
+
+                html += "<hr>";
+                html += "<div style='text-align: Center;'>" + ClientName + "</div><br/>";
+                html += "<div style='text-align: Center;'>" + Address1 + "</div><br/>";
+                html += "<div style='text-align: Center;'>" + Address2 + "</div><br/>";
+                html += "<hr>";
+                // Header
+                html += "<table style='font-family:sans-serif;font-size: 12px;font-weight: 500;margin:10px;'>";
+                html += "<tr><td width:100px !important;>Purchase Order</td><td>:</td><td style='width:341px !important;'>" + SeqID + "</td>";
+                html += "<td>Date</td><td>:</td><td style='width:341px !important;'>" + CreatedDatetime + "</td></tr></table>";
+                html += "<br/>";
+                html += "<span style='margin-left:10px;'>Address</span><br/>";
+                html += "<span style='margin-left:85px;'>" + PH_Supplier_Address1 + "</span><br/>";
+                html += "<span style='margin-left:85px;'>" + PH_Supplier_Address2 + "</span><br/>";
+                html += "<span style='margin-left:85px;'>" + PH_Supplier_City + " " + PH_Supplier_State + " " + PH_Supplier_Country + "</span><br/>";
+                html += "<br/>";
+                html += "<br/>";
+                html += "<span style='margin-left:10px;'>Sub:" + Sub + "</span><br/><br/>";
+                html += "<span style='margin-left:10px;'>Ref: Your Quotation " + QuotationNo + " Date " + DeliveryDate + "</span><br/><br/>";
+                html += "<span style='margin-left:10px;'>" + Body + "</span><br/><br/>";
+
+
+                //Deatils
+                html += "<table border='1' style='font-family:sans-serif;font-size: 12px;font-weight: 500;border-collapse:collapse;width: 98%;margin:10px;'><tr>";
+                html += "<td style='width: 53px !important;'>S.no</td>";
+                html += "<td style='width: 275px !important;'>Particular</td>";
+                html += " <td align='right' style='width: 53px !important;'>Qty</td>";
+                html += "<td align='right' style='width: 53px !important;'>Rate</td>";
+                html += "<td align='right' style='width: 63px !important;'>GST</td>";
+                html += "<td align='right' style='width: 63px !important;'>Total</td></tr>";
+                var Sno = 0;
+                for (PCDetails = 0; PCDetails < response.PrintDeatils.length; PCDetails++) {
+                    Sno = Sno + 1;
+                    var BrandName = response.PrintDeatils[PCDetails].BrandName;
+                    var GST = response.PrintDeatils[PCDetails].GST;
+                    var Cost = response.PrintDeatils[PCDetails].Cost;
+                    var Qty = response.PrintDeatils[PCDetails].Qty;
+                    var RowTotalAmount = response.PrintDeatils[PCDetails].TotalAmount;
+
+                    html += "<tr><td style='width: 53px !important;'>" + Sno + "</td>";
+                    html += "<td style='width: 109px !important;'>" + BrandName + "</td>";
+                    html += "<td style='width: 53px !important;text-align: right;'>" + Qty + "</td>";
+                    html += "<td style='width: 140px !important;text-align: right;'>" + Cost + "</td>";
+                    html += "<td style='width: 275px !important;text-align: right;'>" + GST + "</td>";
+                    html += "<td align='right' style='width: 53px !important;text-align: right;'>" + RowTotalAmount + "</td>";
+                    html += "</tr>";
+                }
+                html += "</table><br/>";
+                //Amount Details
+                html += "<span style='margin-right: 21px;float: right;'>Net Total:" + TotalAmount + "</span><br/>";
+
+                html += "<span style='margin-left:10px;'>Our T.I.No:" + TINO + "</span><br/><br/>";
+                html += "<span style='margin-left:10px;'>DeliVery:" + Delivery + "</span><br/><br/>";
+                html += "<span style='margin-left:10px;'>Disposal of L.R.:" + Disposal + "</span><br/>";
+
+            }
+            sessionStorage.setItem("PrintDetails", html);
+            POListopenRequestedPopup();
+        }
+    }
+    function POListopenRequestedPopup() {
+        var rootUrl = "http://" + document.location.hostname + ":" + window.location.port;
+        var url = rootUrl + '/Pharmacy/Dispense/print';
+        window.open(url, '_blank');
+        sessionStorage.setItem("PrintDetails", "");
+    }
+    function GetSupllierPurchaseOrderTop100(SupplierID) {
+        $.ajax({
+            url: "/api/PurchaseApi/GetSupllierPurchaseOrderTop100",
+            type: "GET",
+            data: {
+                SupplierID: SupplierID
+            },
+            dataType: "json",
+            beforeSend: function () { $("#loading").css("display", "block"); },
+            success: function (response) {
+                if (response.length > 0) {
+                    var html = "";
+                    var Sno = 0;
+                    $("#tblPOList tbody").empty();
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        Sno = PCHeader + 1;
+                        var SeqID = response[PCHeader].SeqID;
+                        var PurchaseOrderNumber = response[PCHeader].PurchaseOrderNumber;
+                        var PH_SupplierName = response[PCHeader].PH_SupplierName;
+                        var CreatedDatetime = response[PCHeader].CreatedDatetime;
+                        var TotalItem = response[PCHeader].TotalItem;
+                        var TotalAmount = response[PCHeader].TotalAmount;
+                        var IsAprovedBy = response[PCHeader].IsAprovedBy;
+                        var WarehouseId = response[PCHeader].WarehouseId;
+                        var WarehouseName = response[PCHeader].WarehouseName;
+                        var ModifiedDatetime = response[PCHeader].ModifiedDatetime;
+
+                        html += "<tr><td>" + Sno + "</td>";//0
+                        html += "<td style='display:none;'>" + SeqID + "</td>";//1
+                        html += "<td>" + SeqID + "</td>";//2
+                        //html += "<td>" + PurchaseOrderNumber + "</td>";//2
+                        html += "<td>" + PH_SupplierName + "</td>";//3
+                        html += "<td>" + CreatedDatetime + "</td>";//4
+                        html += "<td>" + TotalItem + "</td>";//5
+                        html += "<td>" + TotalAmount + "</td>";//6
+                        html += "<td style='display:none;'>" + WarehouseId + "</td>";//7
+                        html += "<td>" + WarehouseName + "</td>";//8
+                        if (IsAprovedBy === true)
+                            html += "<td>Approved</td>";//9
+                        else
+                            html += "<td>Not Approved</td>";//9
+                        html += "<td><button type='button' onclick='return SelectPOListBind(this)'>Select</button></td>";//8
+                        html += "</tr>";
+                    }
+                    $("#tblPOList tbody").append(html);
+                }
+                else {
+                    $("#tblPOList tbody").empty();
+                }
+            },
+            complete: function () { $("#loading").css("display", "none"); }
+        });
+        return false;
+    }
+    function OnChangePoListSupplier() {
+        var SupplierID = $("#ddlPOListSuplier").val();
+        GetSupllierPurchaseOrderTop100(SupplierID);
+    }
+    function GetPOListSupplierMaster() {
+        $.ajax({
+            url: "/Pharma/Invoice/GetAllSupplierMaster",
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.length > 0) {
+                    for (PCHeader = 0; PCHeader < response.length; PCHeader++) {
+                        var PH_SupplierID = response[PCHeader].PH_SupplierID;
+                        var PH_SupplierName = response[PCHeader].PH_SupplierName;
+                        $('#ddlPOListSuplier')
+                            .append($("<option></option>").val(PH_SupplierID).html(PH_SupplierName));
+                    }
+                }
+            }
+        });
+    }
+    function GetPoNumberDetailsBySearch() {
+        var poNumber = $('#txtPoNumber').val();
+        var SupplierID = parseFloat($("#ddlPOListSuplier").val());
+        if (poNumber == "" || poNumber == null ) {
+            var Search = 0;
+        }
+
+        else {
+            Search = parseFloat(poNumber)
+        }
+
+        $.ajax({
+            url: rootUrl + "/api/PurchaseApi/GetPoNumberDetails?Search=" + Search + "&SupplierId=" + SupplierID,
+            type: 'Get',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                BindPoListTop100(response);
+            }
+        });
+    }
+</script>
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="panel panel-default DivBox" style="background-color: white;">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                <label>Search</label>
+                               <input type="text" placeholder="Search Po Number" class="form-control" id="txtPoNumber" onkeyup="GetPoNumberDetailsBySearch()" />
+                            </div>
+                            <div class="col-xs-4 col-sm-4 col-md-4">
+                                <label>Suppiler Name </label>
+                                <select class="form-control" id="ddlPOListSuplier" onchange="OnChangePoListSupplier();">
+                                    <option value="0">--Select--</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <table class="table table-bordered table-striped dataTable table-reflow tableHB" id="tblPOList" style="color: black;margin-left: 5px;">
+                                    <thead>
+                                        <tr>
+                                            <th>S.No</th>
+                                            <th>PO Number</th>
+                                            <th>Supplier Name</th>
+                                            <th>Date</th>
+                                            <th>Total Item</th>
+                                            <th>Total Amount</th>
+                                            <th>Warehouse</th>
+                                            <th>Status</th>
+                                            <th>Select</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
