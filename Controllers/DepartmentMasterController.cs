@@ -149,6 +149,7 @@ namespace Emr_web.Controllers
                 HospitalID = Convert.ToInt64(HttpContext.Session.GetString("Hospitalid"))
             };
             _emrRepo.NewEventCreateion(eventManagemntInfo);
+
         }
     }
 }
